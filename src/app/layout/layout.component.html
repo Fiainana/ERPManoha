@@ -1,0 +1,139 @@
+<div
+  class="shell"
+  [class.shell--collapsed]="collapsed() && isDesktop()"
+  [class.shell--mobile-open]="mobileOpen()"
+>
+  @if (mobileOpen() && !isDesktop()) {
+    <div class="shell__scrim" (click)="closeMobile()" aria-hidden="true"></div>
+  }
+
+  <aside
+    class="sidebar"
+    [class.is-collapsed]="collapsed() && isDesktop()"
+    [class.is-open]="mobileOpen()"
+    [attr.aria-hidden]="!isDesktop() && !mobileOpen() ? 'true' : null"
+  >
+    <div class="sidebar__brand">
+      <span class="sidebar__logo" aria-hidden="true">EM</span>
+      <div class="sidebar__brand-text">
+        <span class="sidebar__name">{{ appName }}</span>
+        <span class="sidebar__product">Manoha Énergie</span>
+      </div>
+      @if (!isDesktop()) {
+        <button type="button" class="sidebar__close" (click)="closeMobile()" aria-label="Fermer le menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      }
+    </div>
+
+    <nav class="sidebar__nav" aria-label="Navigation principale">
+      @for (group of groups(); track group.id) {
+        @if (group.items.length === 0 && group.route) {
+          <a
+            [routerLink]="group.route"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: group.route === '/' }"
+            class="sidebar__link"
+            [title]="collapsed() && isDesktop() ? group.label : ''"
+          >
+            <span class="sidebar__icon" [attr.data-icon]="group.icon" aria-hidden="true"></span>
+            <span class="sidebar__label">{{ group.label }}</span>
+          </a>
+        } @else if (group.items.length > 0) {
+          <div class="sidebar__group" [class.is-open]="isGroupExpanded(group)" [class.is-active]="isGroupActive(group)">
+            <button
+              type="button"
+              class="sidebar__group-btn"
+              (click)="toggleGroup(group.id)"
+              [attr.aria-expanded]="isGroupExpanded(group)"
+              [title]="collapsed() && isDesktop() ? group.label : ''"
+            >
+              <span class="sidebar__icon" [attr.data-icon]="group.icon" aria-hidden="true"></span>
+              <span class="sidebar__label">{{ group.label }}</span>
+              <svg class="sidebar__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+              </svg>
+            </button>
+            @if (isGroupExpanded(group) && !(collapsed() && isDesktop())) {
+              <div class="sidebar__sub">
+                @for (item of group.items; track item.route) {
+                  <a
+                    [routerLink]="item.route"
+                    routerLinkActive="is-active"
+                    class="sidebar__sublink"
+                  >
+                    {{ item.label }}
+                  </a>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user" [title]="auth.displayName() || auth.user()?.login || ''">
+        <span class="sidebar__avatar">{{ (auth.displayName() || '?').charAt(0) }}</span>
+        <div class="sidebar__user-meta">
+          <strong>{{ auth.displayName() || auth.user()?.login }}</strong>
+          <small>{{ auth.roles().join(' · ') || 'Utilisateur' }}</small>
+        </div>
+      </div>
+      <button type="button" class="sidebar__action" (click)="logout()" [title]="collapsed() && isDesktop() ? 'Déconnexion' : ''">
+        <span class="sidebar__icon" data-icon="logout" aria-hidden="true"></span>
+        <span class="sidebar__label">Déconnexion</span>
+      </button>
+      <p class="sidebar__powered">Powered by <strong>Aikflow</strong></p>
+    </div>
+
+    @if (isDesktop()) {
+      <button
+        type="button"
+        class="sidebar__toggle"
+        (click)="toggleSidebar()"
+        [attr.aria-expanded]="!collapsed()"
+        [attr.aria-label]="collapsed() ? 'Élargir le menu' : 'Réduire le menu'"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          @if (collapsed()) {
+            <path fill="currentColor" d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+          } @else {
+            <path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+          }
+        </svg>
+      </button>
+    }
+  </aside>
+
+  <div class="shell__main">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button
+          type="button"
+          class="topbar__menu"
+          (click)="toggleSidebar()"
+          [attr.aria-label]="isDesktop() ? (collapsed() ? 'Élargir le menu' : 'Réduire le menu') : (mobileOpen() ? 'Fermer le menu' : 'Ouvrir le menu')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z" />
+          </svg>
+        </button>
+        <div class="topbar__titles">
+          <span class="topbar__eyebrow">Manoha Énergie · ERP</span>
+          <h1 class="topbar__title">{{ pageTitle() }}</h1>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <span class="topbar__chip">{{ auth.roles()[0] || 'Utilisateur' }}</span>
+        <span class="topbar__user">{{ auth.displayName() || auth.user()?.login }}</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
