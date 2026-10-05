@@ -58,3 +58,35 @@ export interface ClientListParams {
   pageSize?: number;
   inclureSommeil?: boolean;
 }
+
+export interface CreateClientRequest {
+  numero?: string | null;
+  intitule: string;
+  adresse?: string | null;
+  complement?: string | null;
+  codePostal?: string | null;
+  ville?: string | null;
+  pays?: string | null;
+  telephone?: string | null;
+  telecopie?: string | null;
+  email?: string | null;
+  siret?: string | null;
+  identifiant?: string | null;
+  representantCode?: string | null;
+}
+
+export interface UpdateClientRequest {
+  intitule?: string | null;
+  adresse?: string | null;
+  complement?: string | null;
+  codePostal?: string | null;
+  ville?: string | null;
+  pays?: string | null;
+  telephone?: string | null;
+  telecopie?: string | null;
+  email?: string | null;
+  siret?: string | null;
+  identifiant?: string | null;
+  representantCode?: string | null;
+  sommeil?: boolean | null;
+}

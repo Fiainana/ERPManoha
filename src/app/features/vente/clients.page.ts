@@ -11,19 +11,20 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { ClientsService } from '../../core/services/clients.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Client } from '../../core/models/client.model';
 
 @Component({
   selector: 'app-clients-page',
-  imports: [RouterLink, FormsModule, DecimalPipe],
+  imports: [RouterLink, FormsModule],
   templateUrl: './clients.page.html',
   styleUrl: './clients.page.scss',
 })
 export class ClientsPage implements OnInit {
   private readonly clientsApi = inject(ClientsService);
+  readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
   private observer?: IntersectionObserver;
@@ -37,6 +38,9 @@ export class ClientsPage implements OnInit {
   readonly page = signal(1);
   readonly hasMore = signal(false);
   readonly pageSize = 30;
+
+  /** Création réservée Admin / Commercial (pas Recouvrement seul) */
+  readonly canWrite = this.auth.hasRole('Admin', 'Commercial');
 
   search = '';
   inclureSommeil = false;
@@ -103,7 +107,7 @@ export class ClientsPage implements OnInit {
         error: (err) => {
           this.loading.set(false);
           this.loadingMore.set(false);
-          this.error.set(err?.error?.message || err?.message || 'Erreur chargement clients');
+          this.error.set(err?.message || 'Erreur chargement clients');
         },
       });
   }
