@@ -10,6 +10,7 @@ import { FacturesPage } from './features/vente/factures.page';
 import { DemandesDevisImportPage } from './features/vente/demandes-devis-import.page';
 import { FournisseursPage } from './features/achat/fournisseurs.page';
 import { DemandesAchatPage } from './features/achat/demandes-achat.page';
+import { DemandesAchatAdminPage } from './features/achat/demandes-achat-admin.page';
 import { BcAchatPage } from './features/achat/bc-achat.page';
 import { BlAchatPage } from './features/achat/bl-achat.page';
 import { FacturesAchatPage } from './features/achat/factures-achat.page';
@@ -67,10 +68,17 @@ export const routes: Routes = [
         component: FournisseursPage,
         canActivate: [roleGuard('Admin')],
       },
+      // Commercial : ses propres demandes
       {
         path: 'achat/demandes-achat',
         component: DemandesAchatPage,
         canActivate: [roleGuard('Admin', 'Commercial')],
+      },
+      // Admin : toutes les demandes + transformation BC
+      {
+        path: 'achat/demandes-achat-admin',
+        component: DemandesAchatAdminPage,
+        canActivate: [roleGuard('Admin')],
       },
       {
         path: 'achat/bc-achat',

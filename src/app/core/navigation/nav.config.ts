@@ -21,7 +21,13 @@ export interface NavGroup {
 
 /**
  * Navigation ERP — hors comptoir & borne impression.
- * Rôles alignés ManohaEnergieAPI README.
+ * Rôles alignés ManohaEnergieAPI.
+ *
+ * Demandes d'achat : deux espaces distincts
+ * - Commercial : mes demandes (POST/GET /api/b2b/demandes-achat/mes)
+ * - Admin : toutes les demandes + transformation BC
+ *   (GET /api/b2b/demandes-achat, POST .../generer-sage,
+ *    POST /api/admin/achats/demandes/{id}/transformer-bc)
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -79,9 +85,14 @@ export const NAV_GROUPS: NavGroup[] = [
         roles: ['Admin'],
       },
       {
-        label: "Demandes d'achat",
+        label: "Mes demandes d'achat",
         route: '/achat/demandes-achat',
         roles: ['Admin', 'Commercial'],
+      },
+      {
+        label: "Demandes d'achat (Admin)",
+        route: '/achat/demandes-achat-admin',
+        roles: ['Admin'],
       },
       {
         label: 'BC Achat',
