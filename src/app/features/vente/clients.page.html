@@ -1,0 +1,168 @@
+<div class="cli">
+  <header class="cli__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Vente</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Clients</strong>
+      </nav>
+      <div class="cli__title-row">
+        <h1>Clients</h1>
+        <span class="count-pill" [class.is-loading]="loading() && items().length === 0">
+          @if (loading() && items().length === 0) {
+            …
+          } @else {
+            {{ total() }}
+          }
+        </span>
+      </div>
+      <p class="cli__subtitle">Portefeuille B2B Sage</p>
+    </div>
+  </header>
+
+  <div class="cli__toolbar">
+    <div class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+        />
+      </svg>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="N° client, intitulé, ville…"
+        autocomplete="off"
+        aria-label="Rechercher un client"
+      />
+      @if (search) {
+        <button
+          type="button"
+          class="search__clear"
+          (click)="search = ''; onSearchInput()"
+          aria-label="Effacer"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path
+              fill="currentColor"
+              d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+            />
+          </svg>
+        </button>
+      }
+    </div>
+
+    <div class="cli__toolbar-actions">
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="inclureSommeil" (change)="onSommeilChange()" />
+        <span>Inclure sommeil</span>
+      </label>
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z"
+        />
+      </svg>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton" aria-busy="true">
+        @for (_ of [1, 2, 3, 4, 5, 6, 7, 8]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <div class="empty__visual" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28">
+            <path
+              fill="currentColor"
+              d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3m-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3m0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13m8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5"
+            />
+          </svg>
+        </div>
+        <h2 class="empty__title">Aucun client trouvé</h2>
+        <p class="empty__text">Modifiez la recherche ou réinitialisez les filtres.</p>
+        <button type="button" class="btn btn--primary" (click)="clearFilters()">
+          Réinitialiser les filtres
+        </button>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead" role="row">
+          <span class="col-client">Client</span>
+          <span class="col-ville">Ville</span>
+          <span class="col-tel">Téléphone</span>
+          <span class="col-rep">Représentant</span>
+          <span class="col-encours num">Encours</span>
+          <span class="col-chev" aria-hidden="true"></span>
+        </div>
+
+        <ul class="tbody">
+          @for (c of items(); track c.numero) {
+            <li [class.is-sommeil]="c.sommeil">
+              <a [routerLink]="['/vente/clients', c.numero]" class="trow">
+                <span class="col-client">
+                  <span class="ref">{{ c.numero }}</span>
+                  <span class="name">{{ c.intitule || '—' }}</span>
+                  @if (c.sommeil) {
+                    <span class="tag">Sommeil</span>
+                  }
+                </span>
+                <span class="col-ville">
+                  @if (c.codePostal || c.ville) {
+                    {{ c.codePostal }} {{ c.ville }}
+                  } @else {
+                    —
+                  }
+                </span>
+                <span class="col-tel">{{ c.telephone || '—' }}</span>
+                <span class="col-rep">{{ c.representant || '—' }}</span>
+                <span class="col-encours num">
+                  <span class="encours-chip" [class.has-debt]="(c.encours ?? 0) > 0">
+                    @if (c.encours != null) {
+                      {{ c.encours | number: '1.0-0' }}
+                      <em>Ar</em>
+                    } @else {
+                      —
+                    }
+                  </span>
+                </span>
+                <span class="col-chev" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                  </svg>
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Chargement de la suite…</span>
+        } @else if (!hasMore()) {
+          <span>Fin de liste · {{ items().length }} sur {{ total() }}</span>
+        } @else {
+          <span>{{ items().length }} / {{ total() }} affichés · faites défiler pour charger</span>
+        }
+      </footer>
+    }
+  </div>
+
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
