@@ -1,0 +1,144 @@
+<div class="detail">
+  <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <a routerLink="/vente/clients">Clients</a>
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+      <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+    </svg>
+    <strong>{{ client()?.numero || '…' }}</strong>
+  </nav>
+
+  @if (loading()) {
+    <div class="skeleton-block" aria-busy="true"></div>
+  } @else if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  } @else if (client(); as c) {
+    <header class="detail__header">
+      <div class="detail__header-main">
+        <p class="eyebrow">Portefeuille B2B</p>
+        <p class="detail__ref">{{ c.numero }}</p>
+        <h1>{{ c.intitule || c.numero }}</h1>
+        <div class="detail__tags">
+          @if (c.sommeil) {
+            <span class="chip chip--muted">Sommeil</span>
+          }
+          @if (c.aCredit || (c.encours ?? 0) > 0) {
+            <span class="chip chip--warn">À crédit</span>
+          }
+          @if (c.classement) {
+            <span class="chip">{{ c.classement }}</span>
+          }
+        </div>
+      </div>
+      <a routerLink="/vente/clients" class="btn btn--ghost">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" />
+        </svg>
+        Retour liste
+      </a>
+    </header>
+
+    @if (stats(); as s) {
+      <section class="kpi" aria-label="Indicateurs">
+        <div class="kpi__card">
+          <span class="kpi__label">Devis</span>
+          <strong class="kpi__value">{{ s.nbDevis | number: '1.0-0' }}</strong>
+        </div>
+        <div class="kpi__card">
+          <span class="kpi__label">Factures</span>
+          <strong class="kpi__value">{{ s.nbFactures | number: '1.0-0' }}</strong>
+        </div>
+        <div class="kpi__card">
+          <span class="kpi__label">CA TTC facturé</span>
+          <strong class="kpi__value">
+            {{ s.caTtcFacture | number: '1.0-0' }}
+            <small>Ar</small>
+          </strong>
+        </div>
+        <div class="kpi__card" [class.is-critical]="s.resteAPayer > 0">
+          <span class="kpi__label">Reste à payer</span>
+          <strong class="kpi__value">
+            {{ s.resteAPayer | number: '1.0-0' }}
+            <small>Ar</small>
+          </strong>
+          @if (s.nbImpayees > 0) {
+            <span class="kpi__hint">{{ s.nbImpayees }} impayée{{ s.nbImpayees > 1 ? 's' : '' }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    <div class="detail__grid">
+      <section class="panel">
+        <div class="panel__head">
+          <h2>Coordonnées</h2>
+        </div>
+        <dl class="info-list">
+          <div>
+            <dt>Adresse</dt>
+            <dd>{{ addressLine(c) }}</dd>
+          </div>
+          <div>
+            <dt>Ville</dt>
+            <dd>{{ cityLine(c) }}</dd>
+          </div>
+          <div>
+            <dt>Pays</dt>
+            <dd>{{ c.pays || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Téléphone</dt>
+            <dd>{{ c.telephone || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{{ c.email || '—' }}</dd>
+          </div>
+          <div>
+            <dt>SIRET / ID</dt>
+            <dd>{{ c.siret || c.identifiant || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">
+          <h2>Commercial & règlement</h2>
+        </div>
+        <dl class="info-list">
+          <div>
+            <dt>Représentant</dt>
+            <dd>{{ c.representant || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Mode de règlement</dt>
+            <dd>{{ c.modeReglementLibelle || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Condition</dt>
+            <dd>{{ c.conditionReglementLibelle || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Encours</dt>
+            <dd>
+              @if (c.encours != null) {
+                <span class="money" [class.has-debt]="c.encours > 0">
+                  {{ c.encours | number: '1.0-0' }} Ar
+                </span>
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Qualité</dt>
+            <dd>{{ c.qualite || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Classement</dt>
+            <dd>{{ c.classement || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  }
+</div>
