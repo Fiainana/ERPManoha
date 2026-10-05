@@ -1,0 +1,140 @@
+<div class="form-page">
+  <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <a routerLink="/vente/clients">Clients</a>
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+      <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+    </svg>
+    <strong>{{ isEdit() ? 'Modifier' : 'Nouveau' }}</strong>
+  </nav>
+
+  <header class="form-page__header">
+    <div>
+      <p class="eyebrow">Portefeuille B2B</p>
+      <h1>{{ isEdit() ? 'Modifier le client' : 'Nouveau client' }}</h1>
+      @if (isEdit() && numero()) {
+        <p class="form-page__ref">{{ numero() }}</p>
+      }
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="skeleton-block" aria-busy="true"></div>
+  } @else {
+    <form class="form-card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (error()) {
+        <div class="alert" role="alert">{{ error() }}</div>
+      }
+
+      <section class="form-section">
+        <h2>Identification</h2>
+        <div class="form-grid">
+          @if (!isEdit()) {
+            <div class="field">
+              <label for="numero">N° client <span class="opt">(optionnel)</span></label>
+              <input id="numero" type="text" formControlName="numero" placeholder="Laissé vide = auto Sage" />
+            </div>
+          }
+          <div
+            class="field field--wide"
+            [class.field--invalid]="form.controls.intitule.invalid && form.controls.intitule.touched"
+          >
+            <label for="intitule">Intitulé <span class="req">*</span></label>
+            <input id="intitule" type="text" formControlName="intitule" placeholder="Raison sociale" />
+            @if (form.controls.intitule.invalid && form.controls.intitule.touched) {
+              <span class="field__error">Intitulé obligatoire</span>
+            }
+          </div>
+          <div class="field">
+            <label for="siret">SIRET</label>
+            <input id="siret" type="text" formControlName="siret" />
+          </div>
+          <div class="field">
+            <label for="identifiant">Identifiant</label>
+            <input id="identifiant" type="text" formControlName="identifiant" />
+          </div>
+          <div class="field">
+            <label for="representantCode">Code représentant</label>
+            <input id="representantCode" type="text" formControlName="representantCode" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Adresse</h2>
+        <div class="form-grid">
+          <div class="field field--wide">
+            <label for="adresse">Adresse</label>
+            <input id="adresse" type="text" formControlName="adresse" />
+          </div>
+          <div class="field field--wide">
+            <label for="complement">Complément</label>
+            <input id="complement" type="text" formControlName="complement" />
+          </div>
+          <div class="field">
+            <label for="codePostal">Code postal</label>
+            <input id="codePostal" type="text" formControlName="codePostal" />
+          </div>
+          <div class="field">
+            <label for="ville">Ville</label>
+            <input id="ville" type="text" formControlName="ville" />
+          </div>
+          <div class="field">
+            <label for="pays">Pays</label>
+            <input id="pays" type="text" formControlName="pays" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Contact</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="telephone">Téléphone</label>
+            <input id="telephone" type="text" formControlName="telephone" />
+          </div>
+          <div class="field">
+            <label for="telecopie">Télécopie</label>
+            <input id="telecopie" type="text" formControlName="telecopie" />
+          </div>
+          <div
+            class="field field--wide"
+            [class.field--invalid]="form.controls.email.invalid && form.controls.email.touched"
+          >
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" placeholder="contact@exemple.com" />
+            @if (form.controls.email.invalid && form.controls.email.touched) {
+              <span class="field__error">Email invalide</span>
+            }
+          </div>
+        </div>
+      </section>
+
+      @if (isEdit()) {
+        <section class="form-section">
+          <h2>Statut</h2>
+          <label class="check">
+            <input type="checkbox" formControlName="sommeil" />
+            <span>Client en sommeil</span>
+          </label>
+        </section>
+      }
+
+      <footer class="form-actions">
+        <a
+          class="btn btn--ghost"
+          [routerLink]="isEdit() && numero() ? ['/vente/clients', numero()] : ['/vente/clients']"
+        >
+          Annuler
+        </a>
+        <button type="submit" class="btn btn--primary" [disabled]="saving() || form.invalid">
+          @if (saving()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Enregistrement…
+          } @else {
+            {{ isEdit() ? 'Enregistrer' : 'Créer le client' }}
+          }
+        </button>
+      </footer>
+    </form>
+  }
+</div>
