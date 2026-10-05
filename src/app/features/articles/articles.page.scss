@@ -10,6 +10,8 @@
   --ok: #16a34a;
   --low: #d97706;
   --out: #dc2626;
+  --cols: minmax(0, 2.4fr) 1fr 0.8fr 1fr 0.8fr;
+  --cols-admin: minmax(0, 2.2fr) 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr;
 }
 
 .page {
@@ -48,7 +50,6 @@
   color: var(--muted);
 }
 
-/* Toolbar */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -149,7 +150,6 @@
   font-size: 0.875rem;
 }
 
-/* Panel / table */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -158,10 +158,22 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.table-head {
+.table-head,
+.art-row {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr;
+  grid-template-columns: var(--cols);
   gap: 0.75rem;
+  align-items: center;
+}
+
+.panel--admin {
+  .table-head,
+  .art-row {
+    grid-template-columns: var(--cols-admin);
+  }
+}
+
+.table-head {
   padding: 0.65rem 1.15rem;
   background: #fafafa;
   border-bottom: 1px solid var(--border);
@@ -174,11 +186,6 @@
   .num {
     text-align: right;
   }
-
-  /* When prix achat hidden: 5 columns */
-  &:has(+ .art-list .art-row:not(:has(.art-row__cost))) {
-    grid-template-columns: minmax(0, 2.4fr) 1fr 0.8fr 1fr 0.8fr;
-  }
 }
 
 .art-list {
@@ -188,10 +195,6 @@
 }
 
 .art-row {
-  display: grid;
-  grid-template-columns: minmax(0, 2.2fr) 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr;
-  align-items: center;
-  gap: 0.75rem;
   padding: 0.85rem 1.15rem;
   border-bottom: 1px solid var(--border);
   color: inherit;
@@ -201,15 +204,10 @@
   &:hover {
     background: var(--red-soft);
   }
+}
 
-  &:last-child {
-    border-bottom: none;
-  }
-
-  /* Without prix achat column */
-  &:not(:has(.art-row__cost)) {
-    grid-template-columns: minmax(0, 2.4fr) 1fr 0.8fr 1fr 0.8fr;
-  }
+.art-list li:last-child .art-row {
+  border-bottom: none;
 }
 
 .art-row__main {
@@ -384,7 +382,7 @@
   }
 
   .art-row,
-  .art-row:not(:has(.art-row__cost)) {
+  .panel--admin .art-row {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.5rem 1rem;
   }
