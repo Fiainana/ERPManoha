@@ -32,10 +32,14 @@ export interface UserProfile {
   roles?: string[];
 }
 
-/** Rôles applicatifs gérés côté API */
+/**
+ * Rôles applicatifs ManohaEnergieAPI.
+ * Rayon est accepté côté API et mappé vers Vendeur.
+ */
 export type AppRole =
   | 'Admin'
   | 'Commercial'
+  | 'Vendeur'
   | 'Rayon'
   | 'Caisse'
   | 'Depot'
