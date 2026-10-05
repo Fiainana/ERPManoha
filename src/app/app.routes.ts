@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/auth/login/login.component';
-import { HomeComponent } from './features/home/home.component';
+import { DashboardPage } from './features/dashboard/dashboard.page';
 import { ArticlesPage } from './features/articles/articles.page';
 import { ArticleDetailPage } from './features/articles/article-detail.page';
 import { ClientsPage } from './features/vente/clients.page';
@@ -40,9 +40,8 @@ export const routes: Routes = [
     component: LayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: '', component: HomeComponent, pathMatch: 'full' },
+      { path: '', component: DashboardPage, pathMatch: 'full' },
 
-      // Articles
       {
         path: 'articles',
         component: ArticlesPage,
@@ -54,7 +53,6 @@ export const routes: Routes = [
         canActivate: [roleGuard(...ARTICLES_ROLES)],
       },
 
-      // Vente
       {
         path: 'vente/clients',
         component: ClientsPage,
@@ -76,7 +74,6 @@ export const routes: Routes = [
         canActivate: [roleGuard('Admin', 'Commercial')],
       },
 
-      // Achat
       {
         path: 'achat/fournisseurs',
         component: FournisseursPage,
@@ -108,7 +105,6 @@ export const routes: Routes = [
         canActivate: [roleGuard('Admin')],
       },
 
-      // Dépôt
       {
         path: 'depot/bons-retour',
         component: BonsRetourPage,
@@ -135,14 +131,12 @@ export const routes: Routes = [
         canActivate: [roleGuard('Admin', 'Depot')],
       },
 
-      // Recouvrement
       {
         path: 'recouvrement',
         component: RecouvrementPage,
         canActivate: [roleGuard('Admin', 'Recouvrement')],
       },
 
-      // Admin
       {
         path: 'utilisateurs',
         component: UtilisateursPage,
