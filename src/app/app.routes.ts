@@ -4,6 +4,7 @@ import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { HomeComponent } from './features/home/home.component';
 import { ArticlesPage } from './features/articles/articles.page';
+import { ArticleDetailPage } from './features/articles/article-detail.page';
 import { ClientsPage } from './features/vente/clients.page';
 import { DevisPage } from './features/vente/devis.page';
 import { FacturesPage } from './features/vente/factures.page';
@@ -22,6 +23,16 @@ import { FacturesRetourPage } from './features/depot/factures-retour.page';
 import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
 import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
 
+const ARTICLES_ROLES = [
+  'Admin',
+  'Commercial',
+  'Vendeur',
+  'Rayon',
+  'Caisse',
+  'Depot',
+  'Recouvrement',
+] as const;
+
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
@@ -35,9 +46,12 @@ export const routes: Routes = [
       {
         path: 'articles',
         component: ArticlesPage,
-        canActivate: [
-          roleGuard('Admin', 'Commercial', 'Vendeur', 'Rayon', 'Caisse', 'Depot', 'Recouvrement'),
-        ],
+        canActivate: [roleGuard(...ARTICLES_ROLES)],
+      },
+      {
+        path: 'articles/:reference',
+        component: ArticleDetailPage,
+        canActivate: [roleGuard(...ARTICLES_ROLES)],
       },
 
       // Vente
@@ -68,13 +82,11 @@ export const routes: Routes = [
         component: FournisseursPage,
         canActivate: [roleGuard('Admin')],
       },
-      // Commercial : ses propres demandes
       {
         path: 'achat/demandes-achat',
         component: DemandesAchatPage,
         canActivate: [roleGuard('Admin', 'Commercial')],
       },
-      // Admin : toutes les demandes + transformation BC
       {
         path: 'achat/demandes-achat-admin',
         component: DemandesAchatAdminPage,
