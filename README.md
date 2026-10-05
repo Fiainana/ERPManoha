@@ -1,31 +1,10 @@
 # ERPManoha
 
-ERP Angular 22 pour Manoha Énergie — authentification branchée sur **ManohaEnergieAPI**.
+ERP Angular 22 pour Manoha Énergie — authentification + shell (sidebar / topbar) branchés sur **ManohaEnergieAPI**.
 
-## Stack
+## Palette
 
-- Angular 22 (standalone, signals)
-- Reactive Forms
-- JWT Bearer (interceptors fonctionnels)
-- Guards `authGuard` / `roleGuard`
-
-## API
-
-| Endpoint | Méthode | Description |
-|----------|---------|-------------|
-| `/api/auth/login` | POST | Connexion login + mot de passe |
-| `/api/auth/login/rfid` | POST | Connexion RFID (borne) |
-| `/api/auth/login/pin` | POST | Connexion PIN |
-
-Base URL (dev/prod) : `https://api.manoha-energie.online/api`
-
-Body login :
-
-```json
-{ "login": "monlogin", "password": "****" }
-```
-
-Réponse : `ApiResponse<TokenResponse>` avec `accessToken` + profil utilisateur.
+Rouge `#DC2626` / `#991B1B` et blanc — UI pro Manoha Énergie.
 
 ## Démarrage
 
@@ -36,27 +15,51 @@ npm install
 ng serve
 ```
 
-Ouvre http://localhost:4200 — la route `/` est protégée, redirection vers `/login`.
+http://localhost:4200 → `/login` puis shell protégé.
 
-## Structure auth (clean code)
+## Menu & rôles
+
+| Menu | Sous-menus | Rôles |
+|------|------------|-------|
+| Tableau de bord | — | Tous authentifiés |
+| Articles | — | Admin, Commercial, Vendeur, Rayon, Caisse, Depot, Recouvrement |
+| **Vente** | Clients | Admin, Commercial, Recouvrement |
+| | Devis | Admin, Commercial |
+| | Factures | Admin, Commercial |
+| | Demandes devis import | Admin, Commercial |
+| **Achat** | Fournisseurs | Admin |
+| | Demandes d'achat | Admin, Commercial |
+| | BC Achat | Admin, Depot |
+| | BL / Réceptions | Admin, Depot |
+| | Factures achat | Admin |
+| **Dépôt** | Bons de retour | Admin, Depot |
+| | BC Achat (réception) | Admin, Depot |
+| | Inventaire | Admin, Depot |
+| | Mouvements de stock | Admin, Depot |
+| | Factures retour | Admin, Depot |
+| Recouvrement | — | Admin, Recouvrement |
+| Utilisateurs | — | Admin |
+
+Hors scope volontaire : **comptoir** et **borne impression** (RFID).
+
+Les menus / sous-menus non autorisés **ne s'affichent pas**. Les routes sont aussi protégées par `roleGuard`.
+
+## Structure
 
 ```
 src/app/
   core/
-    models/api-response.ts      # contrats API
-    services/auth.service.ts    # session, login, rôles (signals)
-    guards/auth.guard.ts        # authGuard + roleGuard
+    navigation/nav.config.ts   # source de vérité menu + rôles
+    services/navigation.service.ts
+    services/auth.service.ts
+    guards/auth.guard.ts
     interceptors/auth.interceptor.ts
-  features/
-    auth/login/                 # écran de connexion
-    home/                       # dashboard minimal post-login
+  layout/                      # sidebar + topbar
+  features/                    # pages placeholder (titres seulement)
+  shared/components/
 ```
 
-## Variables d'environnement
+## API
 
-`src/environments/environment.ts` :
-
-```ts
-apiUrl: 'https://api.manoha-energie.online/api'
-appName: 'ERPManoha'
-```
+Base : `https://api.manoha-energie.online/api`  
+Auth : `POST /api/auth/login` `{ login, password }`
