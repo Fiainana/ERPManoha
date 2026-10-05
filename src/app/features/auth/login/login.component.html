@@ -1,0 +1,122 @@
+<div class="login-page">
+  <div class="login-page__bg" aria-hidden="true">
+    <div class="login-page__orb login-page__orb--1"></div>
+    <div class="login-page__orb login-page__orb--2"></div>
+    <div class="login-page__grid"></div>
+  </div>
+
+  <div class="login-shell">
+    <aside class="login-brand">
+      <div class="login-brand__mark">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="48" height="48" rx="12" fill="url(#g)"/>
+          <path d="M14 30V18l10 6 10-6v12" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 24v10" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#DC2626"/>
+              <stop offset="1" stop-color="#991B1B"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="login-brand__title">{{ appName }}</h1>
+      <p class="login-brand__tagline">
+        ERP Manoha Énergie<br />
+        Gestion intégrée & opérations
+      </p>
+      <ul class="login-brand__points">
+        <li>Stocks & dépôts</li>
+        <li>Achats & facturation</li>
+        <li>Tableau de bord temps réel</li>
+      </ul>
+      <p class="login-brand__powered">Powered by <strong>Aikflow</strong></p>
+    </aside>
+
+    <form class="login-card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <header class="login-card__header">
+        <h2>Connexion</h2>
+        <p>Accédez à votre espace ERP</p>
+      </header>
+
+      @if (error()) {
+        <div class="login-card__alert" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div class="field" [class.field--invalid]="form.controls.login.invalid && form.controls.login.touched">
+        <label for="login">Identifiant</label>
+        <div class="field__control">
+          <svg class="field__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input
+            id="login"
+            type="text"
+            formControlName="login"
+            autocomplete="username"
+            autofocus
+            placeholder="Votre login"
+            [attr.aria-invalid]="form.controls.login.invalid && form.controls.login.touched"
+          />
+        </div>
+        @if (form.controls.login.invalid && form.controls.login.touched) {
+          <span class="field__hint">Identifiant obligatoire</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="form.controls.password.invalid && form.controls.password.touched">
+        <label for="password">Mot de passe</label>
+        <div class="field__control">
+          <svg class="field__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+          />
+          <button
+            type="button"
+            class="field__toggle"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            @if (showPassword()) {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            } @else {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            }
+          </button>
+        </div>
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="field__hint">Mot de passe obligatoire</span>
+        }
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="loading() || form.invalid">
+        @if (loading()) {
+          <span class="btn-submit__spinner" aria-hidden="true"></span>
+          Connexion…
+        } @else {
+          Se connecter
+        }
+      </button>
+
+      <p class="login-card__footer">
+        Accès réservé aux collaborateurs Manoha Énergie<br />
+        <span class="login-card__powered">Powered by <strong>Aikflow</strong></span>
+      </p>
+    </form>
+  </div>
+</div>

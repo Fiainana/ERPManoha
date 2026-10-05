@@ -1,46 +1,62 @@
 # ERPManoha
 
-Projet ERP généré avec [Angular CLI](https://github.com/angular/angular-cli) version 22.2.1.
+ERP Angular 22 pour Manoha Énergie — authentification branchée sur **ManohaEnergieAPI**.
 
-## Serveur de développement
+## Stack
 
-Pour démarrer le serveur local :
+- Angular 22 (standalone, signals)
+- Reactive Forms
+- JWT Bearer (interceptors fonctionnels)
+- Guards `authGuard` / `roleGuard`
+
+## API
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/auth/login` | POST | Connexion login + mot de passe |
+| `/api/auth/login/rfid` | POST | Connexion RFID (borne) |
+| `/api/auth/login/pin` | POST | Connexion PIN |
+
+Base URL (dev/prod) : `https://api.manoha-energie.online/api`
+
+Body login :
+
+```json
+{ "login": "monlogin", "password": "****" }
+```
+
+Réponse : `ApiResponse<TokenResponse>` avec `accessToken` + profil utilisateur.
+
+## Démarrage
 
 ```bash
+git clone https://github.com/Fiainana/ERPManoha.git
+cd ERPManoha
+npm install
 ng serve
 ```
 
-Ouvrez ensuite votre navigateur sur `http://localhost:4200/`. L'application se recharge automatiquement à chaque modification.
+Ouvre http://localhost:4200 — la route `/` est protégée, redirection vers `/login`.
 
-## Scaffolding de code
+## Structure auth (clean code)
 
-Pour générer un nouveau composant :
-
-```bash
-ng generate component nom-du-composant
+```
+src/app/
+  core/
+    models/api-response.ts      # contrats API
+    services/auth.service.ts    # session, login, rôles (signals)
+    guards/auth.guard.ts        # authGuard + roleGuard
+    interceptors/auth.interceptor.ts
+  features/
+    auth/login/                 # écran de connexion
+    home/                       # dashboard minimal post-login
 ```
 
-Pour la liste complète des schématics :
+## Variables d'environnement
 
-```bash
-ng generate --help
+`src/environments/environment.ts` :
+
+```ts
+apiUrl: 'https://api.manoha-energie.online/api'
+appName: 'ERPManoha'
 ```
-
-## Build
-
-```bash
-ng build
-```
-
-Les artefacts sont placés dans le dossier `dist/`.
-
-## Tests unitaires
-
-```bash
-ng test
-```
-
-## Ressources
-
-- [Documentation Angular](https://angular.dev)
-- [Angular CLI](https://angular.dev/tools/cli)
