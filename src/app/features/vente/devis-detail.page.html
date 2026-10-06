@@ -1,0 +1,176 @@
+<div class="dd">
+  <header class="dd__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/vente/devis">Devis</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ detail()?.entete?.numeroPiece || '…' }}</strong>
+      </nav>
+      <div class="dd__title-row">
+        <h1>{{ detail()?.entete?.numeroPiece || 'Devis' }}</h1>
+      </div>
+      @if (detail()?.entete; as e) {
+        <p class="dd__subtitle">
+          {{ e.clientIntitule || e.clientNumero || '—' }}
+          @if (e.dateDocument) {
+            · {{ e.dateDocument | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      }
+    </div>
+
+    <div class="dd__actions">
+      <a routerLink="/vente/devis" class="btn btn--ghost">Retour</a>
+      <button type="button" class="btn btn--ghost" (click)="downloadPdf()" [disabled]="acting() || loading()">
+        PDF
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="openEmail()" [disabled]="acting() || loading()">
+        Email
+      </button>
+      <button type="button" class="btn btn--primary" (click)="facturer()" [disabled]="acting() || loading()">
+        Facturer
+      </button>
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton" aria-busy="true">
+      @for (_ of [1, 2, 3, 4, 5]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (detail(); as d) {
+    <div class="dd__grid">
+      <section class="card">
+        <h2>En-tête</h2>
+        <dl class="kv">
+          <div>
+            <dt>Client</dt>
+            <dd>
+              @if (d.entete.clientNumero) {
+                <a [routerLink]="['/vente/clients', d.entete.clientNumero]">
+                  {{ d.entete.clientIntitule || d.entete.clientNumero }}
+                </a>
+              } @else {
+                {{ d.entete.clientIntitule || '—' }}
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Référence</dt>
+            <dd>{{ d.entete.reference || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd>
+              {{ d.entete.dateDocument ? (d.entete.dateDocument | date: 'dd/MM/yyyy') : '—' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Représentant</dt>
+            <dd>{{ d.entete.representant || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Total HT</dt>
+            <dd class="num">{{ formatAr(d.entete.totalHT) }}</dd>
+          </div>
+          <div>
+            <dt>Total TTC</dt>
+            <dd class="num strong">{{ formatAr(d.entete.totalTTC) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="card card--lines">
+        <h2>Lignes ({{ d.lignes.length }})</h2>
+        @if (d.lignes.length === 0) {
+          <p class="muted">Aucune ligne.</p>
+        } @else {
+          <div class="lines-scroll">
+            <table class="lines">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Désignation</th>
+                  <th class="num">Qté</th>
+                  <th class="num">P.U.</th>
+                  <th class="num">Remise</th>
+                  <th class="num">HT</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of d.lignes; track l.numeroLigne ?? $index) {
+                  <tr>
+                    <td class="mono">
+                      @if (l.articleReference) {
+                        <a [routerLink]="['/articles', l.articleReference]">{{ l.articleReference }}</a>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>{{ l.designation || '—' }}</td>
+                    <td class="num">{{ l.quantite | number: '1.0-3' }}</td>
+                    <td class="num">{{ formatAr(l.prixUnitaire) }}</td>
+                    <td class="num">
+                      {{ l.remisePourcent != null ? (l.remisePourcent | number: '1.0-2') + ' %' : '—' }}
+                    </td>
+                    <td class="num">{{ formatAr(l.montantHT) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+
+    <footer class="dd__foot">
+      <button type="button" class="btn btn--danger" (click)="annuler()" [disabled]="acting()">
+        Annuler le devis
+      </button>
+    </footer>
+  }
+</div>
+
+@if (emailOpen()) {
+  <div class="overlay" (click)="closeEmail()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <h2>Envoyer le devis par email</h2>
+        <button type="button" class="icon-btn" (click)="closeEmail()" aria-label="Fermer">×</button>
+      </header>
+      <div class="modal__body">
+        <p class="hint">Laissez vide « Destinataires » pour utiliser l’email du client Sage.</p>
+        <label class="field">
+          <span>Destinataires (séparés par virgule)</span>
+          <input type="text" [(ngModel)]="emailTo" name="emailTo" placeholder="client@exemple.com" />
+        </label>
+        <label class="field">
+          <span>Cc</span>
+          <input type="text" [(ngModel)]="emailCc" name="emailCc" />
+        </label>
+        <label class="field">
+          <span>Message</span>
+          <textarea [(ngModel)]="emailMessage" name="emailMessage" rows="3"></textarea>
+        </label>
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="closeEmail()" [disabled]="acting()">
+          Annuler
+        </button>
+        <button type="button" class="btn btn--primary" (click)="sendEmail()" [disabled]="acting()">
+          {{ acting() ? 'Envoi…' : 'Envoyer' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}
