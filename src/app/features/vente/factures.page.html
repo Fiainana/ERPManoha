@@ -91,7 +91,6 @@
           <span class="col-date">Date</span>
           <span class="col-ttc">Total TTC</span>
           <span class="col-reste">Reste</span>
-          <span class="col-act">PDF</span>
         </div>
         <ul class="tbody">
           @for (f of items(); track f.numeroPiece) {
@@ -115,17 +114,6 @@
                 <span class="col-ttc">{{ formatAr(f.totalTTC) }}</span>
                 <span class="col-reste" [class.has-reste]="isImpayee(f)">
                   {{ formatAr(f.resteAPayer) }}
-                </span>
-                <span class="col-act" (click)="$event.preventDefault(); $event.stopPropagation()">
-                  <button
-                    type="button"
-                    class="btn-pdf"
-                    title="Exporter PDF"
-                    (click)="exportPdf($event, f.numeroPiece)"
-                    [disabled]="pdfPiece() === f.numeroPiece"
-                  >
-                    {{ pdfPiece() === f.numeroPiece ? '…' : 'PDF' }}
-                  </button>
                 </span>
               </a>
             </li>
