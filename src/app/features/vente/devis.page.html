@@ -1,0 +1,167 @@
+<div class="dv">
+  <header class="dv__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Vente</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Devis</strong>
+      </nav>
+      <div class="dv__title-row">
+        <h1>Devis</h1>
+        <span class="count-pill" [class.is-loading]="loading() && items().length === 0">
+          @if (loading() && items().length === 0) {
+            …
+          } @else {
+            {{ total() }}
+          }
+        </span>
+      </div>
+      <p class="dv__subtitle">Devis commerciaux B2B Sage</p>
+    </div>
+    <a routerLink="/vente/devis/nouveau" class="btn btn--primary">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z" />
+      </svg>
+      Nouveau devis
+    </a>
+  </header>
+
+  <div class="dv__toolbar">
+    <div class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+        />
+      </svg>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="N° pièce, client, référence…"
+        autocomplete="off"
+        aria-label="Rechercher un devis"
+      />
+      @if (search) {
+        <button
+          type="button"
+          class="search__clear"
+          (click)="search = ''; onSearchInput()"
+          aria-label="Effacer"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path
+              fill="currentColor"
+              d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+            />
+          </svg>
+        </button>
+      }
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z"
+        />
+      </svg>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton" aria-busy="true">
+        @for (_ of [1, 2, 3, 4, 5, 6, 7, 8]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <div class="empty__visual" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28">
+            <path
+              fill="currentColor"
+              d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"
+            />
+          </svg>
+        </div>
+        <h2 class="empty__title">Aucun devis</h2>
+        <p class="empty__text">Créez un devis ou affinez la recherche.</p>
+        <div class="empty__actions">
+          <button type="button" class="btn btn--ghost" (click)="clearFilters()">
+            Réinitialiser
+          </button>
+          <a routerLink="/vente/devis/nouveau" class="btn btn--primary">Nouveau devis</a>
+        </div>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead" role="row">
+          <span class="col-piece">Pièce</span>
+          <span class="col-client">Client</span>
+          <span class="col-date">Date</span>
+          <span class="col-ref">Référence</span>
+          <span class="col-ttc">Total TTC</span>
+          <span class="col-act">PDF</span>
+        </div>
+
+        <ul class="tbody">
+          @for (d of items(); track d.numeroPiece) {
+            <li>
+              <a [routerLink]="['/vente/devis', d.numeroPiece]" class="trow">
+                <span class="col-piece">
+                  <span class="ref">{{ d.numeroPiece }}</span>
+                  @if (d.representant) {
+                    <span class="meta">{{ d.representant }}</span>
+                  }
+                </span>
+                <span class="col-client">
+                  <span class="name">{{ d.clientIntitule || '—' }}</span>
+                  @if (d.clientNumero) {
+                    <span class="meta">{{ d.clientNumero }}</span>
+                  }
+                </span>
+                <span class="col-date">
+                  {{ d.dateDocument ? (d.dateDocument | date: 'dd/MM/yyyy') : '—' }}
+                </span>
+                <span class="col-ref">{{ d.reference || '—' }}</span>
+                <span class="col-ttc">{{ formatAr(d.totalTTC) }}</span>
+                <span class="col-act" (click)="$event.preventDefault(); $event.stopPropagation()">
+                  <button
+                    type="button"
+                    class="btn-pdf"
+                    title="Exporter PDF"
+                    (click)="exportPdf($event, d.numeroPiece)"
+                    [disabled]="pdfPiece() === d.numeroPiece"
+                  >
+                    {{ pdfPiece() === d.numeroPiece ? '…' : 'PDF' }}
+                  </button>
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Chargement de la suite…</span>
+        } @else if (!hasMore()) {
+          <span>Fin de liste · {{ items().length }} sur {{ total() }}</span>
+        } @else {
+          <span>{{ items().length }} / {{ total() }} affichés · faites défiler pour charger</span>
+        }
+      </footer>
+    }
+  </div>
+
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
