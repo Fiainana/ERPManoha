@@ -11,6 +11,7 @@ import { DevisPage } from './features/vente/devis.page';
 import { DevisDetailPage } from './features/vente/devis-detail.page';
 import { DevisFormPage } from './features/vente/devis-form.page';
 import { FacturesPage } from './features/vente/factures.page';
+import { FactureDetailPage } from './features/vente/facture-detail.page';
 import { DemandesDevisImportPage } from './features/vente/demandes-devis-import.page';
 import { FournisseursPage } from './features/achat/fournisseurs.page';
 import { DemandesAchatPage } from './features/achat/demandes-achat.page';
@@ -39,6 +40,8 @@ const ARTICLES_ROLES = [
 const CLIENTS_ROLES = ['Admin', 'Commercial', 'Recouvrement'] as const;
 
 const DEVIS_ROLES = ['Admin', 'Commercial'] as const;
+
+const FACTURES_ROLES = ['Admin', 'Commercial'] as const;
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -88,7 +91,12 @@ export const routes: Routes = [
       {
         path: 'vente/factures',
         component: FacturesPage,
-        canActivate: [roleGuard('Admin', 'Commercial')],
+        canActivate: [roleGuard(...FACTURES_ROLES)],
+      },
+      {
+        path: 'vente/factures/:numeroPiece',
+        component: FactureDetailPage,
+        canActivate: [roleGuard(...FACTURES_ROLES)],
       },
       {
         path: 'vente/demandes-devis-import',
