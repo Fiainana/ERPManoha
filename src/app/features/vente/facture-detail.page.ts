@@ -2,7 +2,6 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FacturesService } from '../../core/services/factures.service';
-import { AuthService } from '../../core/services/auth.service';
 import { FactureDetail } from '../../core/models/facture.model';
 
 @Component({
@@ -15,7 +14,6 @@ export class FactureDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(FacturesService);
-  readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
   readonly acting = signal(false);
@@ -52,24 +50,6 @@ export class FactureDetailPage implements OnInit {
   formatAr(n: number | null | undefined): string {
     if (n == null || !Number.isFinite(n)) return '—';
     return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar';
-  }
-
-  downloadPdf(): void {
-    if (this.acting()) return;
-    this.acting.set(true);
-    this.error.set(null);
-    this.api.downloadPdf(this.piece).subscribe({
-      next: () => {
-        this.acting.set(false);
-        this.showToast('PDF téléchargé');
-        // recharger pour éventuel flag dejaImprimee
-        this.load();
-      },
-      error: (err) => {
-        this.acting.set(false);
-        this.error.set(err?.message || 'Export PDF impossible');
-      },
-    });
   }
 
   imprimer(): void {
