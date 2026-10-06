@@ -15,6 +15,7 @@ import {
 export class FacturesService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/b2b/factures`;
+  private readonly adminBase = `${environment.apiUrl}/admin/factures`;
 
   list(opts: FactureListParams = {}) {
     let params = new HttpParams();
@@ -47,7 +48,6 @@ export class FacturesService {
       );
   }
 
-  /** PDF facture — Commercial = 1 impression ; Admin = illimité */
   getPdf(numeroPiece: string) {
     return this.http
       .get(`${this.base}/${encodeURIComponent(numeroPiece)}/pdf`, {
@@ -86,7 +86,6 @@ export class FacturesService {
     );
   }
 
-  /** Ouvre le PDF et tente l'impression navigateur */
   openPrint(blob: Blob): void {
     const url = URL.createObjectURL(blob);
     const w = window.open(url, '_blank', 'noopener,noreferrer');
@@ -110,6 +109,22 @@ export class FacturesService {
     setTimeout(() => URL.revokeObjectURL(url), 120_000);
   }
 
+  /**
+   * Admin — transforme une facture en bon de retour.
+   * @returns n° du bon de retour si présent dans la réponse
+   */
+  versBonRetour(numeroPiece: string, rfid: string) {
+    return this.http
+      .post<ApiResponse<unknown>>(`${this.adminBase}/vers-retour`, {
+        numeroPiece,
+        rfid,
+      })
+      .pipe(
+        map((res) => this.pickBonRetour(this.unwrap(res))),
+        catchError((err) => throwError(() => new Error(this.readError(err))))
+      );
+  }
+
   private unwrap(res: unknown): unknown {
     if (!res || typeof res !== 'object') return res;
     const o = res as Record<string, unknown>;
@@ -124,7 +139,7 @@ export class FacturesService {
     if (body?.errors?.length) return body.errors.join(' · ');
     if (body?.message) return body.message;
     if (body?.detail) return body.detail;
-    if (http?.status === 403) return 'Accès refusé sur cette facture.';
+    if (http?.status === 403) return 'Accès refusé (badge RFID invalide ou non autorisé).';
     if (http?.status === 404) return 'Facture introuvable.';
     if (http?.status === 503) return 'Service Sage indisponible.';
     return http?.message || 'Erreur API factures';
@@ -142,6 +157,29 @@ export class FacturesService {
         : `Erreur impression (${http.status})`;
     }
     return this.readError(err);
+  }
+
+  private pickBonRetour(raw: unknown): string {
+    if (!raw || typeof raw !== 'object') return '';
+    const o = raw as Record<string, unknown>;
+    const keys = [
+      'numeroPieceRetour',
+      'NumeroPieceRetour',
+      'numeroBonRetour',
+      'NumeroBonRetour',
+      'numeroPiece',
+      'NumeroPiece',
+    ];
+    for (const k of keys) {
+      const v = o[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+    }
+    const entete = (o['entete'] || o['Entete']) as Record<string, unknown> | undefined;
+    if (entete) {
+      const n = entete['numeroPiece'] ?? entete['NumeroPiece'];
+      if (typeof n === 'string' && n.trim()) return n.trim();
+    }
+    return '';
   }
 
   private normalizeList(raw: unknown): FactureListResult {
