@@ -1,12 +1,14 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { FacturesService } from '../../core/services/factures.service';
+import { AuthService } from '../../core/services/auth.service';
 import { FactureDetail } from '../../core/models/facture.model';
 
 @Component({
   selector: 'app-facture-detail-page',
-  imports: [RouterLink, DatePipe, DecimalPipe],
+  imports: [RouterLink, DatePipe, DecimalPipe, FormsModule],
   templateUrl: './facture-detail.page.html',
   styleUrl: './facture-detail.page.scss',
 })
@@ -14,13 +16,16 @@ export class FactureDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(FacturesService);
+  readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
   readonly acting = signal(false);
   readonly error = signal<string | null>(null);
   readonly toast = signal<string | null>(null);
   readonly detail = signal<FactureDetail | null>(null);
+  readonly retourOpen = signal(false);
 
+  rfid = '';
   private piece = '';
 
   ngOnInit(): void {
@@ -66,6 +71,43 @@ export class FactureDetailPage implements OnInit {
       error: (err) => {
         this.acting.set(false);
         this.error.set(err?.message || 'Impression impossible');
+      },
+    });
+  }
+
+  openRetour(): void {
+    this.rfid = '';
+    this.retourOpen.set(true);
+  }
+
+  closeRetour(): void {
+    if (this.acting()) return;
+    this.retourOpen.set(false);
+  }
+
+  confirmerRetour(): void {
+    if (this.acting()) return;
+    const badge = this.rfid.trim();
+    if (!badge) {
+      this.error.set('Badge RFID du responsable obligatoire.');
+      return;
+    }
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.versBonRetour(this.piece, badge).subscribe({
+      next: (br) => {
+        this.acting.set(false);
+        this.retourOpen.set(false);
+        if (br) {
+          void this.router.navigate(['/depot/bons-retour', br]);
+        } else {
+          this.showToast('Bon de retour créé');
+          void this.router.navigate(['/depot/bons-retour']);
+        }
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.error.set(err?.message || 'Transformation impossible');
       },
     });
   }
