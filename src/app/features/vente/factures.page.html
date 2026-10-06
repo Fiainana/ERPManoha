@@ -1,0 +1,149 @@
+<div class="fa">
+  <header class="fa__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Vente</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Factures</strong>
+      </nav>
+      <div class="fa__title-row">
+        <h1>Factures</h1>
+        <span class="count-pill" [class.is-loading]="loading() && items().length === 0">
+          @if (loading() && items().length === 0) {
+            …
+          } @else {
+            {{ total() }}
+          }
+        </span>
+      </div>
+      <p class="fa__subtitle">Factures de vente B2B Sage</p>
+    </div>
+  </header>
+
+  <div class="fa__toolbar">
+    <div class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+        />
+      </svg>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="N° pièce, client, référence…"
+        autocomplete="off"
+        aria-label="Rechercher une facture"
+      />
+      @if (search) {
+        <button
+          type="button"
+          class="search__clear"
+          (click)="search = ''; onSearchInput()"
+          aria-label="Effacer"
+        >
+          ×
+        </button>
+      }
+    </div>
+    <div class="fa__toolbar-actions">
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="impayeesSeulement" (change)="onImpayeesChange()" />
+        <span>Impayées seulement</span>
+      </label>
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton" aria-busy="true">
+        @for (_ of [1, 2, 3, 4, 5, 6, 7, 8]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <div class="empty__visual" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28">
+            <path
+              fill="currentColor"
+              d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"
+            />
+          </svg>
+        </div>
+        <h2 class="empty__title">Aucune facture</h2>
+        <p class="empty__text">Modifiez les filtres ou facturez un devis.</p>
+        <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead" role="row">
+          <span class="col-piece">Pièce</span>
+          <span class="col-client">Client</span>
+          <span class="col-date">Date</span>
+          <span class="col-ttc">Total TTC</span>
+          <span class="col-reste">Reste</span>
+          <span class="col-act">PDF</span>
+        </div>
+        <ul class="tbody">
+          @for (f of items(); track f.numeroPiece) {
+            <li [class.is-impayee]="isImpayee(f)">
+              <a [routerLink]="['/vente/factures', f.numeroPiece]" class="trow">
+                <span class="col-piece">
+                  <span class="ref">{{ f.numeroPiece }}</span>
+                  @if (f.representant) {
+                    <span class="meta">{{ f.representant }}</span>
+                  }
+                </span>
+                <span class="col-client">
+                  <span class="name">{{ f.clientIntitule || '—' }}</span>
+                  @if (f.clientNumero) {
+                    <span class="meta">{{ f.clientNumero }}</span>
+                  }
+                </span>
+                <span class="col-date">
+                  {{ f.dateDocument ? (f.dateDocument | date: 'dd/MM/yyyy') : '—' }}
+                </span>
+                <span class="col-ttc">{{ formatAr(f.totalTTC) }}</span>
+                <span class="col-reste" [class.has-reste]="isImpayee(f)">
+                  {{ formatAr(f.resteAPayer) }}
+                </span>
+                <span class="col-act" (click)="$event.preventDefault(); $event.stopPropagation()">
+                  <button
+                    type="button"
+                    class="btn-pdf"
+                    title="Exporter PDF"
+                    (click)="exportPdf($event, f.numeroPiece)"
+                    [disabled]="pdfPiece() === f.numeroPiece"
+                  >
+                    {{ pdfPiece() === f.numeroPiece ? '…' : 'PDF' }}
+                  </button>
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Chargement de la suite…</span>
+        } @else if (!hasMore()) {
+          <span>Fin de liste · {{ items().length }} sur {{ total() }}</span>
+        } @else {
+          <span>{{ items().length }} / {{ total() }} affichés · faites défiler pour charger</span>
+        }
+      </footer>
+    }
+  </div>
+
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
