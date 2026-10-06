@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { MouvementsStockService } from '../../core/services/mouvements-stock.service';
@@ -17,7 +17,7 @@ import { DepotOption, MouvementStock } from '../../core/models/mouvement-stock.m
 
 @Component({
   selector: 'app-mouvements-stock-page',
-  imports: [FormsModule, DatePipe, DecimalPipe],
+  imports: [FormsModule, DatePipe],
   templateUrl: './mouvements-stock.page.html',
   styleUrl: './mouvements-stock.page.scss',
 })
@@ -80,6 +80,10 @@ export class MouvementsStockPage implements OnInit {
   loadMore(): void {
     if (this.loading() || this.loadingMore() || !this.hasMore()) return;
     this.load(this.page() + 1, true);
+  }
+
+  trackKey(m: MouvementStock, index: number): string {
+    return `${m.numeroPiece}|${m.numeroLigne}|${m.articleReference}|${m.dateMouvement}|${index}`;
   }
 
   isEntree(m: MouvementStock): boolean {
