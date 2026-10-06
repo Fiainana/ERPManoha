@@ -22,6 +22,7 @@ import { FacturesAchatPage } from './features/achat/factures-achat.page';
 import { BonsRetourPage } from './features/depot/bons-retour.page';
 import { BonRetourDetailPage } from './features/depot/bon-retour-detail.page';
 import { BcReceptionPage } from './features/depot/bc-reception.page';
+import { BcReceptionDetailPage } from './features/depot/bc-reception-detail.page';
 import { InventairePage } from './features/depot/inventaire.page';
 import { MouvementsStockPage } from './features/depot/mouvements-stock.page';
 import { FacturesRetourPage } from './features/depot/factures-retour.page';
@@ -151,6 +152,11 @@ export const routes: Routes = [
       {
         path: 'depot/bc-reception',
         component: BcReceptionPage,
+        canActivate: [roleGuard(...DEPOT_ROLES)],
+      },
+      {
+        path: 'depot/bc-reception/:numeroPiece',
+        component: BcReceptionDetailPage,
         canActivate: [roleGuard(...DEPOT_ROLES)],
       },
       {
