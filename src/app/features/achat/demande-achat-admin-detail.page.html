@@ -153,7 +153,7 @@
   <!-- Modal création article OM -->
   @if (modalOpen()) {
     <div class="modal-backdrop" (click)="closeArticleModal()"></div>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-art-title">
+    <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="modal-art-title">
       <header class="modal__head">
         <div>
           <h2 id="modal-art-title">Créer article Sage</h2>
@@ -165,17 +165,57 @@
       </header>
 
       @if (modalError()) {
-        <div class="alert">{{ modalError() }}</div>
+        <div class="alert modal-alert">{{ modalError() }}</div>
       }
 
       <div class="modal__body">
+        <!-- Recherche articles existants -->
+        <div class="art-search">
+          <label class="art-search__label">
+            <span>Recherche article existant (préfixe / libellé)</span>
+            <input
+              [(ngModel)]="artSearchQuery"
+              (ngModelChange)="onArtSearchChange()"
+              placeholder="ex. ART ou ART00…"
+              autocomplete="off"
+              class="mono-input"
+            />
+          </label>
+          @if (searchingArt()) {
+            <small class="hint">Recherche…</small>
+          }
+          @if (nextRefHint()) {
+            <div class="next-ref">
+              <span>Prochain n° suggéré :</span>
+              <strong class="mono">{{ nextRefHint() }}</strong>
+              <button type="button" class="btn btn--sm" (click)="applyNextRef()">Utiliser</button>
+            </div>
+          }
+          @if (articleHits().length) {
+            <ul class="art-hits">
+              @for (a of articleHits(); track a.reference) {
+                <li>
+                  <button type="button" (click)="pickExistingArticle(a)">
+                    <span class="mono">{{ a.reference }}</span>
+                    <span class="des">{{ a.designation || '—' }}</span>
+                    @if (a.codeFamille) {
+                      <span class="fam">{{ a.codeFamille }}</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+            <small class="hint">Clique pour rattacher un article existant (préremplit le formulaire).</small>
+          }
+        </div>
+
         <div class="form-row">
           <label>
             <span>Référence (AR_Ref) *</span>
             <input
               [(ngModel)]="arRef"
               maxlength="19"
-              placeholder="ex. ART001"
+              placeholder="ex. ART013"
               autocomplete="off"
               class="mono-input"
             />
@@ -214,9 +254,13 @@
               }
             </select>
           </label>
-          <label class="check-row">
-            <input type="checkbox" [(ngModel)]="suiviStock" />
-            <span>Suivi de stock</span>
+          <label>
+            <span>Suivi de stock *</span>
+            <select [(ngModel)]="suiviStockType">
+              @for (s of suiviOptions(); track s.valeur) {
+                <option [ngValue]="s.valeur">{{ s.valeur }} — {{ s.libelle }}</option>
+              }
+            </select>
           </label>
           <label class="check-row">
             <input type="checkbox" [(ngModel)]="rattacherSiExiste" />
