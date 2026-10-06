@@ -20,6 +20,7 @@ import { BcAchatPage } from './features/achat/bc-achat.page';
 import { BlAchatPage } from './features/achat/bl-achat.page';
 import { FacturesAchatPage } from './features/achat/factures-achat.page';
 import { BonsRetourPage } from './features/depot/bons-retour.page';
+import { BonRetourDetailPage } from './features/depot/bon-retour-detail.page';
 import { BcReceptionPage } from './features/depot/bc-reception.page';
 import { InventairePage } from './features/depot/inventaire.page';
 import { MouvementsStockPage } from './features/depot/mouvements-stock.page';
@@ -42,6 +43,8 @@ const CLIENTS_ROLES = ['Admin', 'Commercial', 'Recouvrement'] as const;
 const DEVIS_ROLES = ['Admin', 'Commercial'] as const;
 
 const FACTURES_ROLES = ['Admin', 'Commercial'] as const;
+
+const DEPOT_ROLES = ['Admin', 'Depot'] as const;
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -138,27 +141,32 @@ export const routes: Routes = [
       {
         path: 'depot/bons-retour',
         component: BonsRetourPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
+        canActivate: [roleGuard(...DEPOT_ROLES)],
+      },
+      {
+        path: 'depot/bons-retour/:numeroPiece',
+        component: BonRetourDetailPage,
+        canActivate: [roleGuard(...DEPOT_ROLES)],
       },
       {
         path: 'depot/bc-reception',
         component: BcReceptionPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
+        canActivate: [roleGuard(...DEPOT_ROLES)],
       },
       {
         path: 'depot/inventaire',
         component: InventairePage,
-        canActivate: [roleGuard('Admin', 'Depot')],
+        canActivate: [roleGuard(...DEPOT_ROLES)],
       },
       {
         path: 'depot/mouvements-stock',
         component: MouvementsStockPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
+        canActivate: [roleGuard(...DEPOT_ROLES)],
       },
       {
         path: 'depot/factures-retour',
         component: FacturesRetourPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
+        canActivate: [roleGuard(...DEPOT_ROLES)],
       },
 
       {
