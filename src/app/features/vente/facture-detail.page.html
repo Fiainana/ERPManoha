@@ -20,6 +20,16 @@
     </div>
     <div class="fd__actions">
       <a routerLink="/vente/factures" class="btn btn--ghost">Retour</a>
+      @if (auth.isAdmin()) {
+        <button
+          type="button"
+          class="btn btn--ghost"
+          (click)="openRetour()"
+          [disabled]="acting() || loading()"
+        >
+          Bon de retour
+        </button>
+      }
       <button type="button" class="btn btn--primary" (click)="imprimer()" [disabled]="acting() || loading()">
         Imprimer
       </button>
@@ -143,6 +153,36 @@
           </div>
         }
       </section>
+    </div>
+  }
+
+  @if (retourOpen()) {
+    <div class="modal-backdrop" (click)="closeRetour()"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="retour-title">
+      <h2 id="retour-title">Transformer en bon de retour</h2>
+      <p class="modal__hint">
+        Facture <strong>{{ piece || detail()?.entete?.numeroPiece }}</strong> — badge RFID d’un
+        responsable Admin requis.
+      </p>
+      <label class="field">
+        <span>Badge RFID</span>
+        <input
+          type="password"
+          [(ngModel)]="rfid"
+          name="rfid"
+          autocomplete="off"
+          placeholder="Scanner ou saisir le badge…"
+          (keydown.enter)="confirmerRetour()"
+        />
+      </label>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" (click)="closeRetour()" [disabled]="acting()">
+          Annuler
+        </button>
+        <button type="button" class="btn btn--primary" (click)="confirmerRetour()" [disabled]="acting()">
+          {{ acting() ? 'Transformation…' : 'Confirmer' }}
+        </button>
+      </div>
     </div>
   }
 </div>
