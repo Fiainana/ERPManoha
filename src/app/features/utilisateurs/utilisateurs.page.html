@@ -1,0 +1,287 @@
+<div class="usr">
+  <header class="usr__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Administration</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Utilisateurs</strong>
+      </nav>
+      <div class="usr__title-row">
+        <h1>Utilisateurs</h1>
+        <span class="count-pill" [class.is-loading]="loading() && items().length === 0">
+          @if (loading() && items().length === 0) {
+            …
+          } @else {
+            {{ filtered().length }}
+          }
+        </span>
+      </div>
+      <p class="usr__subtitle">Comptes applicatifs & collaborateurs Sage</p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="openModal()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z" />
+      </svg>
+      Nouvel utilisateur
+    </button>
+  </header>
+
+  <div class="usr__toolbar">
+    <div class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+        />
+      </svg>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        placeholder="Login, nom, rôle, matricule…"
+        autocomplete="off"
+        aria-label="Rechercher un utilisateur"
+      />
+      @if (search) {
+        <button
+          type="button"
+          class="search__clear"
+          (click)="search = ''"
+          aria-label="Effacer"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path
+              fill="currentColor"
+              d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+            />
+          </svg>
+        </button>
+      }
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="reload()" [disabled]="loading()">
+      Actualiser
+    </button>
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (listError()) {
+    <div class="alert" role="alert">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z"
+        />
+      </svg>
+      <span>{{ listError() }}</span>
+    </div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton" aria-busy="true">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (filtered().length === 0) {
+      <div class="empty">
+        <div class="empty__visual" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28">
+            <path
+              fill="currentColor"
+              d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3m-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3m0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13m8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5"
+            />
+          </svg>
+        </div>
+        <h2 class="empty__title">Aucun utilisateur</h2>
+        <p class="empty__text">Créez un compte ou affinez la recherche.</p>
+        <button type="button" class="btn btn--primary" (click)="openModal()">
+          Créer le premier compte
+        </button>
+      </div>
+    } @else {
+      <ul class="people">
+        @for (u of filtered(); track u.id || u.login) {
+          <li class="person" [class.is-off]="u.actif === false">
+            <span class="avatar" aria-hidden="true">{{ initials(u) }}</span>
+            <div class="person__main">
+              <strong>{{ displayName(u) }}</strong>
+              <span class="login">{{ u.login }}</span>
+            </div>
+            <div class="person__meta">
+              @for (r of rolesOf(u); track r) {
+                <span class="chip" [class.chip--admin]="r === 'Admin'">{{ r }}</span>
+              }
+              @if (u.sageMatricule || u.matricule) {
+                <span class="chip chip--muted">Sage {{ u.sageMatricule || u.matricule }}</span>
+              }
+            </div>
+            <button
+              type="button"
+              class="status"
+              [class.is-off]="u.actif === false"
+              [disabled]="togglingId() === u.id"
+              (click)="toggleActif(u)"
+              [attr.title]="u.actif === false ? 'Activer' : 'Désactiver'"
+            >
+              {{ u.actif === false ? 'Inactif' : 'Actif' }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>
+
+@if (modalOpen()) {
+  <div class="overlay" (click)="closeModal()">
+    <div
+      class="modal"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="user-modal-title"
+    >
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">Nouveau compte</p>
+          <h2 id="user-modal-title">Ajouter un utilisateur</h2>
+        </div>
+        <button type="button" class="icon-btn" (click)="closeModal()" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path
+              fill="currentColor"
+              d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+            />
+          </svg>
+        </button>
+      </header>
+
+      @if (formError()) {
+        <div class="alert modal__alert" role="alert">{{ formError() }}</div>
+      }
+
+      <form class="modal__body" (ngSubmit)="submit()">
+        <section class="form-section">
+          <h3>Identité Sage</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Nom <span class="req">*</span></span>
+              <input [(ngModel)]="nom" name="nom" required autocomplete="family-name" />
+            </label>
+            <label class="field">
+              <span>Prénom</span>
+              <input [(ngModel)]="prenom" name="prenom" autocomplete="given-name" />
+            </label>
+            <label class="field">
+              <span>Matricule Sage</span>
+              <input
+                [(ngModel)]="matricule"
+                name="matricule"
+                maxlength="10"
+                placeholder="vide = auto"
+              />
+            </label>
+            <label class="field">
+              <span>Fonction</span>
+              <input [(ngModel)]="fonction" name="fonction" />
+            </label>
+            <label class="field field--wide">
+              <span>Service</span>
+              <input [(ngModel)]="service" name="service" />
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Accès application</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Login <span class="req">*</span></span>
+              <input [(ngModel)]="login" name="login" required autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Mot de passe <span class="req">*</span></span>
+              <input
+                [(ngModel)]="password"
+                name="password"
+                type="password"
+                required
+                autocomplete="new-password"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Rôles applicatifs</h3>
+          <div class="roles">
+            @for (opt of roleOptions; track opt.value) {
+              <label class="choice" [class.on]="selectedRoles[opt.value]">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="selectedRoles[opt.value]"
+                  [name]="'role_' + opt.value"
+                />
+                <span>
+                  <strong>{{ opt.label }}</strong>
+                  <small>{{ opt.hint }}</small>
+                </span>
+              </label>
+            }
+            <label class="choice" [class.on]="actif">
+              <input type="checkbox" [(ngModel)]="actif" name="actif" />
+              <span>
+                <strong>Actif</strong>
+                <small>Peut se connecter</small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Profil collaborateur Sage</h3>
+          <div class="roles roles--compact">
+            <label class="choice" [class.on]="vendeur">
+              <input type="checkbox" [(ngModel)]="vendeur" name="vendeur" />
+              <span><strong>Vendeur</strong></span>
+            </label>
+            <label class="choice" [class.on]="acheteur">
+              <input type="checkbox" [(ngModel)]="acheteur" name="acheteur" />
+              <span><strong>Acheteur</strong></span>
+            </label>
+            <label class="choice" [class.on]="caissier">
+              <input type="checkbox" [(ngModel)]="caissier" name="caissier" />
+              <span><strong>Caissier</strong></span>
+            </label>
+            <label class="choice" [class.on]="chargeRecouvrement">
+              <input type="checkbox" [(ngModel)]="chargeRecouvrement" name="chargeRecouvrement" />
+              <span><strong>Recouvrement</strong></span>
+            </label>
+            <label class="choice" [class.on]="receptionnaire">
+              <input type="checkbox" [(ngModel)]="receptionnaire" name="receptionnaire" />
+              <span><strong>Réceptionnaire</strong></span>
+            </label>
+          </div>
+        </section>
+
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="closeModal()" [disabled]="saving()">
+            Annuler
+          </button>
+          <button type="submit" class="btn btn--primary" [disabled]="saving()">
+            @if (saving()) {
+              <span class="spinner" aria-hidden="true"></span>
+              Création…
+            } @else {
+              Créer le compte
+            }
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
