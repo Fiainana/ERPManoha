@@ -17,6 +17,8 @@ import { FournisseursPage } from './features/achat/fournisseurs.page';
 import { FournisseurDetailPage } from './features/achat/fournisseur-detail.page';
 import { FournisseurFormPage } from './features/achat/fournisseur-form.page';
 import { DemandesAchatPage } from './features/achat/demandes-achat.page';
+import { DemandeAchatFormPage } from './features/achat/demande-achat-form.page';
+import { DemandeAchatDetailPage } from './features/achat/demande-achat-detail.page';
 import { DemandesAchatAdminPage } from './features/achat/demandes-achat-admin.page';
 import { BcAchatPage } from './features/achat/bc-achat.page';
 import { BlAchatPage } from './features/achat/bl-achat.page';
@@ -128,6 +130,16 @@ export const routes: Routes = [
       {
         path: 'achat/demandes-achat',
         component: DemandesAchatPage,
+        canActivate: [roleGuard('Admin', 'Commercial')],
+      },
+      {
+        path: 'achat/demandes-achat/nouvelle',
+        component: DemandeAchatFormPage,
+        canActivate: [roleGuard('Admin', 'Commercial')],
+      },
+      {
+        path: 'achat/demandes-achat/:id',
+        component: DemandeAchatDetailPage,
         canActivate: [roleGuard('Admin', 'Commercial')],
       },
       {
