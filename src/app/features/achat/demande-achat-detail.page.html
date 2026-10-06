@@ -6,7 +6,7 @@
         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
           <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
         </svg>
-        <strong>#{{ item()?.id || idPlaceholder }}</strong>
+        <strong>#{{ item()?.id || '…' }}</strong>
       </nav>
       <h1>Demande #{{ item()?.id || '…' }}</h1>
       @if (item(); as d) {
