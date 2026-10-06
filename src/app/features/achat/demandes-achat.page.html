@@ -1,0 +1,91 @@
+<div class="da">
+  <header class="da__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Achat</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Mes demandes d'achat</strong>
+      </nav>
+      <div class="da__title-row">
+        <h1>Mes demandes d'achat</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="da__subtitle">Demandes internes — transformées en BC Sage par l'admin</p>
+    </div>
+    <a routerLink="/achat/demandes-achat/nouvelle" class="btn btn--primary">Nouvelle demande</a>
+  </header>
+
+  <div class="da__toolbar">
+    <div class="field field--select">
+      <select [(ngModel)]="statutFilter" (ngModelChange)="onFilterChange()">
+        @for (o of statutOptions; track o.value) {
+          <option [ngValue]="o.value">{{ o.label }}</option>
+        }
+      </select>
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucune demande</h2>
+        <p>Crée une demande pour signaler un besoin d'achat.</p>
+        <a routerLink="/achat/demandes-achat/nouvelle" class="btn btn--primary">Nouvelle demande</a>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>N°</span>
+          <span>Date</span>
+          <span>Statut</span>
+          <span>Lignes</span>
+          <span>BC Sage</span>
+          <span>Note</span>
+        </div>
+        <ul class="tbody">
+          @for (d of items(); track d.id) {
+            <li>
+              <a [routerLink]="['/achat/demandes-achat', d.id]" class="trow">
+                <span class="ref">#{{ d.id }}</span>
+                <span class="date">
+                  {{ d.dateCreation ? (d.dateCreation | date: 'dd/MM/yyyy HH:mm') : '—' }}
+                </span>
+                <span>
+                  <span class="badge" [class]="statutClass(d.statut)">
+                    {{ d.statutLibelle || d.statut || '—' }}
+                  </span>
+                </span>
+                <span class="num">{{ d.nbLignes }}</span>
+                <span class="mono">{{ d.pieceSage || '—' }}</span>
+                <span class="note">{{ d.note || '—' }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          Chargement…
+        } @else if (!hasMore()) {
+          Fin · {{ items().length }} / {{ total() }}
+        } @else {
+          {{ items().length }} / {{ total() }} · faire défiler
+        }
+      </footer>
+    }
+  </div>
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
