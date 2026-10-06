@@ -1,0 +1,178 @@
+<div class="daad">
+  <header class="daad__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/achat/demandes-achat-admin">Demandes admin</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>#{{ item()?.id || '…' }}</strong>
+      </nav>
+      <h1>Demande #{{ item()?.id || '…' }}</h1>
+      @if (item(); as d) {
+        <p class="sub">
+          <span class="badge" [class]="statutClass(d.statut)">{{ d.statutLibelle || d.statut }}</span>
+          <span>{{ d.demandeurLibelle || '' }}</span>
+          @if (d.dateCreation) {
+            <span>{{ d.dateCreation | date: 'dd/MM/yyyy HH:mm' }}</span>
+          }
+        </p>
+      }
+    </div>
+    <a routerLink="/achat/demandes-achat-admin" class="btn btn--ghost">Retour</a>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (item(); as d) {
+    <section class="card meta">
+      <div>
+        <span class="label">Note</span>
+        <strong>{{ d.note || '—' }}</strong>
+      </div>
+      <div>
+        <span class="label">BC Sage</span>
+        <strong class="mono">{{ d.pieceSage || '— pas encore' }}</strong>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Lignes</h2>
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Article</span>
+          <span>Désignation</span>
+          <span class="num">Qté</span>
+          <span class="num">Qté conf.</span>
+          <span class="num">Prix</span>
+          <span>Action</span>
+        </div>
+        <ul class="tbody">
+          @for (l of lignesEdit; track l.id) {
+            <li class="trow">
+              <span class="mono">{{ l.articleReference || '—' }}</span>
+              <span>
+                {{ l.designation || l.refFournisseur || '—' }}
+                @if (l.estNouvelArticle) {
+                  <span class="tag">Nouveau</span>
+                }
+              </span>
+              <span class="num">{{ l.quantite | number: '1.0-3' }}</span>
+              <span class="num">
+                @if (canTransform()) {
+                  <input type="number" min="0.001" step="any" [(ngModel)]="l.quantiteConfirmee" />
+                } @else {
+                  {{ l.quantite | number: '1.0-3' }}
+                }
+              </span>
+              <span class="num">
+                @if (canTransform()) {
+                  <input type="number" min="0" step="any" [(ngModel)]="l.prixUnitaire" placeholder="cat." />
+                } @else {
+                  —
+                }
+              </span>
+              <span>
+                @if (l.estNouvelArticle && canTransform()) {
+                  <button type="button" class="btn btn--sm" (click)="openArticleForm(l)">
+                    Créer article
+                  </button>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    @if (articleLigneId) {
+      <section class="card">
+        <h2>Créer article Sage (ligne #{{ articleLigneId }})</h2>
+        <div class="form-row">
+          <label>
+            <span>AR_Ref *</span>
+            <input [(ngModel)]="arRef" maxlength="19" />
+          </label>
+          <label>
+            <span>Famille (FA_Code) *</span>
+            <input [(ngModel)]="faCode" maxlength="11" />
+          </label>
+          <label class="span-2">
+            <span>Désignation</span>
+            <input [(ngModel)]="artDesign" maxlength="69" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" (click)="cancelArticleForm()">Annuler</button>
+          <button type="button" class="btn btn--primary" (click)="submitArticle()" [disabled]="acting()">
+            {{ acting() ? '…' : 'Créer / rattacher' }}
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (canTransform()) {
+      <section class="card">
+        <h2>Transformer en BC fournisseur</h2>
+        <div class="form-row">
+          <label>
+            <span>Dépôt *</span>
+            <select [(ngModel)]="depotNo">
+              <option [ngValue]="null">— choisir —</option>
+              @for (dep of depots(); track dep.no) {
+                <option [ngValue]="dep.no">{{ dep.intitule || ('Dépôt ' + dep.no) }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Fournisseur</span>
+            <input
+              [(ngModel)]="fournQuery"
+              (ngModelChange)="searchFourn()"
+              placeholder="Recherche…"
+            />
+            @if (fournHits().length) {
+              <ul class="hits">
+                @for (f of fournHits(); track f.numero) {
+                  <li>
+                    <button type="button" (click)="pickFourn(f)">
+                      {{ f.numero }} — {{ f.intitule }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+            @if (fournisseurCode) {
+              <small class="mono">Code : {{ fournisseurCode }}</small>
+            }
+          </label>
+          <label>
+            <span>Référence doc</span>
+            <input [(ngModel)]="reference" maxlength="17" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn--primary"
+            (click)="genererBc()"
+            [disabled]="acting()"
+          >
+            {{ acting() ? 'Création Sage…' : 'Créer le BC Sage' }}
+          </button>
+        </div>
+      </section>
+    }
+  }
+</div>
