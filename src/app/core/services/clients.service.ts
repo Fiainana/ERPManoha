@@ -10,6 +10,10 @@ import {
   ClientListResult,
   ClientStats,
   CreateClientRequest,
+  DevisClient,
+  DevisClientListResult,
+  FactureClient,
+  FactureClientListResult,
   UpdateClientRequest,
 } from '../models/client.model';
 
@@ -49,6 +53,45 @@ export class ClientsService {
           return this.normalizeDetail(res.data as Record<string, unknown>);
         }),
         catchError((err) => throwError(() => this.toError(err, 'Client introuvable')))
+      );
+  }
+
+  /** Factures du client — GET /api/b2b/clients/{numero}/factures */
+  listFactures(numero: string, opts: { impayees?: boolean; page?: number; pageSize?: number } = {}) {
+    let params = new HttpParams();
+    if (opts.impayees) params = params.set('impayees', 'true');
+    if (opts.page) params = params.set('page', String(opts.page));
+    if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
+
+    return this.http
+      .get<ApiResponse<unknown>>(`${this.base}/${encodeURIComponent(numero)}/factures`, { params })
+      .pipe(
+        map((res) => {
+          if (!res.success || res.data == null) {
+            throw new Error(res.message || 'Impossible de charger les factures');
+          }
+          return this.normalizeFacturesList(res.data);
+        }),
+        catchError((err) => throwError(() => this.toError(err, 'Impossible de charger les factures')))
+      );
+  }
+
+  /** Devis du client — GET /api/b2b/clients/{numero}/devis */
+  listDevis(numero: string, opts: { page?: number; pageSize?: number } = {}) {
+    let params = new HttpParams();
+    if (opts.page) params = params.set('page', String(opts.page));
+    if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
+
+    return this.http
+      .get<ApiResponse<unknown>>(`${this.base}/${encodeURIComponent(numero)}/devis`, { params })
+      .pipe(
+        map((res) => {
+          if (!res.success || res.data == null) {
+            throw new Error(res.message || 'Impossible de charger les devis');
+          }
+          return this.normalizeDevisList(res.data);
+        }),
+        catchError((err) => throwError(() => this.toError(err, 'Impossible de charger les devis')))
       );
   }
 
@@ -109,9 +152,20 @@ export class ClientsService {
   private normalizeDetail(raw: Record<string, unknown>): ClientDetailResult {
     const clientRaw = (raw['client'] || raw['Client'] || raw) as Record<string, unknown>;
     const statsRaw = (raw['stats'] || raw['Stats']) as Record<string, unknown> | undefined;
+    const facturesRaw = (raw['dernieresFactures'] ||
+      raw['DernieresFactures'] ||
+      raw['factures'] ||
+      raw['Factures']) as unknown;
+    const devisRaw = (raw['derniersDevis'] ||
+      raw['DerniersDevis'] ||
+      raw['devis'] ||
+      raw['Devis']) as unknown;
+
     return {
       client: this.normalizeClient(clientRaw),
       stats: statsRaw ? this.normalizeStats(statsRaw) : undefined,
+      derniereFactures: facturesRaw ? this.normalizeFacturesList(facturesRaw) : undefined,
+      derniersDevis: devisRaw ? this.normalizeDevisList(devisRaw) : undefined,
     };
   }
 
@@ -122,6 +176,54 @@ export class ClientsService {
       caTtcFacture: Number(raw['caTtcFacture'] ?? raw['CaTtcFacture'] ?? 0),
       resteAPayer: Number(raw['resteAPayer'] ?? raw['ResteAPayer'] ?? 0),
       nbImpayees: Number(raw['nbImpayees'] ?? raw['NbImpayees'] ?? 0),
+    };
+  }
+
+  private normalizeFacturesList(raw: unknown): FactureClientListResult {
+    const bag = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const rows = (bag['items'] || bag['Items'] || (Array.isArray(raw) ? raw : [])) as Record<
+      string,
+      unknown
+    >[];
+    return {
+      page: Number(bag['page'] ?? bag['Page'] ?? 1),
+      pageSize: Number(bag['pageSize'] ?? bag['PageSize'] ?? (rows.length || 20)),
+      total: Number(bag['total'] ?? bag['Total'] ?? rows.length),
+      totalPages: Number(bag['totalPages'] ?? bag['TotalPages'] ?? (rows.length ? 1 : 0)),
+      impayeesSeulement: Boolean(bag['impayeesSeulement'] ?? bag['ImpayeesSeulement']),
+      items: rows.map((row): FactureClient => ({
+        numeroPiece: String(row['numeroPiece'] ?? row['NumeroPiece'] ?? ''),
+        dateDocument: (row['dateDocument'] ?? row['DateDocument']) as string | null,
+        reference: (row['reference'] ?? row['Reference']) as string | null,
+        totalHT: (row['totalHT'] ?? row['TotalHT']) as number | null,
+        totalTTC: (row['totalTTC'] ?? row['TotalTTC']) as number | null,
+        netAPayer: (row['netAPayer'] ?? row['NetAPayer']) as number | null,
+        montantRegle: (row['montantRegle'] ?? row['MontantRegle']) as number | null,
+        resteAPayer: (row['resteAPayer'] ?? row['ResteAPayer']) as number | null,
+      })),
+    };
+  }
+
+  private normalizeDevisList(raw: unknown): DevisClientListResult {
+    const bag = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const rows = (bag['items'] || bag['Items'] || (Array.isArray(raw) ? raw : [])) as Record<
+      string,
+      unknown
+    >[];
+    return {
+      page: Number(bag['page'] ?? bag['Page'] ?? 1),
+      pageSize: Number(bag['pageSize'] ?? bag['PageSize'] ?? (rows.length || 20)),
+      total: Number(bag['total'] ?? bag['Total'] ?? rows.length),
+      totalPages: Number(bag['totalPages'] ?? bag['TotalPages'] ?? (rows.length ? 1 : 0)),
+      items: rows.map((row): DevisClient => ({
+        numeroPiece: String(row['numeroPiece'] ?? row['NumeroPiece'] ?? ''),
+        dateDocument: (row['dateDocument'] ?? row['DateDocument']) as string | null,
+        reference: (row['reference'] ?? row['Reference']) as string | null,
+        totalHT: (row['totalHT'] ?? row['TotalHT']) as number | null,
+        totalTTC: (row['totalTTC'] ?? row['TotalTTC']) as number | null,
+        netAPayer: (row['netAPayer'] ?? row['NetAPayer']) as number | null,
+        representant: (row['representant'] ?? row['Representant']) as string | null,
+      })),
     };
   }
 
