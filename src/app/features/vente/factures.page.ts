@@ -38,7 +38,6 @@ export class FacturesPage implements OnInit {
   readonly total = signal(0);
   readonly page = signal(1);
   readonly hasMore = signal(false);
-  readonly pdfPiece = signal<string | null>(null);
   readonly pageSize = 30;
 
   search = '';
@@ -76,21 +75,6 @@ export class FacturesPage implements OnInit {
   loadMore(): void {
     if (this.loading() || this.loadingMore() || !this.hasMore()) return;
     this.load(this.page() + 1, true);
-  }
-
-  exportPdf(ev: Event, piece: string): void {
-    ev.preventDefault();
-    ev.stopPropagation();
-    if (!piece || this.pdfPiece()) return;
-    this.pdfPiece.set(piece);
-    this.error.set(null);
-    this.api.downloadPdf(piece).subscribe({
-      next: () => this.pdfPiece.set(null),
-      error: (err) => {
-        this.pdfPiece.set(null);
-        this.error.set(err?.message || 'Export PDF impossible');
-      },
-    });
   }
 
   formatAr(n: number | null | undefined): string {
