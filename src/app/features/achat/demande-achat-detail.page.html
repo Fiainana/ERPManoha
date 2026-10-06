@@ -1,0 +1,95 @@
+<div class="dad">
+  <header class="dad__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/achat/demandes-achat">Mes demandes</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>#{{ item()?.id || idPlaceholder }}</strong>
+      </nav>
+      <h1>Demande #{{ item()?.id || '…' }}</h1>
+      @if (item(); as d) {
+        <p class="dad__subtitle">
+          <span class="badge" [class]="statutClass(d.statut)">
+            {{ d.statutLibelle || d.statut }}
+          </span>
+          @if (d.dateCreation) {
+            <span>{{ d.dateCreation | date: 'dd/MM/yyyy HH:mm' }}</span>
+          }
+        </p>
+      }
+    </div>
+    <div class="dad__actions">
+      <a routerLink="/achat/demandes-achat" class="btn btn--ghost">Retour</a>
+      @if (canAnnuler()) {
+        <button
+          type="button"
+          class="btn btn--danger"
+          (click)="annuler()"
+          [disabled]="acting() || loading()"
+        >
+          {{ acting() ? 'Annulation…' : 'Annuler la demande' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (item(); as d) {
+    <section class="card meta">
+      <div>
+        <span class="label">BC Sage</span>
+        <strong class="mono">{{ d.pieceSage || '— (pas encore créé)' }}</strong>
+      </div>
+      <div>
+        <span class="label">Dépôt</span>
+        <strong>{{ d.depotIntitule || (d.depotNo != null ? d.depotNo : '—') }}</strong>
+      </div>
+      <div>
+        <span class="label">Note</span>
+        <strong>{{ d.note || '—' }}</strong>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Lignes ({{ d.lignes.length }})</h2>
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Article</span>
+          <span>Désignation</span>
+          <span class="num">Qté</span>
+          <span>Type</span>
+        </div>
+        <ul class="tbody">
+          @for (l of d.lignes; track l.id) {
+            <li class="trow">
+              <span class="mono">{{ l.articleReference || '—' }}</span>
+              <span>{{ l.designation || l.refFournisseur || '—' }}</span>
+              <span class="num">{{ l.quantite | number: '1.0-3' }}</span>
+              <span>
+                @if (l.estNouvelArticle) {
+                  <span class="tag tag--new">Nouveau</span>
+                } @else {
+                  <span class="tag">Sage</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  }
+</div>

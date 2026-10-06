@@ -1,0 +1,114 @@
+<div class="daf">
+  <header class="daf__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/achat/demandes-achat">Mes demandes</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Nouvelle</strong>
+      </nav>
+      <h1>Nouvelle demande d'achat</h1>
+      <p class="daf__subtitle">Article existant ou nouvelle désignation — l'admin créera le BC Sage</p>
+    </div>
+    <div class="daf__actions">
+      <a routerLink="/achat/demandes-achat" class="btn btn--ghost">Annuler</a>
+      <button type="button" class="btn btn--primary" (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Envoi…' : 'Envoyer la demande' }}
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  <section class="card">
+    <h2>Note (optionnel)</h2>
+    <textarea
+      [(ngModel)]="note"
+      rows="2"
+      maxlength="500"
+      placeholder="Urgence, client, contexte…"
+    ></textarea>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <h2>Lignes</h2>
+      <div class="card__tools">
+        <button type="button" class="btn btn--ghost btn--sm" (click)="addLineSage()">
+          + Article Sage
+        </button>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="addLineNew()">
+          + Nouvelle désignation
+        </button>
+      </div>
+    </div>
+
+    <div class="search-article">
+      <input
+        type="search"
+        [(ngModel)]="articleQuery"
+        (ngModelChange)="onArticleType()"
+        placeholder="Rechercher un article Sage…"
+        autocomplete="off"
+      />
+      @if (articleHits().length) {
+        <ul class="hits">
+          @for (a of articleHits(); track a.reference) {
+            <li>
+              <button type="button" (click)="pickArticle(a)">
+                <span class="mono">{{ a.reference }}</span>
+                <span>{{ a.designation || a.reference }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="lines">
+      @for (l of lines; track $index; let i = $index) {
+        <div class="line" [class.line--new]="l.isNew">
+          <span class="line__type">{{ l.isNew ? 'Nouveau' : 'Sage' }}</span>
+
+          @if (l.isNew) {
+            <input
+              class="line__desig"
+              [(ngModel)]="l.designation"
+              placeholder="Désignation demandée *"
+              maxlength="69"
+            />
+          } @else {
+            <input
+              class="line__ref"
+              [(ngModel)]="l.articleReference"
+              placeholder="AR_Ref"
+              maxlength="19"
+            />
+            <input
+              class="line__desig"
+              [(ngModel)]="l.designation"
+              placeholder="Désignation (auto)"
+              maxlength="69"
+            />
+          }
+
+          <input
+            class="line__qty"
+            type="number"
+            min="0.001"
+            step="any"
+            [(ngModel)]="l.quantite"
+            title="Quantité"
+          />
+
+          <button type="button" class="btn-icon" (click)="removeLine(i)" title="Supprimer">
+            ×
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+</div>
