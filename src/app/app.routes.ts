@@ -14,6 +14,8 @@ import { FacturesPage } from './features/vente/factures.page';
 import { FactureDetailPage } from './features/vente/facture-detail.page';
 import { DemandesDevisImportPage } from './features/vente/demandes-devis-import.page';
 import { FournisseursPage } from './features/achat/fournisseurs.page';
+import { FournisseurDetailPage } from './features/achat/fournisseur-detail.page';
+import { FournisseurFormPage } from './features/achat/fournisseur-form.page';
 import { DemandesAchatPage } from './features/achat/demandes-achat.page';
 import { DemandesAchatAdminPage } from './features/achat/demandes-achat-admin.page';
 import { BcAchatPage } from './features/achat/bc-achat.page';
@@ -111,6 +113,16 @@ export const routes: Routes = [
       {
         path: 'achat/fournisseurs',
         component: FournisseursPage,
+        canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'achat/fournisseurs/nouveau',
+        component: FournisseurFormPage,
+        canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'achat/fournisseurs/:numero',
+        component: FournisseurDetailPage,
         canActivate: [roleGuard('Admin')],
       },
       {
