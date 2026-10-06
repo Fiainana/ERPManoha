@@ -1,0 +1,93 @@
+<div class="fou">
+  <header class="fou__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Achat</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Fournisseurs</strong>
+      </nav>
+      <div class="fou__title-row">
+        <h1>Fournisseurs</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="fou__subtitle">Référentiel fournisseurs Sage</p>
+    </div>
+    <a routerLink="/achat/fournisseurs/nouveau" class="btn btn--primary">Nouveau fournisseur</a>
+  </header>
+
+  <div class="fou__toolbar">
+    <div class="search">
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="N°, intitulé, ville, téléphone…"
+        autocomplete="off"
+      />
+    </div>
+    <label class="check">
+      <input type="checkbox" [(ngModel)]="inclureSommeil" (change)="onSommeilChange()" />
+      <span>Inclure sommeil</span>
+    </label>
+    <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucun fournisseur</h2>
+        <p>Modifie la recherche ou crée un nouveau fournisseur.</p>
+        <a routerLink="/achat/fournisseurs/nouveau" class="btn btn--primary">Nouveau fournisseur</a>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Fournisseur</span>
+          <span>Ville</span>
+          <span>Téléphone</span>
+          <span>Email</span>
+        </div>
+        <ul class="tbody">
+          @for (f of items(); track f.numero) {
+            <li [class.is-sommeil]="f.sommeil">
+              <a [routerLink]="['/achat/fournisseurs', f.numero]" class="trow">
+                <span class="col-main">
+                  <span class="ref">{{ f.numero }}</span>
+                  <span class="name">{{ f.intitule || '—' }}</span>
+                  @if (f.sommeil) {
+                    <span class="tag">Sommeil</span>
+                  }
+                </span>
+                <span>{{ f.codePostal || '' }} {{ f.ville || '—' }}</span>
+                <span>{{ f.telephone || '—' }}</span>
+                <span class="email">{{ f.email || '—' }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          Chargement…
+        } @else if (!hasMore()) {
+          Fin · {{ items().length }} / {{ total() }}
+        } @else {
+          {{ items().length }} / {{ total() }} · faire défiler
+        }
+      </footer>
+    }
+  </div>
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
