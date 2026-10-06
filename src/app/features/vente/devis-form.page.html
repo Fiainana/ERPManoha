@@ -1,0 +1,175 @@
+<div class="df">
+  <header class="df__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/vente/devis">Devis</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Nouveau</strong>
+      </nav>
+      <h1>Nouveau devis</h1>
+      <p class="df__subtitle">Création d’un devis commercial Sage</p>
+    </div>
+    <div class="df__actions">
+      <a routerLink="/vente/devis" class="btn btn--ghost">Annuler</a>
+      <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving()">
+        {{ saving() ? 'Création…' : 'Créer le devis' }}
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <section class="card">
+    <h2>Client & en-tête</h2>
+    <div class="form-grid">
+      <div class="field field--wide lookup">
+        <span>Client <span class="req">*</span></span>
+        @if (clientNumero) {
+          <div class="picked">
+            <div>
+              <strong>{{ clientLabel }}</strong>
+              <span class="mono">{{ clientNumero }}</span>
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="clearClient()">Changer</button>
+          </div>
+        } @else {
+          <input
+            type="search"
+            [(ngModel)]="clientQuery"
+            (ngModelChange)="onClientType()"
+            placeholder="Rechercher n° ou intitulé…"
+            autocomplete="off"
+          />
+          @if (clientHits().length) {
+            <ul class="hits">
+              @for (c of clientHits(); track c.numero) {
+                <li>
+                  <button type="button" (click)="pickClient(c)">
+                    <strong>{{ c.intitule }}</strong>
+                    <span class="mono">{{ c.numero }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </div>
+
+      <label class="field">
+        <span>Référence</span>
+        <input [(ngModel)]="reference" name="reference" maxlength="17" />
+      </label>
+      <label class="field">
+        <span>Date</span>
+        <input type="date" [(ngModel)]="date" name="date" />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <h2>Lignes</h2>
+      <button type="button" class="btn btn--ghost btn--sm" (click)="addLine()">+ Ligne</button>
+    </div>
+
+    <div class="field lookup article-search">
+      <span>Ajouter un article</span>
+      <input
+        type="search"
+        [(ngModel)]="articleQuery"
+        (ngModelChange)="onArticleType()"
+        placeholder="Référence ou désignation…"
+        autocomplete="off"
+      />
+      @if (articleHits().length) {
+        <ul class="hits">
+          @for (a of articleHits(); track a.reference) {
+            <li>
+              <button type="button" (click)="pickArticle(a)">
+                <span class="mono">{{ a.reference }}</span>
+                <strong>{{ a.designation || a.reference }}</strong>
+                <span class="price">
+                  {{ a.prixVente != null ? (a.prixVente | number: '1.0-0') + ' Ar' : '—' }}
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="lines-scroll">
+      <table class="lines">
+        <thead>
+          <tr>
+            <th>Article</th>
+            <th>Désignation</th>
+            <th class="num">Qté</th>
+            <th class="num">P.U.</th>
+            <th class="num">Remise %</th>
+            <th class="num">HT est.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lines; track $index) {
+            <tr>
+              <td class="mono">{{ l.articleReference || '—' }}</td>
+              <td>{{ l.designation || '—' }}</td>
+              <td class="num">
+                <input type="number" min="0.0001" step="any" [(ngModel)]="l.quantite" [name]="'q' + $index" />
+              </td>
+              <td class="num">
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  [(ngModel)]="l.prixUnitaire"
+                  [name]="'p' + $index"
+                />
+              </td>
+              <td class="num">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="any"
+                  [(ngModel)]="l.remise"
+                  [name]="'r' + $index"
+                />
+              </td>
+              <td class="num">{{ formatAr(lineHt(l)) }}</td>
+              <td>
+                <button type="button" class="btn-icon" (click)="removeLine($index)" title="Retirer">
+                  ×
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div>
+        <span>Total HT estimé</span>
+        <strong>{{ formatAr(totalHt()) }}</strong>
+      </div>
+      <div>
+        <span>Total TTC estimé (TVA 20 %)</span>
+        <strong class="ttc">{{ formatAr(totalTtc()) }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <footer class="df__foot">
+    <a routerLink="/vente/devis" class="btn btn--ghost">Annuler</a>
+    <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving()">
+      {{ saving() ? 'Création…' : 'Créer le devis' }}
+    </button>
+  </footer>
+</div>
