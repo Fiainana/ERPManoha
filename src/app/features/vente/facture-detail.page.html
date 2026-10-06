@@ -20,9 +20,6 @@
     </div>
     <div class="fd__actions">
       <a routerLink="/vente/factures" class="btn btn--ghost">Retour</a>
-      <button type="button" class="btn btn--ghost" (click)="downloadPdf()" [disabled]="acting() || loading()">
-        PDF
-      </button>
       <button type="button" class="btn btn--primary" (click)="imprimer()" [disabled]="acting() || loading()">
         Imprimer
       </button>
