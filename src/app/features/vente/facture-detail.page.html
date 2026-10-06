@@ -1,0 +1,151 @@
+<div class="fd">
+  <header class="fd__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/vente/factures">Factures</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ detail()?.entete?.numeroPiece || '…' }}</strong>
+      </nav>
+      <h1>{{ detail()?.entete?.numeroPiece || 'Facture' }}</h1>
+      @if (detail()?.entete; as e) {
+        <p class="fd__subtitle">
+          {{ e.clientIntitule || e.clientNumero || '—' }}
+          @if (e.dateDocument) {
+            · {{ e.dateDocument | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      }
+    </div>
+    <div class="fd__actions">
+      <a routerLink="/vente/factures" class="btn btn--ghost">Retour</a>
+      <button type="button" class="btn btn--ghost" (click)="downloadPdf()" [disabled]="acting() || loading()">
+        PDF
+      </button>
+      <button type="button" class="btn btn--primary" (click)="imprimer()" [disabled]="acting() || loading()">
+        Imprimer
+      </button>
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton" aria-busy="true">
+      @for (_ of [1, 2, 3, 4, 5]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (detail(); as d) {
+    <div class="fd__grid">
+      <section class="card">
+        <h2>En-tête</h2>
+        <dl class="kv">
+          <div>
+            <dt>Client</dt>
+            <dd>
+              @if (d.entete.clientNumero) {
+                <a [routerLink]="['/vente/clients', d.entete.clientNumero]">
+                  {{ d.entete.clientIntitule || d.entete.clientNumero }}
+                </a>
+              } @else {
+                {{ d.entete.clientIntitule || '—' }}
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Référence</dt>
+            <dd>{{ d.entete.reference || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd>
+              {{ d.entete.dateDocument ? (d.entete.dateDocument | date: 'dd/MM/yyyy') : '—' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Représentant</dt>
+            <dd>{{ d.entete.representant || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Total HT</dt>
+            <dd class="num">{{ formatAr(d.entete.totalHT) }}</dd>
+          </div>
+          <div>
+            <dt>Total TTC</dt>
+            <dd class="num strong">{{ formatAr(d.entete.totalTTC) }}</dd>
+          </div>
+          <div>
+            <dt>Montant réglé</dt>
+            <dd class="num">{{ formatAr(d.entete.montantRegle) }}</dd>
+          </div>
+          <div>
+            <dt>Reste à payer</dt>
+            <dd
+              class="num strong"
+              [class.is-reste]="(d.entete.resteAPayer ?? 0) > 0.0001"
+            >
+              {{ formatAr(d.entete.resteAPayer) }}
+            </dd>
+          </div>
+          @if (d.entete.dejaImprimee) {
+            <div>
+              <dt>Impression</dt>
+              <dd><span class="badge">Déjà imprimée</span></dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="card card--lines">
+        <h2>Lignes ({{ d.lignes.length }})</h2>
+        @if (d.lignes.length === 0) {
+          <p class="muted">Aucune ligne.</p>
+        } @else {
+          <div class="lines-scroll">
+            <table class="lines">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Désignation</th>
+                  <th class="num">Qté</th>
+                  <th class="num">P.U.</th>
+                  <th class="num">Remise</th>
+                  <th class="num">HT</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of d.lignes; track $index) {
+                  <tr>
+                    <td class="mono">
+                      @if (l.articleReference || l.reference) {
+                        <a [routerLink]="['/articles', l.articleReference || l.reference]">
+                          {{ l.articleReference || l.reference }}
+                        </a>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>{{ l.designation || '—' }}</td>
+                    <td class="num">{{ l.quantite != null ? (l.quantite | number: '1.0-3') : '—' }}</td>
+                    <td class="num">{{ formatAr(l.prixUnitaire) }}</td>
+                    <td class="num">
+                      {{ l.remisePourcent != null ? (l.remisePourcent | number: '1.0-2') + ' %' : '—' }}
+                    </td>
+                    <td class="num">{{ formatAr(l.montantHT) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  }
+</div>
