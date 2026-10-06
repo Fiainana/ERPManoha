@@ -107,6 +107,10 @@ export class UsersService {
       roles = rolesRaw;
     }
 
+    const actifRaw = row['actif'] ?? row['Actif'];
+    const actif: boolean =
+      actifRaw === undefined || actifRaw === null ? true : Boolean(actifRaw);
+
     return {
       id: Number(row['id'] ?? row['Id'] ?? 0) || undefined,
       login: (row['login'] ?? row['Login']) as string | null,
@@ -121,7 +125,7 @@ export class UsersService {
       service: (row['service'] ?? row['Service']) as string | null,
       isAdmin: Boolean(row['isAdmin'] ?? row['IsAdmin']),
       roles,
-      actif: row['actif'] ?? row['Actif'] ?? true,
+      actif,
       hasPassword: Boolean(row['hasPassword'] ?? row['HasPassword']),
       hasRfid: Boolean(row['hasRfid'] ?? row['HasRfid']),
       hasPin: Boolean(row['hasPin'] ?? row['HasPin']),
