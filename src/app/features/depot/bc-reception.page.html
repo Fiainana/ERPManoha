@@ -1,0 +1,81 @@
+<div class="br">
+  <header class="br__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Dépôt</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>BC Achat (réception)</strong>
+      </nav>
+      <div class="br__title-row">
+        <h1>Commandes fournisseurs</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="br__subtitle">Réceptionner un BC → bon de livraison (BL) Sage</p>
+    </div>
+  </header>
+
+  <div class="br__toolbar">
+    <div class="search">
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="N° BC, fournisseur…"
+        autocomplete="off"
+      />
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucune commande fournisseur</h2>
+        <p>Les BC créés depuis les demandes d’achat apparaissent ici.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Pièce</span>
+          <span>Fournisseur</span>
+          <span>Date</span>
+          <span class="num">Total TTC</span>
+        </div>
+        <ul class="tbody">
+          @for (b of items(); track b.numeroPiece) {
+            <li>
+              <a [routerLink]="['/depot/bc-reception', b.numeroPiece]" class="trow">
+                <span class="ref">{{ b.numeroPiece }}</span>
+                <span class="name">{{ b.fournisseurIntitule || b.fournisseurCode || '—' }}</span>
+                <span>{{ b.dateDocument ? (b.dateDocument | date: 'dd/MM/yyyy') : '—' }}</span>
+                <span class="num">{{ formatAr(b.totalTTC) }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          Chargement…
+        } @else if (!hasMore()) {
+          Fin · {{ items().length }} / {{ total() }}
+        } @else {
+          {{ items().length }} / {{ total() }} · faire défiler
+        }
+      </footer>
+    }
+  </div>
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
