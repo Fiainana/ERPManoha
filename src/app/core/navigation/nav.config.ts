@@ -95,6 +95,11 @@ export const NAV_GROUPS: NavGroup[] = [
         roles: ['Admin'],
       },
       {
+        label: "Préparations d'achat",
+        route: '/achat/prepa-achat',
+        roles: ['Admin'],
+      },
+      {
         label: 'BC Achat',
         route: '/achat/bc-achat',
         roles: ['Admin', 'Depot'],

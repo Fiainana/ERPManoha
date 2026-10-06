@@ -4,7 +4,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { AdminAchatsService } from '../../core/services/admin-achats.service';
 import { BcAchatDetail } from '../../core/models/bc-achat.model';
 
-export type DocAchatKind = 'commandes' | 'receptions' | 'factures';
+export type DocAchatKind = 'commandes' | 'receptions' | 'factures' | 'preparations';
 
 @Component({
   selector: 'app-doc-achat-detail-page',
@@ -57,7 +57,9 @@ export class DocAchatDetailPage implements OnInit {
         ? this.api.getReception(this.piece)
         : this.kind === 'factures'
           ? this.api.getFacture(this.piece)
-          : this.api.getCommande(this.piece);
+          : this.kind === 'preparations'
+            ? this.api.getPreparation(this.piece)
+            : this.api.getCommande(this.piece);
 
     req.subscribe({
       next: (d) => {
@@ -73,6 +75,35 @@ export class DocAchatDetailPage implements OnInit {
 
   canFacturer(): boolean {
     return this.kind === 'receptions';
+  }
+
+  canTransformerBc(): boolean {
+    return this.kind === 'preparations';
+  }
+
+  transformerBc(): void {
+    if (!this.canTransformerBc() || this.acting()) return;
+    if (!confirm(`Transformer la préparation ${this.piece} en bon de commande fournisseur ?`)) return;
+
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.transformerPreparationBc(this.piece).subscribe({
+      next: (res) => {
+        this.acting.set(false);
+        const o = (res || {}) as Record<string, unknown>;
+        const bc = String(
+          o['numeroPieceBc'] ?? o['NumeroPieceBc'] ?? o['numeroPiece'] ?? o['NumeroPiece'] ?? ''
+        );
+        this.toast.set(bc ? `BC créé : ${bc}` : 'Préparation transformée en BC');
+        if (bc) {
+          void this.router.navigate(['/achat/bc-achat', bc]);
+        }
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.error.set(err?.message || 'Transformation impossible');
+      },
+    });
   }
 
   facturer(): void {

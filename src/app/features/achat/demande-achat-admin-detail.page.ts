@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DemandesAchatService } from '../../core/services/demandes-achat.service';
+import { AdminAchatsService } from '../../core/services/admin-achats.service';
 import { MouvementsStockService } from '../../core/services/mouvements-stock.service';
 import { FournisseursService } from '../../core/services/fournisseurs.service';
 import { ArticlesService } from '../../core/services/articles.service';
@@ -27,6 +28,7 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(DemandesAchatService);
+  private readonly achatsApi = inject(AdminAchatsService);
   private readonly depotsApi = inject(MouvementsStockService);
   private readonly fournApi = inject(FournisseursService);
   private readonly articlesApi = inject(ArticlesService);
@@ -166,6 +168,39 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   canTransform(): boolean {
     const s = this.item()?.statut || '';
     return s === 'ArticlePret' || s === 'EnAttenteArticle' || s === 'Envoyee';
+  }
+
+  /** Document Sage déjà créé (souvent une préparation) — étape suivante = BC. */
+  canTransformerPrepa(): boolean {
+    const d = this.item();
+    return !!d?.pieceSage && !this.canTransform();
+  }
+
+  transformerPrepa(): void {
+    const piece = this.item()?.pieceSage?.trim();
+    if (!piece || this.acting()) return;
+    if (!confirm(`Transformer la préparation Sage ${piece} en bon de commande fournisseur ?`)) return;
+
+    this.acting.set(true);
+    this.error.set(null);
+    this.achatsApi.transformerPreparationBc(piece).subscribe({
+      next: (res) => {
+        this.acting.set(false);
+        const o = (res || {}) as Record<string, unknown>;
+        const bc = String(
+          o['numeroPieceBc'] ?? o['NumeroPieceBc'] ?? o['numeroPiece'] ?? o['NumeroPiece'] ?? ''
+        );
+        this.toast.set(bc ? `BC Sage créé : ${bc}` : 'Préparation transformée en BC');
+        this.load();
+        if (bc) {
+          void this.router.navigate(['/achat/bc-achat', bc]);
+        }
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.error.set(err?.message || 'Transformation préparation → BC impossible');
+      },
+    });
   }
 
   searchFourn(): void {

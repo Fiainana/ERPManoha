@@ -22,6 +22,7 @@ import { DemandeAchatDetailPage } from './features/achat/demande-achat-detail.pa
 import { DemandesAchatAdminPage } from './features/achat/demandes-achat-admin.page';
 import { DemandeAchatAdminDetailPage } from './features/achat/demande-achat-admin-detail.page';
 import { BcAchatPage } from './features/achat/bc-achat.page';
+import { PrepaAchatPage } from './features/achat/prepa-achat.page';
 import { BlAchatPage } from './features/achat/bl-achat.page';
 import { FacturesAchatPage } from './features/achat/factures-achat.page';
 import { DocAchatDetailPage } from './features/achat/doc-achat-detail.page';
@@ -153,6 +154,17 @@ export const routes: Routes = [
         path: 'achat/demandes-achat-admin/:id',
         component: DemandeAchatAdminDetailPage,
         canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'achat/prepa-achat',
+        component: PrepaAchatPage,
+        canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'achat/prepa-achat/:piece',
+        component: DocAchatDetailPage,
+        canActivate: [roleGuard('Admin')],
+        data: { kind: 'preparations', listPath: '/achat/prepa-achat', titleLabel: 'Préparation' },
       },
       {
         path: 'achat/bc-achat',

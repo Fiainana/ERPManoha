@@ -29,6 +29,10 @@ export class AdminAchatsService {
     return this.listDocs('factures', opts);
   }
 
+  listPreparations(opts: { search?: string; page?: number; pageSize?: number } = {}) {
+    return this.listDocs('preparations', opts);
+  }
+
   getCommande(piece: string) {
     return this.getDoc('commandes', piece);
   }
@@ -39,6 +43,23 @@ export class AdminAchatsService {
 
   getFacture(piece: string) {
     return this.getDoc('factures', piece);
+  }
+
+  getPreparation(piece: string) {
+    return this.getDoc('preparations', piece);
+  }
+
+  /** Préparation d'achat Sage → BC fournisseur */
+  transformerPreparationBc(numeroPiece: string) {
+    return this.http
+      .post<ApiResponse<unknown>>(
+        `${this.base}/preparations/${encodeURIComponent(numeroPiece)}/transformer-bc`,
+        {}
+      )
+      .pipe(
+        map((res) => this.unwrap(res)),
+        catchError((err) => throwError(() => new Error(this.readError(err))))
+      );
   }
 
   /** BL → FA fournisseur */
@@ -52,7 +73,7 @@ export class AdminAchatsService {
   }
 
   private listDocs(
-    kind: 'commandes' | 'receptions' | 'factures',
+    kind: 'commandes' | 'receptions' | 'factures' | 'preparations',
     opts: { search?: string; page?: number; pageSize?: number }
   ) {
     let params = new HttpParams();
@@ -66,7 +87,7 @@ export class AdminAchatsService {
     );
   }
 
-  private getDoc(kind: 'commandes' | 'receptions' | 'factures', piece: string) {
+  private getDoc(kind: 'commandes' | 'receptions' | 'factures' | 'preparations', piece: string) {
     return this.http
       .get<ApiResponse<unknown>>(`${this.base}/${kind}/${encodeURIComponent(piece)}`)
       .pipe(
