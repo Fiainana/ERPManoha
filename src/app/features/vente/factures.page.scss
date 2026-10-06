@@ -203,7 +203,7 @@
   box-shadow: var(--me-shadow-sm);
 
   --grid: minmax(110px, 1.1fr) minmax(160px, 2fr) minmax(90px, 0.9fr) minmax(100px, 1fr)
-    minmax(100px, 1fr) 56px;
+    minmax(100px, 1fr);
 }
 
 .table-scroll {
@@ -216,7 +216,7 @@
   grid-template-columns: var(--grid);
   align-items: center;
   gap: 0.5rem 0.75rem;
-  min-width: 720px;
+  min-width: 640px;
 }
 
 .thead {
@@ -296,34 +296,6 @@
 
 .col-reste.has-reste {
   color: var(--me-red-deeper);
-}
-
-.col-act {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-pdf {
-  height: 28px;
-  padding: 0 0.55rem;
-  border-radius: var(--me-radius-sm);
-  border: 1px solid var(--me-border);
-  background: var(--me-white);
-  color: var(--me-text-secondary);
-  font-size: var(--me-fs-xs);
-  font-weight: 650;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    border-color: var(--me-red-border);
-    color: var(--me-red-deeper);
-    background: var(--me-red-soft);
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: wait;
-  }
 }
 
 .panel__footer {
@@ -412,7 +384,7 @@
   }
 
   .trow {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
   }
 
