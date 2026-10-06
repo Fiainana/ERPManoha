@@ -86,15 +86,26 @@
         autocomplete="off"
       />
       @if (articleHits().length) {
-        <ul class="hits">
+        <ul class="hits hits--articles">
           @for (a of articleHits(); track a.reference) {
             <li>
               <button type="button" (click)="pickArticle(a)">
-                <span class="mono">{{ a.reference }}</span>
-                <strong>{{ a.designation || a.reference }}</strong>
-                <span class="price">
-                  {{ a.prixVente != null ? (a.prixVente | number: '1.0-0') + ' Ar' : '—' }}
-                </span>
+                <div class="hit-main">
+                  <span class="mono">{{ a.reference }}</span>
+                  <strong>{{ a.designation || a.reference }}</strong>
+                </div>
+                <div class="hit-meta">
+                  <span class="price">
+                    {{ a.prixVente != null ? (a.prixVente | number: '1.0-0') + ' Ar' : '—' }}
+                  </span>
+                  <span class="stock" [class]="stockClass(stockOf(a))">
+                    @if (stockOf(a) != null) {
+                      Stock {{ stockOf(a) | number: '1.0-0' }}
+                    } @else {
+                      Stock —
+                    }
+                  </span>
+                </div>
               </button>
             </li>
           }
@@ -108,9 +119,10 @@
           <tr>
             <th>Article</th>
             <th>Désignation</th>
+            <th class="num">Stock</th>
             <th class="num">Qté</th>
             <th class="num">P.U.</th>
-            <th class="num">Remise %</th>
+            <th class="num">Remise</th>
             <th class="num">HT est.</th>
             <th></th>
           </tr>
@@ -120,6 +132,15 @@
             <tr>
               <td class="mono">{{ l.articleReference || '—' }}</td>
               <td>{{ l.designation || '—' }}</td>
+              <td class="num">
+                @if (l.articleReference) {
+                  <span class="stock stock--inline" [class]="stockClass(l.stockDisponible)">
+                    {{ l.stockDisponible != null ? (l.stockDisponible | number: '1.0-0') : '—' }}
+                  </span>
+                } @else {
+                  —
+                }
+              </td>
               <td class="num">
                 <input type="number" min="0.0001" step="any" [(ngModel)]="l.quantite" [name]="'q' + $index" />
               </td>
@@ -133,14 +154,11 @@
                 />
               </td>
               <td class="num">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="any"
-                  [(ngModel)]="l.remise"
-                  [name]="'r' + $index"
-                />
+                <select [(ngModel)]="l.remise" [name]="'r' + $index" class="remise-select">
+                  @for (r of remiseOptions; track r) {
+                    <option [ngValue]="r">{{ r === 0 ? '0 %' : r + ' %' }}</option>
+                  }
+                </select>
               </td>
               <td class="num">{{ formatAr(lineHt(l)) }}</td>
               <td>
