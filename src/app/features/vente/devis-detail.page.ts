@@ -126,10 +126,15 @@ export class DevisDetailPage implements OnInit {
     this.acting.set(true);
     this.error.set(null);
     this.api.facturer(this.piece).subscribe({
-      next: () => {
+      next: (numeroFacture) => {
         this.acting.set(false);
-        this.showToast('Devis transformé en facture');
-        this.load();
+        if (numeroFacture) {
+          void this.router.navigate(['/vente/factures', numeroFacture]);
+        } else {
+          // API n’a pas renvoyé le n° → liste factures
+          this.showToast('Devis transformé en facture');
+          void this.router.navigate(['/vente/factures']);
+        }
       },
       error: (err) => {
         this.acting.set(false);
