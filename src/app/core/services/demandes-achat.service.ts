@@ -10,7 +10,10 @@ import {
   DemandeAchatListItem,
   DemandeAchatListResult,
   DemandeAchatLigne,
+  FamilleOption,
   GenererSagePayload,
+  ReferentielArticleCreation,
+  UniteOption,
 } from '../models/demande-achat.model';
 
 @Injectable({ providedIn: 'root' })
@@ -18,8 +21,8 @@ export class DemandesAchatService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/b2b/demandes-achat`;
   private readonly adminBase = `${environment.apiUrl}/admin/achats`;
+  private readonly adminArticles = `${environment.apiUrl}/admin/articles`;
 
-  /** Mes demandes (commercial / admin connecté). */
   listMes(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
     let params = new HttpParams();
     if (opts.statut) params = params.set('statut', opts.statut);
@@ -32,7 +35,6 @@ export class DemandesAchatService {
     );
   }
 
-  /** Toutes les demandes (Admin). */
   listAll(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
     let params = new HttpParams();
     if (opts.statut) params = params.set('statut', opts.statut);
@@ -66,7 +68,6 @@ export class DemandesAchatService {
     );
   }
 
-  /** Demande → BC fournisseur Sage. */
   genererSage(id: number, body: GenererSagePayload) {
     return this.http.post<ApiResponse<unknown>>(`${this.base}/${id}/generer-sage`, body).pipe(
       map((res) => this.unwrap(res)),
@@ -74,7 +75,6 @@ export class DemandesAchatService {
     );
   }
 
-  /** Alias admin (même action). */
   transformerBc(id: number, body: GenererSagePayload) {
     return this.http
       .post<ApiResponse<unknown>>(`${this.adminBase}/demandes/${id}/transformer-bc`, body)
@@ -84,21 +84,64 @@ export class DemandesAchatService {
       );
   }
 
-  /** Créer / rattacher article OM sur une ligne. */
+  /**
+   * POST /api/b2b/demandes-achat/{id}/lignes/{ligneId}/article
+   * Corps = CreerArticleDemandeRequest
+   */
   creerArticle(demandeId: number, ligneId: number, body: CreerArticleDemandePayload) {
     return this.http
       .post<ApiResponse<unknown>>(`${this.base}/${demandeId}/lignes/${ligneId}/article`, {
-        AR_Ref: body.arRef,
-        FA_CodeFamille: body.faCodeFamille,
+        ArticleReference: body.articleReference,
         Designation: body.designation,
         PrixAchat: body.prixAchat,
         PrixVente: body.prixVente,
-        Unite: body.unite,
+        UniteVenteNo: body.uniteVenteNo,
+        CodeFamille: body.codeFamille,
+        SuiviStock: body.suiviStock ?? true,
+        RattacherSiExiste: body.rattacherSiExiste ?? true,
       })
       .pipe(
         map((res) => this.unwrap(res)),
         catchError((err) => throwError(() => new Error(this.readError(err))))
       );
+  }
+
+  /** GET /api/admin/articles/referentiel-creation — familles, unités, etc. */
+  referentielArticle() {
+    return this.http.get<ApiResponse<unknown>>(`${this.adminArticles}/referentiel-creation`).pipe(
+      map((res) => this.normalizeReferentiel(this.unwrap(res))),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
+  }
+
+  private normalizeReferentiel(raw: unknown): ReferentielArticleCreation {
+    const bag = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const famRaw = (bag['familles'] || bag['Familles'] || []) as Record<string, unknown>[];
+    const uniRaw = (bag['unites'] || bag['Unites'] || []) as Record<string, unknown>[];
+    const suiviRaw = (bag['suiviStock'] || bag['SuiviStock'] || []) as Record<string, unknown>[];
+
+    const familles: FamilleOption[] = famRaw
+      .map((r) => ({
+        code: String(r['code'] ?? r['Code'] ?? '').trim(),
+        intitule: (r['intitule'] ?? r['Intitule']) as string | null,
+        suiviStock: this.num(r['suiviStock'] ?? r['SuiviStock']),
+        uniteVenteNo: this.num(r['uniteVenteNo'] ?? r['UniteVenteNo']),
+      }))
+      .filter((f) => !!f.code);
+
+    const unites: UniteOption[] = uniRaw
+      .map((r) => ({
+        no: Number(r['no'] ?? r['No'] ?? 0),
+        intitule: (r['intitule'] ?? r['Intitule']) as string | null,
+      }))
+      .filter((u) => u.no > 0);
+
+    const suiviStockOptions = suiviRaw.map((r) => ({
+      valeur: Number(r['valeur'] ?? r['Valeur'] ?? 0),
+      libelle: String(r['libelle'] ?? r['Libelle'] ?? ''),
+    }));
+
+    return { familles, unites, suiviStockOptions };
   }
 
   private unwrap(res: unknown): unknown {

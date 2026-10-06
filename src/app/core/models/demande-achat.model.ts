@@ -36,7 +36,6 @@ export interface DemandeAchatLigne {
   articleReference: string | null;
   qteRecue: number | null;
   estNouvelArticle: boolean;
-  /** Saisie admin pour génération BC */
   quantiteConfirmee?: number | null;
   prixUnitaire?: number | null;
 }
@@ -88,12 +87,35 @@ export interface GenererSagePayload {
   lignes?: GenererSageLigne[];
 }
 
-/** Création article OM sur ligne demande (AR_Ref + FA_CodeFamille obligatoires). */
+/**
+ * Corps POST /api/b2b/demandes-achat/{id}/lignes/{ligneId}/article
+ * Aligné sur CreerArticleDemandeRequest (API).
+ */
 export interface CreerArticleDemandePayload {
-  arRef: string;
-  faCodeFamille: string;
+  articleReference: string;
   designation?: string | null;
-  prixAchat?: number | null;
+  prixAchat: number;
   prixVente?: number | null;
-  unite?: string | null;
+  uniteVenteNo?: number | null;
+  codeFamille: string;
+  suiviStock?: boolean;
+  rattacherSiExiste?: boolean;
+}
+
+export interface FamilleOption {
+  code: string;
+  intitule: string | null;
+  suiviStock: number | null;
+  uniteVenteNo: number | null;
+}
+
+export interface UniteOption {
+  no: number;
+  intitule: string | null;
+}
+
+export interface ReferentielArticleCreation {
+  familles: FamilleOption[];
+  unites: UniteOption[];
+  suiviStockOptions: { valeur: number; libelle: string }[];
 }
