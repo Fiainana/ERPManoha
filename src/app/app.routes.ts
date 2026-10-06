@@ -8,6 +8,8 @@ import { ArticleDetailPage } from './features/articles/article-detail.page';
 import { ClientsPage } from './features/vente/clients.page';
 import { ClientDetailPage } from './features/vente/client-detail.page';
 import { DevisPage } from './features/vente/devis.page';
+import { DevisDetailPage } from './features/vente/devis-detail.page';
+import { DevisFormPage } from './features/vente/devis-form.page';
 import { FacturesPage } from './features/vente/factures.page';
 import { DemandesDevisImportPage } from './features/vente/demandes-devis-import.page';
 import { FournisseursPage } from './features/achat/fournisseurs.page';
@@ -35,6 +37,8 @@ const ARTICLES_ROLES = [
 ] as const;
 
 const CLIENTS_ROLES = ['Admin', 'Commercial', 'Recouvrement'] as const;
+
+const DEVIS_ROLES = ['Admin', 'Commercial'] as const;
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -69,7 +73,17 @@ export const routes: Routes = [
       {
         path: 'vente/devis',
         component: DevisPage,
-        canActivate: [roleGuard('Admin', 'Commercial')],
+        canActivate: [roleGuard(...DEVIS_ROLES)],
+      },
+      {
+        path: 'vente/devis/nouveau',
+        component: DevisFormPage,
+        canActivate: [roleGuard(...DEVIS_ROLES)],
+      },
+      {
+        path: 'vente/devis/:numeroPiece',
+        component: DevisDetailPage,
+        canActivate: [roleGuard(...DEVIS_ROLES)],
       },
       {
         path: 'vente/factures',
