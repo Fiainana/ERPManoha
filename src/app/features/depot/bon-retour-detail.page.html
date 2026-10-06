@@ -1,0 +1,105 @@
+<div class="brd">
+  <header class="brd__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/depot/bons-retour">Bons de retour</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ detail()?.entete?.numeroPiece || '…' }}</strong>
+      </nav>
+      <h1>{{ detail()?.entete?.numeroPiece || 'Bon de retour' }}</h1>
+      @if (detail()?.entete; as e) {
+        <p class="brd__subtitle">
+          {{ e.clientIntitule || e.clientNumero || '—' }}
+          @if (e.dateDocument) {
+            · {{ e.dateDocument | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      }
+    </div>
+    <div class="brd__actions">
+      <a routerLink="/depot/bons-retour" class="btn btn--ghost">Retour</a>
+      <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting() || loading()">
+        {{ acting() ? 'Validation…' : 'Valider le retour' }}
+      </button>
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (detail(); as d) {
+    <section class="card">
+      <h2>En-tête</h2>
+      <dl class="kv">
+        <div>
+          <dt>Client</dt>
+          <dd>
+            @if (d.entete.clientNumero) {
+              <a [routerLink]="['/vente/clients', d.entete.clientNumero]">
+                {{ d.entete.clientIntitule || d.entete.clientNumero }}
+              </a>
+            } @else {
+              {{ d.entete.clientIntitule || '—' }}
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Référence</dt>
+          <dd>{{ d.entete.reference || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Total HT</dt>
+          <dd class="num">{{ formatAr(d.entete.totalHT) }}</dd>
+        </div>
+        <div>
+          <dt>Total TTC</dt>
+          <dd class="num strong">{{ formatAr(d.entete.totalTTC) }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Lignes ({{ d.lignes.length }})</h2>
+      @if (d.lignes.length === 0) {
+        <p class="muted">Aucune ligne.</p>
+      } @else {
+        <div class="lines-scroll">
+          <table class="lines">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Désignation</th>
+                <th class="num">Qté</th>
+                <th class="num">P.U.</th>
+                <th class="num">HT</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.lignes; track $index) {
+                <tr>
+                  <td class="mono">{{ l.articleReference || '—' }}</td>
+                  <td>{{ l.designation || '—' }}</td>
+                  <td class="num">{{ l.quantite != null ? (l.quantite | number: '1.0-3') : '—' }}</td>
+                  <td class="num">{{ formatAr(l.prixUnitaire) }}</td>
+                  <td class="num">{{ formatAr(l.montantHT) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
