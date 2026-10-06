@@ -214,7 +214,7 @@
   margin: 0;
   padding: 0.35rem;
   list-style: none;
-  max-height: 240px;
+  max-height: 280px;
   overflow: auto;
   background: var(--me-white);
   border: 1px solid var(--me-border);
@@ -248,12 +248,72 @@
       font-size: var(--me-fs-xs);
       color: var(--me-text-muted);
     }
+  }
 
-    .price {
-      font-size: var(--me-fs-xs);
-      font-weight: 650;
-      color: var(--me-text-secondary);
-    }
+  &--articles button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+}
+
+.hit-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+
+  strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.hit-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  flex-shrink: 0;
+
+  .price {
+    font-size: var(--me-fs-xs);
+    font-weight: 650;
+    color: var(--me-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.stock {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--me-radius-full);
+  font-size: var(--me-fs-xs);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &.is-ok {
+    background: color-mix(in srgb, #16a34a 14%, white);
+    color: #166534;
+  }
+
+  &.is-low {
+    background: color-mix(in srgb, #ca8a04 16%, white);
+    color: #854d0e;
+  }
+
+  &.is-out {
+    background: var(--me-danger-soft);
+    color: var(--me-red-deeper);
+  }
+
+  &--inline {
+    min-width: 2.5rem;
+    justify-content: center;
   }
 }
 
@@ -268,7 +328,7 @@
 .lines {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
+  min-width: 780px;
 
   th,
   td {
@@ -310,6 +370,26 @@
       border-color: var(--me-red);
       background: var(--me-white);
     }
+  }
+}
+
+.remise-select {
+  height: 32px;
+  min-width: 72px;
+  padding: 0 0.35rem;
+  border: 1px solid var(--me-border);
+  border-radius: var(--me-radius-sm);
+  background: var(--me-bg-subtle);
+  color: var(--me-text);
+  font-size: var(--me-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: var(--me-red);
+    background: var(--me-white);
+    box-shadow: var(--me-shadow-focus);
   }
 }
 
