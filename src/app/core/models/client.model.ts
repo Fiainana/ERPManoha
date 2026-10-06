@@ -45,9 +45,51 @@ export interface ClientListResult {
   items: Client[];
 }
 
+/** Ligne devis rattachée à un client (API GET .../clients/{n}/devis). */
+export interface DevisClient {
+  numeroPiece: string;
+  dateDocument?: string | null;
+  reference?: string | null;
+  totalHT?: number | null;
+  totalTTC?: number | null;
+  netAPayer?: number | null;
+  representant?: string | null;
+}
+
+export interface DevisClientListResult {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  items: DevisClient[];
+}
+
+/** Ligne facture rattachée à un client (API GET .../clients/{n}/factures). */
+export interface FactureClient {
+  numeroPiece: string;
+  dateDocument?: string | null;
+  reference?: string | null;
+  totalHT?: number | null;
+  totalTTC?: number | null;
+  netAPayer?: number | null;
+  montantRegle?: number | null;
+  resteAPayer?: number | null;
+}
+
+export interface FactureClientListResult {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  impayeesSeulement?: boolean;
+  items: FactureClient[];
+}
+
 export interface ClientDetailResult {
   client: Client;
   stats?: ClientStats;
+  derniereFactures?: FactureClientListResult;
+  derniersDevis?: DevisClientListResult;
 }
 
 export interface ClientListParams {
