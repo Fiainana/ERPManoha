@@ -1,0 +1,86 @@
+<div class="dal">
+  <header class="dal__header">
+    <div>
+      <nav class="breadcrumb">
+        <span>Achat</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ breadcrumb }}</strong>
+      </nav>
+      <div class="dal__title-row">
+        <h1>{{ title }}</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="dal__subtitle">{{ subtitle }}</p>
+    </div>
+  </header>
+
+  <div class="dal__toolbar">
+    <div class="search">
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="N° pièce, fournisseur…"
+        autocomplete="off"
+      />
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>{{ emptyTitle }}</h2>
+        <p>{{ emptyText }}</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Pièce</span>
+          <span>Date</span>
+          <span>Fournisseur</span>
+          <span class="num">Total TTC</span>
+        </div>
+        <ul class="tbody">
+          @for (d of items(); track d.numeroPiece) {
+            <li>
+              <a [routerLink]="[detailBase, d.numeroPiece]" class="trow">
+                <span class="ref">{{ d.numeroPiece }}</span>
+                <span class="date">
+                  {{ d.dateDocument ? (d.dateDocument | date: 'dd/MM/yyyy') : '—' }}
+                </span>
+                <span class="fourn">
+                  <span class="mono">{{ d.fournisseurCode || '—' }}</span>
+                  <span class="name">{{ d.fournisseurIntitule || '' }}</span>
+                </span>
+                <span class="num">{{ formatMoney(d.totalTTC) }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          Chargement…
+        } @else if (!hasMore()) {
+          Fin · {{ items().length }} / {{ total() }}
+        } @else {
+          {{ items().length }} / {{ total() }} · faire défiler
+        }
+      </footer>
+    }
+  </div>
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>

@@ -1,0 +1,88 @@
+<div class="dadoc">
+  <header class="dadoc__header">
+    <div>
+      <nav class="breadcrumb">
+        <a [routerLink]="listPath">{{ titleLabel }}</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ item()?.entete?.numeroPiece || '…' }}</strong>
+      </nav>
+      <h1>{{ titleLabel }} {{ item()?.entete?.numeroPiece || '…' }}</h1>
+      @if (item()?.entete; as e) {
+        <p class="sub">
+          {{ e.fournisseurCode }} — {{ e.fournisseurIntitule || '' }}
+          @if (e.dateDocument) {
+            · {{ e.dateDocument | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      }
+    </div>
+    <div class="actions">
+      <a [routerLink]="listPath" class="btn btn--ghost">Retour</a>
+      @if (canFacturer()) {
+        <button type="button" class="btn btn--primary" (click)="facturer()" [disabled]="acting()">
+          {{ acting() ? 'Facturation…' : 'Facturer (BL → FA)' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (item(); as d) {
+    <section class="card meta">
+      <div>
+        <span class="label">Total HT</span>
+        <strong>{{ formatMoney(d.entete.totalHT) }}</strong>
+      </div>
+      <div>
+        <span class="label">Total TTC</span>
+        <strong>{{ formatMoney(d.entete.totalTTC) }}</strong>
+      </div>
+      <div>
+        <span class="label">Dépôt</span>
+        <strong>{{ d.entete.depotIntitule || d.entete.depotNo || '—' }}</strong>
+      </div>
+      <div>
+        <span class="label">Référence</span>
+        <strong>{{ d.entete.reference || '—' }}</strong>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Lignes ({{ d.lignes.length }})</h2>
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Article</span>
+          <span>Désignation</span>
+          <span class="num">Qté</span>
+          <span class="num">PU</span>
+          <span class="num">HT</span>
+        </div>
+        <ul class="tbody">
+          @for (l of d.lignes; track l.numeroLigne) {
+            <li class="trow">
+              <span class="mono">{{ l.articleReference || '—' }}</span>
+              <span>{{ l.designation || '—' }}</span>
+              <span class="num">{{ l.quantite | number: '1.0-3' }}</span>
+              <span class="num">{{ formatMoney(l.prixUnitaire) }}</span>
+              <span class="num">{{ formatMoney(l.montantHT) }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  }
+</div>
