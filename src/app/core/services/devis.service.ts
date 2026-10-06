@@ -122,13 +122,17 @@ export class DevisService {
       );
   }
 
+  /**
+   * Transforme le devis en facture.
+   * @returns n° de facture créé si présent dans la réponse API
+   */
   facturer(numeroPiece: string) {
     return this.http
       .post<ApiResponse<Record<string, unknown>>>(`${this.base}/facturer`, {
         numeroPiece,
       })
       .pipe(
-        map((res) => this.unwrap(res)),
+        map((res) => this.pickFacturePiece(this.unwrap(res))),
         catchError((err) => throwError(() => new Error(this.readError(err))))
       );
   }
@@ -254,6 +258,37 @@ export class DevisService {
         entete['NumeroPiece'] ||
         ''
     );
+  }
+
+  /** Extrait le n° de facture après transformation devis → FA */
+  private pickFacturePiece(raw: unknown): string {
+    if (!raw || typeof raw !== 'object') return '';
+    const o = raw as Record<string, unknown>;
+    const keys = [
+      'numeroFacture',
+      'NumeroFacture',
+      'numeroPieceFacture',
+      'NumeroPieceFacture',
+      'factureNumero',
+      'FactureNumero',
+      'numeroPiece',
+      'NumeroPiece',
+    ];
+    for (const k of keys) {
+      const v = o[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+    }
+    const facture = (o['facture'] || o['Facture']) as Record<string, unknown> | undefined;
+    if (facture && typeof facture === 'object') {
+      const n = facture['numeroPiece'] ?? facture['NumeroPiece'];
+      if (typeof n === 'string' && n.trim()) return n.trim();
+    }
+    const entete = (o['entete'] || o['Entete']) as Record<string, unknown> | undefined;
+    if (entete && typeof entete === 'object') {
+      const n = entete['numeroPiece'] ?? entete['NumeroPiece'];
+      if (typeof n === 'string' && n.trim()) return n.trim();
+    }
+    return '';
   }
 
   private num(v: unknown): number | null {
