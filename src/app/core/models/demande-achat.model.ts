@@ -36,6 +36,9 @@ export interface DemandeAchatLigne {
   articleReference: string | null;
   qteRecue: number | null;
   estNouvelArticle: boolean;
+  /** Saisie admin pour génération BC */
+  quantiteConfirmee?: number | null;
+  prixUnitaire?: number | null;
 }
 
 export interface DemandeAchatDetail {
@@ -70,4 +73,27 @@ export interface CreateDemandeAchatLigne {
 export interface CreateDemandeAchatPayload {
   note?: string | null;
   lignes: CreateDemandeAchatLigne[];
+}
+
+export interface GenererSageLigne {
+  ligneId: number;
+  quantite?: number | null;
+  prixUnitaire?: number | null;
+}
+
+export interface GenererSagePayload {
+  depotNo: number;
+  fournisseurCode?: string | null;
+  reference?: string | null;
+  lignes?: GenererSageLigne[];
+}
+
+/** Création article OM sur ligne demande (AR_Ref + FA_CodeFamille obligatoires). */
+export interface CreerArticleDemandePayload {
+  arRef: string;
+  faCodeFamille: string;
+  designation?: string | null;
+  prixAchat?: number | null;
+  prixVente?: number | null;
+  unite?: string | null;
 }

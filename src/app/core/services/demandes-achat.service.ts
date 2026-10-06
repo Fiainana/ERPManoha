@@ -5,16 +5,19 @@ import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response';
 import {
   CreateDemandeAchatPayload,
+  CreerArticleDemandePayload,
   DemandeAchatDetail,
   DemandeAchatListItem,
   DemandeAchatListResult,
   DemandeAchatLigne,
+  GenererSagePayload,
 } from '../models/demande-achat.model';
 
 @Injectable({ providedIn: 'root' })
 export class DemandesAchatService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/b2b/demandes-achat`;
+  private readonly adminBase = `${environment.apiUrl}/admin/achats`;
 
   /** Mes demandes (commercial / admin connecté). */
   listMes(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
@@ -24,6 +27,19 @@ export class DemandesAchatService {
     if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
 
     return this.http.get<ApiResponse<unknown>>(`${this.base}/mes`, { params }).pipe(
+      map((res) => this.normalizeList(this.unwrap(res))),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
+  }
+
+  /** Toutes les demandes (Admin). */
+  listAll(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
+    let params = new HttpParams();
+    if (opts.statut) params = params.set('statut', opts.statut);
+    if (opts.page) params = params.set('page', String(opts.page));
+    if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
+
+    return this.http.get<ApiResponse<unknown>>(this.base, { params }).pipe(
       map((res) => this.normalizeList(this.unwrap(res))),
       catchError((err) => throwError(() => new Error(this.readError(err))))
     );
@@ -50,6 +66,41 @@ export class DemandesAchatService {
     );
   }
 
+  /** Demande → BC fournisseur Sage. */
+  genererSage(id: number, body: GenererSagePayload) {
+    return this.http.post<ApiResponse<unknown>>(`${this.base}/${id}/generer-sage`, body).pipe(
+      map((res) => this.unwrap(res)),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
+  }
+
+  /** Alias admin (même action). */
+  transformerBc(id: number, body: GenererSagePayload) {
+    return this.http
+      .post<ApiResponse<unknown>>(`${this.adminBase}/demandes/${id}/transformer-bc`, body)
+      .pipe(
+        map((res) => this.unwrap(res)),
+        catchError((err) => throwError(() => new Error(this.readError(err))))
+      );
+  }
+
+  /** Créer / rattacher article OM sur une ligne. */
+  creerArticle(demandeId: number, ligneId: number, body: CreerArticleDemandePayload) {
+    return this.http
+      .post<ApiResponse<unknown>>(`${this.base}/${demandeId}/lignes/${ligneId}/article`, {
+        AR_Ref: body.arRef,
+        FA_CodeFamille: body.faCodeFamille,
+        Designation: body.designation,
+        PrixAchat: body.prixAchat,
+        PrixVente: body.prixVente,
+        Unite: body.unite,
+      })
+      .pipe(
+        map((res) => this.unwrap(res)),
+        catchError((err) => throwError(() => new Error(this.readError(err))))
+      );
+  }
+
   private unwrap(res: unknown): unknown {
     if (!res || typeof res !== 'object') return res;
     const o = res as Record<string, unknown>;
@@ -64,10 +115,10 @@ export class DemandesAchatService {
     if (body?.errors?.length) return body.errors.join(' · ');
     if (body?.message) return body.message;
     if (body?.detail) return body.detail;
-    if (http?.status === 403) return 'Accès refusé.';
+    if (http?.status === 403) return 'Accès réservé aux administrateurs.';
     if (http?.status === 404) return 'Demande introuvable.';
     if (http?.status === 503) return 'Service indisponible.';
-    return http?.message || 'Erreur API demandes d\'achat';
+    return http?.message || "Erreur API demandes d'achat";
   }
 
   private normalizeList(raw: unknown): DemandeAchatListResult {
@@ -102,7 +153,6 @@ export class DemandesAchatService {
 
   private normalizeDetail(raw: unknown): DemandeAchatDetail {
     const bag = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-    // API : { Entete, Lignes } ou flat
     const entete = (bag['entete'] || bag['Entete'] || bag) as Record<string, unknown>;
     const lignesRaw = (bag['lignes'] || bag['Lignes'] || []) as Record<string, unknown>[];
     const dem = (entete['demandeur'] || entete['Demandeur'] || {}) as Record<string, unknown>;
@@ -124,23 +174,24 @@ export class DemandesAchatService {
   }
 
   private normalizeLigne(row: Record<string, unknown>): DemandeAchatLigne {
-    const article =
-      (row['articleSage'] ?? row['ArticleSage'] ?? row['articleReference'] ?? row['ArticleReference']) as
-        | string
-        | null;
+    const article = (row['articleSage'] ??
+      row['ArticleSage'] ??
+      row['articleReference'] ??
+      row['ArticleReference']) as string | null;
+    const qty = Number(row['quantite'] ?? row['Quantite'] ?? 0);
     return {
       id: Number(row['id'] ?? row['Id'] ?? 0),
       demandeId: Number(row['demandeId'] ?? row['DemandeId'] ?? 0),
       refFournisseur: (row['refFournisseur'] ?? row['RefFournisseur']) as string | null,
       designation: (row['designation'] ?? row['Designation']) as string | null,
-      quantite: Number(row['quantite'] ?? row['Quantite'] ?? 0),
+      quantite: qty,
       articleSage: article,
       articleReference: article,
       qteRecue: this.num(row['qteRecue'] ?? row['QteRecue']),
       estNouvelArticle:
-        row['estNouvelArticle'] === true ||
-        row['EstNouvelArticle'] === true ||
-        !article,
+        row['estNouvelArticle'] === true || row['EstNouvelArticle'] === true || !article,
+      quantiteConfirmee: qty,
+      prixUnitaire: null,
     };
   }
 
