@@ -12,7 +12,9 @@
       @if (item(); as d) {
         <p class="sub">
           <span class="badge" [class]="statutClass(d.statut)">{{ d.statutLibelle || d.statut }}</span>
-          <span>{{ d.demandeurLibelle || '' }}</span>
+          @if (d.demandeurLibelle) {
+            <span>{{ d.demandeurLibelle }}</span>
+          }
           @if (d.dateCreation) {
             <span>{{ d.dateCreation | date: 'dd/MM/yyyy HH:mm' }}</span>
           }
@@ -31,117 +33,175 @@
 
   @if (loading()) {
     <div class="skeleton">
-      @for (_ of [1, 2, 3]; track $index) {
+      @for (_ of [1, 2, 3, 4]; track $index) {
         <div class="skeleton__row"></div>
       }
     </div>
   } @else if (item(); as d) {
-    <section class="card meta">
-      <div>
-        <span class="label">Note</span>
-        <strong>{{ d.note || '—' }}</strong>
-      </div>
-      <div>
-        <span class="label">BC Sage</span>
-        <strong class="mono">{{ d.pieceSage || '— pas encore' }}</strong>
-      </div>
+    <!-- En-tête type kv (design BC réception) -->
+    <section class="card">
+      <h2>En-tête</h2>
+      <dl class="kv">
+        <div>
+          <dt>Statut</dt>
+          <dd>
+            <span class="badge" [class]="statutClass(d.statut)">{{ d.statutLibelle || d.statut }}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Demandeur</dt>
+          <dd>{{ d.demandeurLibelle || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Fournisseur</dt>
+          <dd class="mono">{{ d.fournisseurCode || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Dépôt demandé</dt>
+          <dd>
+            {{ d.depotIntitule || (d.depotNo != null ? 'N° ' + d.depotNo : '— non fixé') }}
+          </dd>
+        </div>
+        <div>
+          <dt>BC Sage</dt>
+          <dd class="mono">{{ d.pieceSage || '— pas encore' }}</dd>
+        </div>
+        <div>
+          <dt>Note</dt>
+          <dd>{{ d.note || '—' }}</dd>
+        </div>
+      </dl>
     </section>
 
+    <!-- Lignes -->
     <section class="card">
-      <h2>Lignes</h2>
-      <div class="table-scroll">
-        <div class="thead">
-          <span>Article</span>
-          <span>Désignation</span>
-          <span class="num">Qté</span>
-          <span class="num">Qté conf.</span>
-          <span class="num">Prix</span>
-          <span>Action</span>
-        </div>
-        <ul class="tbody">
-          @for (l of lignesEdit; track l.id) {
-            <li class="trow">
-              <span class="mono">{{ l.articleReference || '—' }}</span>
-              <span>
-                {{ l.designation || l.refFournisseur || '—' }}
-                @if (l.estNouvelArticle) {
-                  <span class="tag">Nouveau</span>
-                }
-              </span>
-              <span class="num">{{ l.quantite | number: '1.0-3' }}</span>
-              <span class="num">
-                @if (canTransform()) {
-                  <input type="number" min="0.001" step="any" [(ngModel)]="l.quantiteConfirmee" />
-                } @else {
-                  {{ l.quantite | number: '1.0-3' }}
-                }
-              </span>
-              <span class="num">
-                @if (canTransform()) {
-                  <input type="number" min="0" step="any" [(ngModel)]="l.prixUnitaire" placeholder="cat." />
-                } @else {
-                  —
-                }
-              </span>
-              <span>
-                @if (l.estNouvelArticle && canTransform()) {
-                  <button type="button" class="btn btn--sm" (click)="openArticleModal(l)">
-                    Créer article
-                  </button>
-                }
-              </span>
-            </li>
-          }
-        </ul>
+      <div class="card__head">
+        <h2>Lignes ({{ lignesEdit.length }})</h2>
+        @if (lignesSansArticle() > 0) {
+          <span class="tag tag--warn">{{ lignesSansArticle() }} sans article Sage</span>
+        }
       </div>
+      @if (lignesEdit.length === 0) {
+        <p class="muted">Aucune ligne.</p>
+      } @else {
+        <div class="lines-scroll">
+          <table class="lines">
+            <thead>
+              <tr>
+                <th>Article Sage</th>
+                <th>Désignation / réf. fourn.</th>
+                <th class="num">Qté</th>
+                <th class="num">Qté conf.</th>
+                <th class="num">Prix unit.</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lignesEdit; track l.id) {
+                <tr [class.row--new]="l.estNouvelArticle">
+                  <td class="mono">{{ l.articleReference || '—' }}</td>
+                  <td>
+                    {{ l.designation || l.refFournisseur || '—' }}
+                    @if (l.estNouvelArticle) {
+                      <span class="tag">Nouveau</span>
+                    }
+                  </td>
+                  <td class="num">{{ l.quantite | number: '1.0-3' }}</td>
+                  <td class="num qte-input">
+                    @if (canTransform()) {
+                      <input type="number" min="0.001" step="any" [(ngModel)]="l.quantiteConfirmee" />
+                    } @else {
+                      {{ l.quantite | number: '1.0-3' }}
+                    }
+                  </td>
+                  <td class="num qte-input">
+                    @if (canTransform()) {
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        [(ngModel)]="l.prixUnitaire"
+                        placeholder="cat."
+                      />
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="actions">
+                    @if (l.estNouvelArticle && canTransform()) {
+                      <button type="button" class="btn btn--sm" (click)="openArticleModal(l)">
+                        Créer article
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </section>
 
     @if (canTransform()) {
-      <section class="card">
+      <section class="card card--action">
         <h2>Transformer en BC fournisseur</h2>
-        <div class="form-row">
-          <label>
-            <span>Dépôt *</span>
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Dépôt de réception *</span>
             <select [(ngModel)]="depotNo">
-              <option [ngValue]="null">— choisir —</option>
+              <option [ngValue]="null">— choisir un dépôt —</option>
               @for (dep of depots(); track dep.no) {
-                <option [ngValue]="dep.no">{{ dep.intitule || ('Dépôt ' + dep.no) }}</option>
+                <option [ngValue]="dep.no">
+                  {{ dep.no }} — {{ dep.intitule || ('Dépôt ' + dep.no) }}
+                </option>
               }
             </select>
+            @if (depots().length === 0) {
+              <small class="field__err">
+                {{ depotError() || 'Aucun dépôt chargé. Vérifie /api/depot/depots ou le référentiel articles.' }}
+              </small>
+            } @else {
+              <small class="field__hint">{{ depots().length }} dépôt(s) disponible(s)</small>
+            }
           </label>
-          <label>
-            <span>Fournisseur</span>
+
+          <label class="field field--search">
+            <span class="field__label">Fournisseur</span>
             <input
               [(ngModel)]="fournQuery"
               (ngModelChange)="searchFourn()"
-              placeholder="Recherche…"
+              placeholder="Code ou intitulé…"
+              autocomplete="off"
             />
             @if (fournHits().length) {
               <ul class="hits">
                 @for (f of fournHits(); track f.numero) {
                   <li>
                     <button type="button" (click)="pickFourn(f)">
-                      {{ f.numero }} — {{ f.intitule }}
+                      <span class="mono">{{ f.numero }}</span>
+                      <span>{{ f.intitule }}</span>
                     </button>
                   </li>
                 }
               </ul>
             }
             @if (fournisseurCode) {
-              <small class="mono">Code : {{ fournisseurCode }}</small>
+              <small class="field__hint mono">Code : {{ fournisseurCode }}</small>
             }
           </label>
-          <label>
-            <span>Référence doc</span>
-            <input [(ngModel)]="reference" maxlength="17" />
+
+          <label class="field">
+            <span class="field__label">Référence document</span>
+            <input [(ngModel)]="reference" maxlength="17" placeholder="optionnel" />
           </label>
         </div>
+
         <div class="form-actions">
           <button
             type="button"
             class="btn btn--primary"
             (click)="genererBc()"
-            [disabled]="acting()"
+            [disabled]="acting() || depots().length === 0"
           >
             {{ acting() ? 'Création Sage…' : 'Créer le BC Sage' }}
           </button>
@@ -150,7 +210,7 @@
     }
   }
 
-  <!-- Modal création article OM -->
+  <!-- Modal création article (inchangé structure) -->
   @if (modalOpen()) {
     <div class="modal-backdrop" (click)="closeArticleModal()"></div>
     <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="modal-art-title">
@@ -169,7 +229,6 @@
       }
 
       <div class="modal__body">
-        <!-- Recherche articles existants -->
         <div class="art-search">
           <label class="art-search__label">
             <span>Recherche article existant (préfixe / libellé)</span>
@@ -205,29 +264,21 @@
                 </li>
               }
             </ul>
-            <small class="hint">Clique pour rattacher un article existant (préremplit le formulaire).</small>
+            <small class="hint">Clique pour rattacher un article existant.</small>
           }
         </div>
 
         <div class="form-row">
           <label>
             <span>Référence (AR_Ref) *</span>
-            <input
-              [(ngModel)]="arRef"
-              maxlength="19"
-              placeholder="ex. ART013"
-              autocomplete="off"
-              class="mono-input"
-            />
+            <input [(ngModel)]="arRef" maxlength="19" placeholder="ex. ART013" class="mono-input" autocomplete="off" />
           </label>
           <label>
             <span>Famille *</span>
             <select [(ngModel)]="codeFamille" (ngModelChange)="onFamilleChange()">
-              <option value="">— choisir une famille —</option>
+              <option value="">— choisir —</option>
               @for (f of familles(); track f.code) {
-                <option [value]="f.code">
-                  {{ f.code }}{{ f.intitule ? ' — ' + f.intitule : '' }}
-                </option>
+                <option [value]="f.code">{{ f.code }}{{ f.intitule ? ' — ' + f.intitule : '' }}</option>
               }
             </select>
           </label>
@@ -248,9 +299,7 @@
             <select [(ngModel)]="uniteVenteNo">
               <option [ngValue]="null">— défaut famille —</option>
               @for (u of unites(); track u.no) {
-                <option [ngValue]="u.no">
-                  {{ u.no }}{{ u.intitule ? ' — ' + u.intitule : '' }}
-                </option>
+                <option [ngValue]="u.no">{{ u.no }}{{ u.intitule ? ' — ' + u.intitule : '' }}</option>
               }
             </select>
           </label>

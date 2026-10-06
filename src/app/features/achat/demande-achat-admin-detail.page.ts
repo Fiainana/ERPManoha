@@ -37,6 +37,7 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   readonly toast = signal<string | null>(null);
   readonly item = signal<DemandeAchatDetail | null>(null);
   readonly depots = signal<DepotOption[]>([]);
+  readonly depotError = signal<string | null>(null);
   readonly fournHits = signal<Fournisseur[]>([]);
   readonly familles = signal<FamilleOption[]>([]);
   readonly unites = signal<UniteOption[]>([]);
@@ -63,7 +64,6 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   reference = '';
   lignesEdit: DemandeAchatLigne[] = [];
 
-  // modal création article
   articleLigneId: number | null = null;
   articleLigneLabel = '';
   arRef = '';
@@ -72,7 +72,6 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   prixAchat: number | null = null;
   prixVente: number | null = null;
   uniteVenteNo: number | null = null;
-  /** AR_SuiviStock Sage : 0–5 */
   suiviStockType = 2;
   rattacherSiExiste = true;
   artSearchQuery = '';
@@ -83,16 +82,15 @@ export class DemandeAchatAdminDetailPage implements OnInit {
       void this.router.navigate(['/achat/demandes-achat-admin']);
       return;
     }
-    this.depotsApi.listDepots().subscribe({
-      next: (d) => this.depots.set(d),
-      error: () => this.depots.set([]),
-    });
+    this.loadDepots();
     this.api.referentielArticle().subscribe({
       next: (r) => {
         this.familles.set(r.familles);
         this.unites.set(r.unites);
-        if (r.suiviStockOptions?.length) {
-          this.suiviOptions.set(r.suiviStockOptions);
+        if (r.suiviStockOptions?.length) this.suiviOptions.set(r.suiviStockOptions);
+        // Fallback dépôts depuis référentiel admin (F_DEPOT SQL)
+        if (r.depots?.length && this.depots().length === 0) {
+          this.mergeDepots(r.depots.map((d) => ({ no: d.no, intitule: d.intitule || '' })));
         }
       },
       error: () => {
@@ -101,6 +99,39 @@ export class DemandeAchatAdminDetailPage implements OnInit {
       },
     });
     this.load();
+  }
+
+  /** Charge dépôts via /api/depot/depots puis fusionne. */
+  private loadDepots(): void {
+    this.depotError.set(null);
+    this.depotsApi.listDepots().subscribe({
+      next: (d) => {
+        this.mergeDepots(d);
+        if (d.length === 0) {
+          this.depotError.set('Aucun dépôt retourné par /depot/depots — essai référentiel…');
+        }
+      },
+      error: (err) => {
+        this.depotError.set(
+          err?.message || 'Impossible de charger /api/depot/depots (rôle Admin/Dépôt requis).'
+        );
+      },
+    });
+  }
+
+  private mergeDepots(list: DepotOption[]): void {
+    const map = new Map<number, DepotOption>();
+    for (const d of this.depots()) map.set(d.no, d);
+    for (const d of list) {
+      if (d.no > 0) map.set(d.no, { no: d.no, intitule: d.intitule || `Dépôt ${d.no}` });
+    }
+    const merged = [...map.values()].sort((a, b) => a.no - b.no);
+    this.depots.set(merged);
+    if (merged.length > 0) this.depotError.set(null);
+    // Auto-sélection si un seul dépôt ou si demande a déjà un depotNo
+    if (this.depotNo == null && merged.length === 1) {
+      this.depotNo = merged[0].no;
+    }
   }
 
   load(): void {
@@ -114,8 +145,11 @@ export class DemandeAchatAdminDetailPage implements OnInit {
           quantiteConfirmee: l.quantite,
           prixUnitaire: null,
         }));
-        if (d.fournisseurCode) this.fournisseurCode = d.fournisseurCode;
-        if (d.depotNo) this.depotNo = d.depotNo;
+        if (d.fournisseurCode) {
+          this.fournisseurCode = d.fournisseurCode;
+          this.fournQuery = d.fournisseurCode;
+        }
+        if (d.depotNo != null && d.depotNo > 0) this.depotNo = d.depotNo;
         this.loading.set(false);
       },
       error: (err) => {
@@ -123,6 +157,10 @@ export class DemandeAchatAdminDetailPage implements OnInit {
         this.error.set(err?.message || 'Demande introuvable');
       },
     });
+  }
+
+  lignesSansArticle(): number {
+    return this.lignesEdit.filter((l) => l.estNouvelArticle || !l.articleReference).length;
   }
 
   canTransform(): boolean {
@@ -152,6 +190,16 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     if (this.acting() || !this.canTransform()) return;
     if (!this.depotNo || this.depotNo < 1) {
       this.error.set('Choisis un dépôt de réception.');
+      return;
+    }
+    if (this.depots().length === 0) {
+      this.error.set('Liste des dépôts vide — vérifie l’API /depot/depots ou le référentiel.');
+      return;
+    }
+    if (this.lignesSansArticle() > 0) {
+      this.error.set(
+        `${this.lignesSansArticle()} ligne(s) sans article Sage — crée ou rattache les articles d’abord.`
+      );
       return;
     }
 
@@ -198,7 +246,7 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     this.prixAchat = null;
     this.prixVente = null;
     this.uniteVenteNo = null;
-    this.suiviStockType = 2; // CMUP par défaut
+    this.suiviStockType = 2;
     this.rattacherSiExiste = true;
     this.artSearchQuery = '';
     this.articleHits.set([]);
@@ -222,12 +270,9 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     if (fam.uniteVenteNo != null && this.uniteVenteNo == null) {
       this.uniteVenteNo = fam.uniteVenteNo;
     }
-    if (fam.suiviStock != null) {
-      this.suiviStockType = fam.suiviStock;
-    }
+    if (fam.suiviStock != null) this.suiviStockType = fam.suiviStock;
   }
 
-  /** Recherche articles existants (préfixe / libellé) + calcul n° suivant. */
   onArtSearchChange(): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     const q = this.artSearchQuery.trim();
@@ -256,15 +301,10 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     });
   }
 
-  /**
-   * Propose le prochain AR_Ref : préfixe + (max numérique + 1).
-   * Ex. ART001, ART012 → ART013
-   */
   private computeNextRef(query: string, items: Article[]): string | null {
     const prefix = query.trim().toUpperCase().replace(/[^A-Z0-9\-_./]/g, '');
     if (!prefix) return null;
 
-    // Extraire base alphabétique et partie numérique éventuelle de la requête
     const mQ = prefix.match(/^(.*?)(\d+)$/);
     const base = mQ ? mQ[1] : prefix;
     let maxNum = mQ ? Number(mQ[2]) - 1 : 0;
@@ -345,16 +385,11 @@ export class DemandeAchatAdminDetailPage implements OnInit {
       this.modalError.set('La désignation est obligatoire.');
       return;
     }
-    if (this.suiviStockType < 0 || this.suiviStockType > 5) {
-      this.modalError.set('Suivi de stock invalide (0–5).');
-      return;
-    }
 
     this.acting.set(true);
     this.modalError.set(null);
     this.error.set(null);
 
-    // API demande : SuiviStock bool — true si type > 0
     const suiviBool = this.suiviStockType !== 0;
 
     this.api
