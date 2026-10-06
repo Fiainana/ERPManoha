@@ -10,6 +10,7 @@ import {
   DemandeAchatListItem,
   DemandeAchatListResult,
   DemandeAchatLigne,
+  DepotRefOption,
   FamilleOption,
   GenererSagePayload,
   ReferentielArticleCreation,
@@ -84,10 +85,6 @@ export class DemandesAchatService {
       );
   }
 
-  /**
-   * POST /api/b2b/demandes-achat/{id}/lignes/{ligneId}/article
-   * Corps = CreerArticleDemandeRequest
-   */
   creerArticle(demandeId: number, ligneId: number, body: CreerArticleDemandePayload) {
     return this.http
       .post<ApiResponse<unknown>>(`${this.base}/${demandeId}/lignes/${ligneId}/article`, {
@@ -106,7 +103,7 @@ export class DemandesAchatService {
       );
   }
 
-  /** GET /api/admin/articles/referentiel-creation — familles, unités, etc. */
+  /** GET /api/admin/articles/referentiel-creation — familles, unités, dépôts… */
   referentielArticle() {
     return this.http.get<ApiResponse<unknown>>(`${this.adminArticles}/referentiel-creation`).pipe(
       map((res) => this.normalizeReferentiel(this.unwrap(res))),
@@ -119,6 +116,7 @@ export class DemandesAchatService {
     const famRaw = (bag['familles'] || bag['Familles'] || []) as Record<string, unknown>[];
     const uniRaw = (bag['unites'] || bag['Unites'] || []) as Record<string, unknown>[];
     const suiviRaw = (bag['suiviStock'] || bag['SuiviStock'] || []) as Record<string, unknown>[];
+    const depRaw = (bag['depots'] || bag['Depots'] || []) as Record<string, unknown>[];
 
     const familles: FamilleOption[] = famRaw
       .map((r) => ({
@@ -141,7 +139,16 @@ export class DemandesAchatService {
       libelle: String(r['libelle'] ?? r['Libelle'] ?? ''),
     }));
 
-    return { familles, unites, suiviStockOptions };
+    const depots: DepotRefOption[] = depRaw
+      .map((r) => ({
+        no: Number(r['no'] ?? r['No'] ?? r['deNo'] ?? r['DE_No'] ?? 0),
+        intitule: (r['intitule'] ?? r['Intitule'] ?? r['deIntitule'] ?? r['DE_Intitule']) as
+          | string
+          | null,
+      }))
+      .filter((d) => d.no > 0);
+
+    return { familles, unites, suiviStockOptions, depots };
   }
 
   private unwrap(res: unknown): unknown {

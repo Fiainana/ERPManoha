@@ -87,10 +87,6 @@ export interface GenererSagePayload {
   lignes?: GenererSageLigne[];
 }
 
-/**
- * Corps POST /api/b2b/demandes-achat/{id}/lignes/{ligneId}/article
- * Aligné sur CreerArticleDemandeRequest (API).
- */
 export interface CreerArticleDemandePayload {
   articleReference: string;
   designation?: string | null;
@@ -114,8 +110,14 @@ export interface UniteOption {
   intitule: string | null;
 }
 
+export interface DepotRefOption {
+  no: number;
+  intitule: string | null;
+}
+
 export interface ReferentielArticleCreation {
   familles: FamilleOption[];
   unites: UniteOption[];
   suiviStockOptions: { valeur: number; libelle: string }[];
+  depots: DepotRefOption[];
 }
