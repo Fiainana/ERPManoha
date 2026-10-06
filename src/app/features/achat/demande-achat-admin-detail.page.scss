@@ -359,6 +359,10 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
+
+  &--wide {
+    width: min(640px, calc(100vw - 2rem));
+  }
 }
 
 .modal__head {
@@ -383,10 +387,10 @@
 
 .modal__body {
   padding: 1rem 1.15rem;
+}
 
-  .alert {
-    margin-bottom: 0.85rem;
-  }
+.modal-alert {
+  margin: 0.75rem 1.15rem 0;
 }
 
 .modal__foot {
@@ -401,6 +405,107 @@
 .mono-input {
   font-family: var(--me-font-mono);
   text-transform: uppercase;
+}
+
+/* Recherche article existant */
+.art-search {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--me-border);
+
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    > span {
+      font-size: var(--me-fs-xs);
+      font-weight: 650;
+      text-transform: uppercase;
+      color: var(--me-text-muted);
+    }
+
+    input {
+      height: 38px;
+      padding: 0 0.65rem;
+      border: 1px solid var(--me-border);
+      border-radius: var(--me-radius);
+      background: var(--me-bg-subtle);
+
+      &:focus {
+        outline: none;
+        border-color: var(--me-red);
+        background: var(--me-white);
+      }
+    }
+  }
+}
+
+.next-ref {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  background: color-mix(in srgb, #2563eb 8%, white);
+  border: 1px solid color-mix(in srgb, #2563eb 22%, white);
+  border-radius: var(--me-radius);
+  font-size: var(--me-fs-sm);
+  color: #1e40af;
+}
+
+.art-hits {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--me-border);
+  border-radius: var(--me-radius);
+  background: var(--me-white);
+
+  li + li {
+    border-top: 1px solid var(--me-border);
+  }
+
+  button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    text-align: left;
+    padding: 0.45rem 0.65rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: var(--me-fs-sm);
+
+    &:hover {
+      background: var(--me-red-soft);
+    }
+
+    .des {
+      color: var(--me-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fam {
+      font-size: var(--me-fs-xs);
+      color: var(--me-text-muted);
+      font-family: var(--me-font-mono);
+    }
+  }
+}
+
+.hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--me-fs-xs);
+  color: var(--me-text-muted);
 }
 
 .skeleton__row {
