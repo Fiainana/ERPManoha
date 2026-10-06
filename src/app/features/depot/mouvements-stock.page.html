@@ -1,0 +1,129 @@
+<div class="ms">
+  <header class="ms__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Dépôt</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Mouvements de stock</strong>
+      </nav>
+      <div class="ms__title-row">
+        <h1>Mouvements de stock</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="ms__subtitle">Entrées / sorties issues des documents Sage (BL, FA, BR, réceptions)</p>
+    </div>
+  </header>
+
+  <div class="ms__toolbar">
+    <div class="search">
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput()"
+        placeholder="Pièce, article, tiers…"
+        autocomplete="off"
+      />
+    </div>
+    <div class="field">
+      <input
+        type="text"
+        [(ngModel)]="article"
+        (change)="onFilterChange()"
+        placeholder="Réf. article exacte"
+        autocomplete="off"
+      />
+    </div>
+    <div class="field field--select">
+      <select [(ngModel)]="depotNo" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">Tous les dépôts</option>
+        @for (d of depots(); track d.no) {
+          <option [ngValue]="d.no">{{ d.intitule || ('Dépôt ' + d.no) }}</option>
+        }
+      </select>
+    </div>
+    <div class="field field--date">
+      <input type="date" [(ngModel)]="dateDebut" (change)="onFilterChange()" title="Date début" />
+    </div>
+    <div class="field field--date">
+      <input type="date" [(ngModel)]="dateFin" (change)="onFilterChange()" title="Date fin" />
+    </div>
+    <button type="button" class="btn btn--ghost" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5, 6, 7, 8]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucun mouvement</h2>
+        <p>Modifie les filtres ou élargis la période.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Date</span>
+          <span>Sens</span>
+          <span>Type</span>
+          <span>Pièce</span>
+          <span>Article</span>
+          <span>Dépôt</span>
+          <span class="num">Qté</span>
+        </div>
+        <ul class="tbody">
+          @for (m of items(); track trackKey(m, $index)) {
+            <li class="trow" [class.trow--in]="isEntree(m)" [class.trow--out]="isSortie(m)">
+              <span class="date">
+                {{ m.dateMouvement ? (m.dateMouvement | date: 'dd/MM/yyyy') : '—' }}
+              </span>
+              <span>
+                <span
+                  class="badge"
+                  [class.badge--in]="isEntree(m)"
+                  [class.badge--out]="isSortie(m)"
+                >
+                  {{ m.sens || '—' }}
+                </span>
+              </span>
+              <span class="type">{{ m.typeLibelle || '—' }}</span>
+              <span class="ref">{{ m.numeroPiece || '—' }}</span>
+              <span class="article">
+                <span class="mono">{{ m.articleReference || '—' }}</span>
+                @if (m.designation) {
+                  <span class="desig">{{ m.designation }}</span>
+                }
+              </span>
+              <span class="depot">{{ m.depotIntitule || (m.depotNo != null ? m.depotNo : '—') }}</span>
+              <span
+                class="num qte"
+                [class.qte--in]="isEntree(m)"
+                [class.qte--out]="isSortie(m)"
+              >
+                {{ formatQte(m.quantiteMouvement) }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (loadingMore()) {
+          Chargement…
+        } @else if (!hasMore()) {
+          Fin · {{ items().length }} / {{ total() }}
+        } @else {
+          {{ items().length }} / {{ total() }} · faire défiler
+        }
+      </footer>
+    }
+  </div>
+  <div #sentinel class="sentinel" aria-hidden="true"></div>
+</div>
