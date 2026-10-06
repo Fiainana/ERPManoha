@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../core/services/users.service';
 import { APP_ROLE_OPTIONS, UserApp } from '../../core/models/user-app.model';
@@ -25,7 +25,6 @@ export class UtilisateursPage implements OnInit {
 
   search = '';
 
-  // Formulaire création
   login = '';
   password = '';
   nom = '';
@@ -48,7 +47,16 @@ export class UtilisateursPage implements OnInit {
   receptionnaire = false;
   actif = true;
 
-  readonly filtered = computed(() => {
+  ngOnInit(): void {
+    this.reload();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.modalOpen()) this.closeModal();
+  }
+
+  filtered(): UserApp[] {
     const q = this.search.trim().toLowerCase();
     const list = this.items();
     if (!q) return list;
@@ -59,15 +67,6 @@ export class UtilisateursPage implements OnInit {
         .toLowerCase()
         .includes(q)
     );
-  });
-
-  ngOnInit(): void {
-    this.reload();
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.modalOpen()) this.closeModal();
   }
 
   reload(): void {
@@ -99,7 +98,10 @@ export class UtilisateursPage implements OnInit {
   rolesOf(u: UserApp): string[] {
     if (Array.isArray(u.roles)) return u.roles.map(String).filter(Boolean);
     if (typeof u.roles === 'string' && u.roles.trim()) {
-      return u.roles.split(/[,;|]/).map((r) => r.trim()).filter(Boolean);
+      return u.roles
+        .split(/[,;|]/)
+        .map((r) => r.trim())
+        .filter(Boolean);
     }
     if (u.isAdmin) return ['Admin'];
     return [];
