@@ -16,7 +16,8 @@ interface LineDraft {
   designation: string;
   quantite: number;
   prixUnitaire: number | null;
-  remise: number | null;
+  /** 0 | 1 | 2 | 5 | 10 | 15 */
+  remise: number;
   stockDisponible?: number | null;
 }
 
@@ -35,6 +36,9 @@ export class DevisFormPage implements OnInit {
   private readonly clientSearch$ = new Subject<string>();
   private readonly articleSearch$ = new Subject<string>();
   private readonly tva = 0.2;
+
+  /** Remises proposées à la saisie (%) */
+  readonly remiseOptions = [0, 1, 2, 5, 10, 15] as const;
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -82,33 +86,40 @@ export class DevisFormPage implements OnInit {
     this.clientLabel = '';
   }
 
+  /** Ajoute / remplit une ligne en haut de liste */
   pickArticle(a: Article): void {
-    const empty = this.lines.find((l) => !l.articleReference);
+    const emptyIdx = this.lines.findIndex((l) => !l.articleReference);
     const line: LineDraft = {
       articleReference: a.reference,
       designation: a.designation || a.reference,
       quantite: 1,
       prixUnitaire: a.prixVente ?? null,
-      remise: null,
-      stockDisponible: a.stockDisponible ?? null,
+      remise: 0,
+      stockDisponible: a.stockDisponible ?? a.stockTotal ?? null,
     };
-    if (empty) Object.assign(empty, line);
-    else this.lines = [...this.lines, line];
+    if (emptyIdx >= 0) {
+      const next = [...this.lines];
+      next.splice(emptyIdx, 1);
+      this.lines = [line, ...next];
+    } else {
+      this.lines = [line, ...this.lines];
+    }
     this.articleQuery = '';
     this.articleHits.set([]);
   }
 
+  /** Nouvelle ligne vide en tête de tableau */
   addLine(): void {
     this.lines = [
-      ...this.lines,
       {
         articleReference: '',
         designation: '',
         quantite: 1,
         prixUnitaire: null,
-        remise: null,
+        remise: 0,
         stockDisponible: null,
       },
+      ...this.lines,
     ];
   }
 
@@ -138,6 +149,19 @@ export class DevisFormPage implements OnInit {
 
   formatAr(n: number): string {
     return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar';
+  }
+
+  stockOf(a: Article): number | null {
+    const n = a.stockDisponible ?? a.stockTotal;
+    if (n == null || !Number.isFinite(Number(n))) return null;
+    return Number(n);
+  }
+
+  stockClass(qty: number | null | undefined): string {
+    const n = qty ?? 0;
+    if (n <= 0) return 'is-out';
+    if (n <= 5) return 'is-low';
+    return 'is-ok';
   }
 
   save(): void {
