@@ -206,7 +206,7 @@
     border: none;
     background: linear-gradient(135deg, var(--me-red) 0%, var(--me-red-dark) 100%);
     color: var(--me-white);
-    box-shadow: 0 2px 8px rgba(220, 38, 38,, 0.25);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
 
     &:hover:not(:disabled) {
       transform: translateY(-1px);
