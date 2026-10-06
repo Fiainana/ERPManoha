@@ -8,7 +8,9 @@ import { FournisseursService } from '../../core/services/fournisseurs.service';
 import {
   DemandeAchatDetail,
   DemandeAchatLigne,
+  FamilleOption,
   GenererSagePayload,
+  UniteOption,
 } from '../../core/models/demande-achat.model';
 import { DepotOption } from '../../core/models/mouvement-stock.model';
 import { Fournisseur } from '../../core/models/fournisseur.model';
@@ -33,6 +35,10 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   readonly item = signal<DemandeAchatDetail | null>(null);
   readonly depots = signal<DepotOption[]>([]);
   readonly fournHits = signal<Fournisseur[]>([]);
+  readonly familles = signal<FamilleOption[]>([]);
+  readonly unites = signal<UniteOption[]>([]);
+  readonly modalOpen = signal(false);
+  readonly modalError = signal<string | null>(null);
 
   private id = 0;
 
@@ -42,11 +48,17 @@ export class DemandeAchatAdminDetailPage implements OnInit {
   reference = '';
   lignesEdit: DemandeAchatLigne[] = [];
 
-  // création article sur ligne
+  // modal création article (CreerArticleDemandeRequest)
   articleLigneId: number | null = null;
+  articleLigneLabel = '';
   arRef = '';
-  faCode = '';
   artDesign = '';
+  codeFamille = '';
+  prixAchat: number | null = null;
+  prixVente: number | null = null;
+  uniteVenteNo: number | null = null;
+  suiviStock = true;
+  rattacherSiExiste = true;
 
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
@@ -57,6 +69,16 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     this.depotsApi.listDepots().subscribe({
       next: (d) => this.depots.set(d),
       error: () => this.depots.set([]),
+    });
+    this.api.referentielArticle().subscribe({
+      next: (r) => {
+        this.familles.set(r.familles);
+        this.unites.set(r.unites);
+      },
+      error: () => {
+        this.familles.set([]);
+        this.unites.set([]);
+      },
     });
     this.load();
   }
@@ -134,7 +156,9 @@ export class DemandeAchatAdminDetailPage implements OnInit {
       next: (res) => {
         this.acting.set(false);
         const o = (res || {}) as Record<string, unknown>;
-        const piece = String(o['numeroPiece'] ?? o['NumeroPiece'] ?? o['pieceSage'] ?? o['PieceSage'] ?? '');
+        const piece = String(
+          o['numeroPiece'] ?? o['NumeroPiece'] ?? o['pieceSage'] ?? o['PieceSage'] ?? ''
+        );
         this.toast.set(piece ? `BC Sage créé : ${piece}` : 'BC Sage créé');
         this.load();
       },
@@ -145,42 +169,99 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     });
   }
 
-  openArticleForm(l: DemandeAchatLigne): void {
+  openArticleModal(l: DemandeAchatLigne): void {
     this.articleLigneId = l.id;
+    this.articleLigneLabel = l.designation || l.refFournisseur || `Ligne #${l.id}`;
     this.arRef = '';
-    this.faCode = '';
     this.artDesign = l.designation || l.refFournisseur || '';
+    this.codeFamille = '';
+    this.prixAchat = null;
+    this.prixVente = null;
+    this.uniteVenteNo = null;
+    this.suiviStock = true;
+    this.rattacherSiExiste = true;
+    this.modalError.set(null);
+    this.modalOpen.set(true);
   }
 
-  cancelArticleForm(): void {
+  closeArticleModal(): void {
+    this.modalOpen.set(false);
     this.articleLigneId = null;
+    this.modalError.set(null);
+  }
+
+  onFamilleChange(): void {
+    const fam = this.familles().find((f) => f.code === this.codeFamille);
+    if (!fam) return;
+    // Préremplir unité / suivi depuis la famille Sage si disponibles
+    if (fam.uniteVenteNo != null && this.uniteVenteNo == null) {
+      this.uniteVenteNo = fam.uniteVenteNo;
+    }
+    if (fam.suiviStock != null) {
+      this.suiviStock = fam.suiviStock !== 0;
+    }
   }
 
   submitArticle(): void {
     if (!this.articleLigneId || this.acting()) return;
-    if (!this.arRef.trim() || !this.faCode.trim()) {
-      this.error.set('AR_Ref et code famille sont obligatoires.');
+
+    const ref = this.arRef.trim().toUpperCase();
+    const fam = this.codeFamille.trim();
+    const des = this.artDesign.trim();
+
+    if (!ref) {
+      this.modalError.set('La référence article (AR_Ref) est obligatoire.');
+      return;
+    }
+    if (ref.length > 19) {
+      this.modalError.set('AR_Ref : max 19 caractères.');
+      return;
+    }
+    if (!/^[A-Z0-9][A-Z0-9\-_./]*$/.test(ref)) {
+      this.modalError.set('AR_Ref : lettres, chiffres, - _ . / uniquement.');
+      return;
+    }
+    if (!fam) {
+      this.modalError.set('Le code famille est obligatoire.');
+      return;
+    }
+    if (this.prixAchat == null || this.prixAchat < 0 || !Number.isFinite(this.prixAchat)) {
+      this.modalError.set("Le prix d'achat est obligatoire (≥ 0).");
+      return;
+    }
+    if (!des) {
+      this.modalError.set('La désignation est obligatoire.');
       return;
     }
 
     this.acting.set(true);
+    this.modalError.set(null);
     this.error.set(null);
+
     this.api
       .creerArticle(this.id, this.articleLigneId, {
-        arRef: this.arRef.trim(),
-        faCodeFamille: this.faCode.trim(),
-        designation: this.artDesign.trim() || null,
+        articleReference: ref,
+        designation: des,
+        prixAchat: Number(this.prixAchat),
+        prixVente:
+          this.prixVente != null && Number.isFinite(this.prixVente) ? Number(this.prixVente) : null,
+        uniteVenteNo: this.uniteVenteNo ?? null,
+        codeFamille: fam,
+        suiviStock: this.suiviStock,
+        rattacherSiExiste: this.rattacherSiExiste,
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
           this.acting.set(false);
-          this.articleLigneId = null;
-          this.toast.set('Article créé / rattaché');
+          this.closeArticleModal();
+          const o = (res || {}) as Record<string, unknown>;
+          const created = String(o['articleReference'] ?? o['ArticleReference'] ?? ref);
+          this.toast.set(`Article '${created}' créé via OM et rattaché`);
           this.load();
         },
         error: (err) => {
           this.acting.set(false);
-          this.error.set(err?.message || 'Création article impossible');
+          this.modalError.set(err?.message || 'Création article impossible');
         },
       });
   }

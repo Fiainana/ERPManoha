@@ -85,7 +85,7 @@
               </span>
               <span>
                 @if (l.estNouvelArticle && canTransform()) {
-                  <button type="button" class="btn btn--sm" (click)="openArticleForm(l)">
+                  <button type="button" class="btn btn--sm" (click)="openArticleModal(l)">
                     Créer article
                   </button>
                 }
@@ -95,32 +95,6 @@
         </ul>
       </div>
     </section>
-
-    @if (articleLigneId) {
-      <section class="card">
-        <h2>Créer article Sage (ligne #{{ articleLigneId }})</h2>
-        <div class="form-row">
-          <label>
-            <span>AR_Ref *</span>
-            <input [(ngModel)]="arRef" maxlength="19" />
-          </label>
-          <label>
-            <span>Famille (FA_Code) *</span>
-            <input [(ngModel)]="faCode" maxlength="11" />
-          </label>
-          <label class="span-2">
-            <span>Désignation</span>
-            <input [(ngModel)]="artDesign" maxlength="69" />
-          </label>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn--ghost" (click)="cancelArticleForm()">Annuler</button>
-          <button type="button" class="btn btn--primary" (click)="submitArticle()" [disabled]="acting()">
-            {{ acting() ? '…' : 'Créer / rattacher' }}
-          </button>
-        </div>
-      </section>
-    }
 
     @if (canTransform()) {
       <section class="card">
@@ -174,5 +148,91 @@
         </div>
       </section>
     }
+  }
+
+  <!-- Modal création article OM -->
+  @if (modalOpen()) {
+    <div class="modal-backdrop" (click)="closeArticleModal()"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-art-title">
+      <header class="modal__head">
+        <div>
+          <h2 id="modal-art-title">Créer article Sage</h2>
+          <p class="modal__sub">Ligne : {{ articleLigneLabel }} · FactoryArticle (OM)</p>
+        </div>
+        <button type="button" class="btn-icon" (click)="closeArticleModal()" aria-label="Fermer">
+          ×
+        </button>
+      </header>
+
+      @if (modalError()) {
+        <div class="alert">{{ modalError() }}</div>
+      }
+
+      <div class="modal__body">
+        <div class="form-row">
+          <label>
+            <span>Référence (AR_Ref) *</span>
+            <input
+              [(ngModel)]="arRef"
+              maxlength="19"
+              placeholder="ex. ART001"
+              autocomplete="off"
+              class="mono-input"
+            />
+          </label>
+          <label>
+            <span>Famille *</span>
+            <select [(ngModel)]="codeFamille" (ngModelChange)="onFamilleChange()">
+              <option value="">— choisir une famille —</option>
+              @for (f of familles(); track f.code) {
+                <option [value]="f.code">
+                  {{ f.code }}{{ f.intitule ? ' — ' + f.intitule : '' }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="span-2">
+            <span>Désignation *</span>
+            <input [(ngModel)]="artDesign" maxlength="69" />
+          </label>
+          <label>
+            <span>Prix d'achat *</span>
+            <input type="number" min="0" step="any" [(ngModel)]="prixAchat" />
+          </label>
+          <label>
+            <span>Prix de vente</span>
+            <input type="number" min="0" step="any" [(ngModel)]="prixVente" />
+          </label>
+          <label>
+            <span>Unité de vente</span>
+            <select [(ngModel)]="uniteVenteNo">
+              <option [ngValue]="null">— défaut famille —</option>
+              @for (u of unites(); track u.no) {
+                <option [ngValue]="u.no">
+                  {{ u.no }}{{ u.intitule ? ' — ' + u.intitule : '' }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" [(ngModel)]="suiviStock" />
+            <span>Suivi de stock</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" [(ngModel)]="rattacherSiExiste" />
+            <span>Rattacher si AR_Ref existe déjà</span>
+          </label>
+        </div>
+      </div>
+
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="closeArticleModal()" [disabled]="acting()">
+          Annuler
+        </button>
+        <button type="button" class="btn btn--primary" (click)="submitArticle()" [disabled]="acting()">
+          {{ acting() ? 'Création OM…' : 'Créer / rattacher' }}
+        </button>
+      </footer>
+    </div>
   }
 </div>
