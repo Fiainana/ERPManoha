@@ -1,0 +1,91 @@
+<div class="ff">
+  <header class="ff__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/achat/fournisseurs">Fournisseurs</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Nouveau</strong>
+      </nav>
+      <h1>Nouveau fournisseur</h1>
+      <p class="ff__subtitle">Création dans Sage (FactoryFournisseur)</p>
+    </div>
+    <div class="ff__actions">
+      <a routerLink="/achat/fournisseurs" class="btn btn--ghost">Annuler</a>
+      <button type="button" class="btn btn--primary" (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Création…' : 'Créer' }}
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  <section class="card">
+    <h2>Identité</h2>
+    <div class="form-grid">
+      <label>
+        <span>N° (optionnel)</span>
+        <input [(ngModel)]="numero" maxlength="17" placeholder="Auto si vide" />
+      </label>
+      <label class="span-2">
+        <span>Intitulé *</span>
+        <input [(ngModel)]="intitule" maxlength="69" required />
+      </label>
+      <label>
+        <span>Identifiant</span>
+        <input [(ngModel)]="identifiant" maxlength="25" />
+      </label>
+      <label>
+        <span>SIRET</span>
+        <input [(ngModel)]="siret" maxlength="25" />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Coordonnées</h2>
+    <div class="form-grid">
+      <label>
+        <span>Téléphone</span>
+        <input [(ngModel)]="telephone" maxlength="21" />
+      </label>
+      <label>
+        <span>Télécopie</span>
+        <input [(ngModel)]="telecopie" maxlength="21" />
+      </label>
+      <label class="span-2">
+        <span>Email</span>
+        <input type="email" [(ngModel)]="email" maxlength="69" />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Adresse</h2>
+    <div class="form-grid">
+      <label class="span-2">
+        <span>Adresse</span>
+        <input [(ngModel)]="adresse" maxlength="35" />
+      </label>
+      <label class="span-2">
+        <span>Complément</span>
+        <input [(ngModel)]="complement" maxlength="35" />
+      </label>
+      <label>
+        <span>Code postal</span>
+        <input [(ngModel)]="codePostal" maxlength="9" />
+      </label>
+      <label>
+        <span>Ville</span>
+        <input [(ngModel)]="ville" maxlength="35" />
+      </label>
+      <label>
+        <span>Pays</span>
+        <input [(ngModel)]="pays" maxlength="35" />
+      </label>
+    </div>
+  </section>
+</div>

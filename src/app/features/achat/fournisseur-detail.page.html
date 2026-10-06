@@ -1,0 +1,164 @@
+<div class="fd">
+  <header class="fd__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/achat/fournisseurs">Fournisseurs</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ item()?.numero || '…' }}</strong>
+      </nav>
+      <h1>{{ item()?.intitule || item()?.numero || 'Fournisseur' }}</h1>
+      @if (item(); as f) {
+        <p class="fd__subtitle">
+          <span class="mono">{{ f.numero }}</span>
+          @if (f.sommeil) {
+            <span class="tag">Sommeil</span>
+          }
+        </p>
+      }
+    </div>
+    <div class="fd__actions">
+      <a routerLink="/achat/fournisseurs" class="btn btn--ghost">Retour</a>
+      @if (!editing()) {
+        <button type="button" class="btn btn--primary" (click)="startEdit()" [disabled]="loading()">
+          Modifier
+        </button>
+      } @else {
+        <button type="button" class="btn btn--ghost" (click)="cancelEdit()" [disabled]="saving()">
+          Annuler
+        </button>
+        <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (item()) {
+    <section class="card">
+      <h2>Identité</h2>
+      <div class="form-grid">
+        <label>
+          <span>Intitulé *</span>
+          @if (editing()) {
+            <input [(ngModel)]="intitule" maxlength="69" />
+          } @else {
+            <strong>{{ item()!.intitule || '—' }}</strong>
+          }
+        </label>
+        <label>
+          <span>Identifiant</span>
+          @if (editing()) {
+            <input [(ngModel)]="identifiant" maxlength="25" />
+          } @else {
+            <span>{{ item()!.identifiant || '—' }}</span>
+          }
+        </label>
+        <label>
+          <span>SIRET</span>
+          @if (editing()) {
+            <input [(ngModel)]="siret" maxlength="25" />
+          } @else {
+            <span>{{ item()!.siret || '—' }}</span>
+          }
+        </label>
+        @if (editing()) {
+          <label class="check-row">
+            <input type="checkbox" [(ngModel)]="sommeil" />
+            <span>Sommeil</span>
+          </label>
+        }
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Coordonnées</h2>
+      <div class="form-grid">
+        <label>
+          <span>Téléphone</span>
+          @if (editing()) {
+            <input [(ngModel)]="telephone" maxlength="21" />
+          } @else {
+            <span>{{ item()!.telephone || '—' }}</span>
+          }
+        </label>
+        <label>
+          <span>Télécopie</span>
+          @if (editing()) {
+            <input [(ngModel)]="telecopie" maxlength="21" />
+          } @else {
+            <span>{{ item()!.telecopie || '—' }}</span>
+          }
+        </label>
+        <label class="span-2">
+          <span>Email</span>
+          @if (editing()) {
+            <input type="email" [(ngModel)]="email" maxlength="69" />
+          } @else {
+            <span>{{ item()!.email || '—' }}</span>
+          }
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Adresse</h2>
+      <div class="form-grid">
+        <label class="span-2">
+          <span>Adresse</span>
+          @if (editing()) {
+            <input [(ngModel)]="adresse" maxlength="35" />
+          } @else {
+            <span>{{ item()!.adresse || '—' }}</span>
+          }
+        </label>
+        <label class="span-2">
+          <span>Complément</span>
+          @if (editing()) {
+            <input [(ngModel)]="complement" maxlength="35" />
+          } @else {
+            <span>{{ item()!.complement || '—' }}</span>
+          }
+        </label>
+        <label>
+          <span>Code postal</span>
+          @if (editing()) {
+            <input [(ngModel)]="codePostal" maxlength="9" />
+          } @else {
+            <span>{{ item()!.codePostal || '—' }}</span>
+          }
+        </label>
+        <label>
+          <span>Ville</span>
+          @if (editing()) {
+            <input [(ngModel)]="ville" maxlength="35" />
+          } @else {
+            <span>{{ item()!.ville || '—' }}</span>
+          }
+        </label>
+        <label>
+          <span>Pays</span>
+          @if (editing()) {
+            <input [(ngModel)]="pays" maxlength="35" />
+          } @else {
+            <span>{{ item()!.pays || '—' }}</span>
+          }
+        </label>
+      </div>
+    </section>
+  }
+</div>
