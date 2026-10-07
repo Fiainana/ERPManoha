@@ -66,7 +66,7 @@
           <dt>Pièce Sage</dt>
           <dd class="mono">
             @if (d.pieceSage) {
-              <a [routerLink]="['/achat/prepa-achat', d.pieceSage]">{{ d.pieceSage }}</a>
+              <a [routerLink]="['/achat/bc-achat', d.pieceSage]">{{ d.pieceSage }}</a>
             } @else {
               — pas encore
             }
@@ -150,7 +150,7 @@
 
     @if (canTransform()) {
       <section class="card card--action">
-        <h2>Créer la préparation Sage</h2>
+        <h2>Créer le BC achat</h2>
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Dépôt de réception *</span>
@@ -209,7 +209,7 @@
             (click)="genererBc()"
             [disabled]="acting() || depots().length === 0"
           >
-            {{ acting() ? 'Création Sage…' : 'Créer la préparation Sage' }}
+            {{ acting() ? 'Création Sage…' : 'Créer le BC achat' }}
           </button>
         </div>
       </section>
@@ -217,15 +217,15 @@
 
     @if (canTransformerPrepa()) {
       <section class="card card--action">
-        <h2>Transformer la préparation en BC</h2>
+        <h2>Ancienne préparation à transformer</h2>
         <p class="muted">
           Document Sage
           <strong class="mono">{{ d.pieceSage }}</strong>
-          — à envoyer au fournisseur une fois transformé en bon de commande.
+          est encore une préparation. Les nouvelles demandes créent un BC directement.
         </p>
         <div class="form-actions">
           <a class="btn btn--ghost" [routerLink]="['/achat/prepa-achat', d.pieceSage!]">
-            Voir la préparation
+            Voir le document
           </a>
           <button
             type="button"

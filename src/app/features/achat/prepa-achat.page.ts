@@ -30,11 +30,11 @@ export class PrepaAchatPage implements OnInit {
   private readonly search$ = new Subject<string>();
 
   readonly title = "Préparations d'achat";
-  readonly subtitle = 'Préparation de commande Sage — à transformer en BC';
+  readonly subtitle = "Anciennes préparations Sage — les nouvelles demandes créent un BC directement";
   readonly breadcrumb = "Préparations";
   readonly detailBase = '/achat/prepa-achat';
   readonly emptyTitle = 'Aucune préparation';
-  readonly emptyText = "Aucune préparation d'achat Sage. Crée-les depuis une demande admin.";
+  readonly emptyText = "Aucune préparation. Les demandes d'achat créent désormais un BC directement.";
 
   readonly loading = signal(false);
   readonly loadingMore = signal(false);

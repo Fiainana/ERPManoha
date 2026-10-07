@@ -170,7 +170,7 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     return s === 'ArticlePret' || s === 'EnAttenteArticle' || s === 'Envoyee';
   }
 
-  /** Document Sage déjà créé (souvent une préparation) — étape suivante = BC. */
+  /** Ancienne pièce encore en préparation — les nouvelles demandes créent un BC. */
   canTransformerPrepa(): boolean {
     const d = this.item();
     return !!d?.pieceSage && !this.canTransform();
@@ -264,6 +264,9 @@ export class DemandeAchatAdminDetailPage implements OnInit {
         );
         this.toast.set(piece ? `BC Sage créé : ${piece}` : 'BC Sage créé');
         this.load();
+        if (piece) {
+          void this.router.navigate(['/achat/bc-achat', piece]);
+        }
       },
       error: (err) => {
         this.acting.set(false);
