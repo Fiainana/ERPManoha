@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BcReceptionService } from '../../core/services/bc-reception.service';
-import { BcAchatDetail, BcAchatLigne } from '../../core/models/bc-achat.model';
+import { BcAchatDetail, BcAchatLigne, ReceptionnerPayload } from '../../core/models/bc-achat.model';
 
 @Component({
   selector: 'app-bc-reception-detail-page',
@@ -53,8 +53,11 @@ export class BcReceptionDetailPage implements OnInit {
     return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar';
   }
 
+  /** BC entièrement réceptionné : Sage le retire des BC (le GET renvoie alors introuvable). */
+  readonly termine = signal(false);
+
   get completementLivre(): boolean {
-    return !!this.detail()?.resteARecevoir?.completementLivre;
+    return this.termine() || !!this.detail()?.resteARecevoir?.completementLivre;
   }
 
   lignesAvecReste(): BcAchatLigne[] {
@@ -74,10 +77,11 @@ export class BcReceptionDetailPage implements OnInit {
   receptionnerPartiel(): void {
     if (this.acting() || this.completementLivre) return;
 
+    // L'API identifie la ligne par numeroLigne (DL_No) : articleReference est ambigu
+    // quand un article figure sur plusieurs lignes.
     const lignes = this.lignesAvecReste()
       .map((l) => ({
-        numeroLigne: l.numeroLigne || undefined,
-        articleReference: l.articleReference || undefined,
+        numeroLigne: l.numeroLigne,
         quantiteRecue: Number(l.quantiteARecevoir) || 0,
       }))
       .filter((l) => l.quantiteRecue > 0);
@@ -99,8 +103,15 @@ export class BcReceptionDetailPage implements OnInit {
       }
     }
 
+    // Tout le reste saisi sur toutes les lignes → réception totale (sans liste de lignes).
+    const toutLeReste =
+      lignes.length === this.lignesAvecReste().length &&
+      this.lignesAvecReste().every(
+        (l) => Math.abs((Number(l.quantiteARecevoir) || 0) - (l.quantiteResteARecevoir ?? 0)) < 0.0001
+      );
+
     if (!confirm(`Réception partielle de ${lignes.length} ligne(s) sur BC ${this.piece} ?`)) return;
-    this.runReception({ lignes });
+    this.runReception(toutLeReste ? undefined : { lignes });
   }
 
   remplirReste(): void {
@@ -121,7 +132,7 @@ export class BcReceptionDetailPage implements OnInit {
     this.detail.set({ ...d, lignes: [...d.lignes] });
   }
 
-  private runReception(body: { lignes: { numeroLigne?: number; articleReference?: string; quantiteRecue: number }[] } | undefined): void {
+  private runReception(body: ReceptionnerPayload | undefined): void {
     this.acting.set(true);
     this.error.set(null);
     this.toast.set(null);
@@ -130,9 +141,18 @@ export class BcReceptionDetailPage implements OnInit {
       next: (res) => {
         this.acting.set(false);
         const bl = res.numeroPieceReception;
-        this.toast.set(res.message || (bl ? `Réception ${bl} créée` : 'Réception effectuée'));
-        // Recharger le BC pour voir le reste mis à jour
-        this.load();
+        const message = res.message || (bl ? `Réception ${bl} créée` : 'Réception effectuée');
+        this.toast.set(message);
+        // Recharger le BC : le reliquat a de nouveaux numéros de ligne.
+        // S'il n'existe plus, c'est qu'il a été entièrement réceptionné.
+        this.api.getCommande(this.piece).subscribe({
+          next: (data) => this.detail.set(data),
+          error: () => {
+            this.termine.set(true);
+            this.detail.set(null);
+            this.toast.set(`${message} BC entièrement réceptionné.`);
+          },
+        });
       },
       error: (err) => {
         this.acting.set(false);

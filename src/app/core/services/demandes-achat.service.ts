@@ -21,7 +21,6 @@ import {
 export class DemandesAchatService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/b2b/demandes-achat`;
-  private readonly adminBase = `${environment.apiUrl}/admin/achats`;
   private readonly adminArticles = `${environment.apiUrl}/admin/articles`;
 
   listMes(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
@@ -74,15 +73,6 @@ export class DemandesAchatService {
       map((res) => this.unwrap(res)),
       catchError((err) => throwError(() => new Error(this.readError(err))))
     );
-  }
-
-  transformerBc(id: number, body: GenererSagePayload) {
-    return this.http
-      .post<ApiResponse<unknown>>(`${this.adminBase}/demandes/${id}/transformer-bc`, body)
-      .pipe(
-        map((res) => this.unwrap(res)),
-        catchError((err) => throwError(() => new Error(this.readError(err))))
-      );
   }
 
   creerArticle(demandeId: number, ligneId: number, body: CreerArticleDemandePayload) {

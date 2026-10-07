@@ -77,35 +77,6 @@ export class DocAchatDetailPage implements OnInit {
     return this.kind === 'receptions';
   }
 
-  canTransformerBc(): boolean {
-    return this.kind === 'preparations';
-  }
-
-  transformerBc(): void {
-    if (!this.canTransformerBc() || this.acting()) return;
-    if (!confirm(`Transformer la préparation ${this.piece} en bon de commande fournisseur ?`)) return;
-
-    this.acting.set(true);
-    this.error.set(null);
-    this.api.transformerPreparationBc(this.piece).subscribe({
-      next: (res) => {
-        this.acting.set(false);
-        const o = (res || {}) as Record<string, unknown>;
-        const bc = String(
-          o['numeroPieceBc'] ?? o['NumeroPieceBc'] ?? o['numeroPiece'] ?? o['NumeroPiece'] ?? ''
-        );
-        this.toast.set(bc ? `BC créé : ${bc}` : 'Préparation transformée en BC');
-        if (bc) {
-          void this.router.navigate(['/achat/bc-achat', bc]);
-        }
-      },
-      error: (err) => {
-        this.acting.set(false);
-        this.error.set(err?.message || 'Transformation impossible');
-      },
-    });
-  }
-
   facturer(): void {
     if (!this.canFacturer() || this.acting()) return;
     if (!confirm(`Transformer le BL ${this.piece} en facture fournisseur ?`)) return;
@@ -116,8 +87,10 @@ export class DocAchatDetailPage implements OnInit {
       next: (res) => {
         this.acting.set(false);
         const o = (res || {}) as Record<string, unknown>;
-        const fa = String(o['numeroPiece'] ?? o['NumeroPiece'] ?? '');
+        const fa = String(o['numeroPieceFacture'] ?? o['NumeroPieceFacture'] ?? '');
         this.toast.set(fa ? `Facture créée : ${fa}` : 'Facture fournisseur créée');
+        // Le BL facturé quitte le type BL dans Sage : ouvrir la facture.
+        if (fa) void this.router.navigate(['/achat/factures-achat', fa]);
       },
       error: (err) => {
         this.acting.set(false);

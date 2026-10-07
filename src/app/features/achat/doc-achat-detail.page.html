@@ -20,11 +20,6 @@
     </div>
     <div class="actions">
       <a [routerLink]="listPath" class="btn btn--ghost">Retour</a>
-      @if (canTransformerBc()) {
-        <button type="button" class="btn btn--primary" (click)="transformerBc()" [disabled]="acting()">
-          {{ acting() ? 'Transformation…' : 'Transformer en BC' }}
-        </button>
-      }
       @if (canFacturer()) {
         <button type="button" class="btn btn--primary" (click)="facturer()" [disabled]="acting()">
           {{ acting() ? 'Facturation…' : 'Facturer (BL → FA)' }}

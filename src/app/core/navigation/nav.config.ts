@@ -25,9 +25,8 @@ export interface NavGroup {
  *
  * Demandes d'achat : deux espaces distincts
  * - Commercial : mes demandes (POST/GET /api/b2b/demandes-achat/mes)
- * - Admin : toutes les demandes + transformation BC
- *   (GET /api/b2b/demandes-achat, POST .../generer-sage,
- *    POST /api/admin/achats/demandes/{id}/transformer-bc)
+ * - Admin : toutes les demandes + création du BC achat (DO_Type 12)
+ *   (GET /api/b2b/demandes-achat, POST .../generer-sage)
  */
 export const NAV_GROUPS: NavGroup[] = [
   {

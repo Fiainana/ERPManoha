@@ -214,30 +214,6 @@
         </div>
       </section>
     }
-
-    @if (canTransformerPrepa()) {
-      <section class="card card--action">
-        <h2>Ancienne préparation à transformer</h2>
-        <p class="muted">
-          Document Sage
-          <strong class="mono">{{ d.pieceSage }}</strong>
-          est encore une préparation. Les nouvelles demandes créent un BC directement.
-        </p>
-        <div class="form-actions">
-          <a class="btn btn--ghost" [routerLink]="['/achat/prepa-achat', d.pieceSage!]">
-            Voir le document
-          </a>
-          <button
-            type="button"
-            class="btn btn--primary"
-            (click)="transformerPrepa()"
-            [disabled]="acting()"
-          >
-            {{ acting() ? 'Transformation…' : 'Transformer en BC Sage' }}
-          </button>
-        </div>
-      </section>
-    }
   }
 
   <!-- Modal création article (inchangé structure) -->

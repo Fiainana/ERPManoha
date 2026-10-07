@@ -49,19 +49,6 @@ export class AdminAchatsService {
     return this.getDoc('preparations', piece);
   }
 
-  /** Préparation d'achat Sage → BC fournisseur */
-  transformerPreparationBc(numeroPiece: string) {
-    return this.http
-      .post<ApiResponse<unknown>>(
-        `${this.base}/preparations/${encodeURIComponent(numeroPiece)}/transformer-bc`,
-        {}
-      )
-      .pipe(
-        map((res) => this.unwrap(res)),
-        catchError((err) => throwError(() => new Error(this.readError(err))))
-      );
-  }
-
   /** BL → FA fournisseur */
   facturerReception(numeroPiece: string) {
     return this.http
