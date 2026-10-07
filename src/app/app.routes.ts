@@ -34,6 +34,7 @@ import { InventairePage } from './features/depot/inventaire.page';
 import { InventaireDetailPage } from './features/depot/inventaire-detail.page';
 import { MouvementsStockPage } from './features/depot/mouvements-stock.page';
 import { FacturesRetourPage } from './features/depot/factures-retour.page';
+import { FactureRetourDetailPage } from './features/depot/facture-retour-detail.page';
 import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
 import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
 
@@ -239,6 +240,11 @@ export const routes: Routes = [
       {
         path: 'depot/factures-retour',
         component: FacturesRetourPage,
+        canActivate: [roleGuard(...DEPOT_ROLES)],
+      },
+      {
+        path: 'depot/factures-retour/:numeroPiece',
+        component: FactureRetourDetailPage,
         canActivate: [roleGuard(...DEPOT_ROLES)],
       },
 

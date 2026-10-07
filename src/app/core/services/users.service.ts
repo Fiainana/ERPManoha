@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response';
 import {
   CreateUserAppRequest,
   UpdateUserAppRequest,
   UserApp,
+  CollaborateurSage,
 } from '../models/user-app.model';
 
 @Injectable({ providedIn: 'root' })
@@ -63,6 +64,52 @@ export class UsersService {
     );
   }
 
+  /** Collaborateurs Sage pour le lien utilisateur. */
+  collaborateursSage() {
+    return this.http
+      .get<ApiResponse<CollaborateurSage[]>>(`${this.base}/collaborateurs-sage`)
+      .pipe(
+        map((res) => {
+          if (!res.success) throw new Error(res.message || 'Collaborateurs Sage indisponibles');
+          return res.data ?? [];
+        }),
+        catchError((err) => throwError(() => new Error(this.readError(err))))
+      );
+  }
+
+  /** Badge RFID : code = enregistrer / remplacer, null = retirer. */
+  setRfid(id: number, rfidCode: string | null) {
+    const req = rfidCode
+      ? this.http.put<ApiResponse<unknown>>(`${this.base}/${id}/rfid`, { rfidCode })
+      : this.http.delete<ApiResponse<unknown>>(`${this.base}/${id}/rfid`);
+    return this.secret(req, 'Badge RFID non enregistré');
+  }
+
+  /** PIN : pin = enregistrer / remplacer, null = retirer. */
+  setPin(id: number, pin: string | null) {
+    const req = pin
+      ? this.http.put<ApiResponse<unknown>>(`${this.base}/${id}/pin`, { pin })
+      : this.http.delete<ApiResponse<unknown>>(`${this.base}/${id}/pin`);
+    return this.secret(req, 'PIN non enregistré');
+  }
+
+  setPassword(id: number, password: string) {
+    return this.secret(
+      this.http.put<ApiResponse<unknown>>(`${this.base}/${id}/password`, { password }),
+      'Mot de passe non enregistré'
+    );
+  }
+
+  private secret(req: Observable<ApiResponse<unknown>>, defaultError: string) {
+    return req.pipe(
+      map((res) => {
+        if (!res.success) throw new Error(res.message || defaultError);
+        return this.normalizeUser(res.data);
+      }),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
+  }
+
   private cleanCreate(body: CreateUserAppRequest): CreateUserAppRequest {
     const out: CreateUserAppRequest = {
       login: body.login.trim(),
@@ -79,6 +126,7 @@ export class UsersService {
     if (body.password?.trim()) out.password = body.password;
     if (body.prenom?.trim()) out.prenom = body.prenom.trim();
     if (body.matricule?.trim()) out.matricule = body.matricule.trim();
+    if (body.sageMatricule?.trim()) out.sageMatricule = body.sageMatricule.trim();
     if (body.fonction?.trim()) out.fonction = body.fonction.trim();
     if (body.service?.trim()) out.service = body.service.trim();
     if (body.rfidCode?.trim()) out.rfidCode = body.rfidCode.trim();

@@ -1,0 +1,105 @@
+<div class="brd">
+  <header class="brd__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/depot/factures-retour">Factures de retour</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ detail()?.entete?.numeroPiece || '…' }}</strong>
+      </nav>
+      <h1>{{ detail()?.entete?.numeroPiece || 'Facture de retour' }}</h1>
+      @if (detail()?.entete; as e) {
+        <p class="brd__subtitle">
+          {{ e.clientIntitule || e.clientNumero || '—' }}
+          @if (e.dateDocument) {
+            · {{ e.dateDocument | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      }
+    </div>
+    <div class="brd__actions">
+      <a routerLink="/depot/factures-retour" class="btn btn--ghost">Retour</a>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (detail(); as d) {
+    <div class="alert alert--ok">
+      Retour validé au dépôt : la marchandise ci-dessous est revenue en stock.
+    </div>
+
+    <section class="card">
+      <h2>En-tête</h2>
+      <dl class="kv">
+        <div>
+          <dt>Facture d’origine</dt>
+          <dd>
+            @if (d.entete.reference && auth.isAdmin()) {
+              <a [routerLink]="['/vente/factures', d.entete.reference]">{{ d.entete.reference }}</a>
+            } @else {
+              {{ d.entete.reference || '—' }}
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Client</dt>
+          <dd>{{ d.entete.clientIntitule || d.entete.clientNumero || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Représentant</dt>
+          <dd>{{ d.entete.representant || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Montant HT repris</dt>
+          <dd class="num">{{ formatAr(abs(d.entete.totalHT)) }}</dd>
+        </div>
+        <div>
+          <dt>Montant TTC repris</dt>
+          <dd class="num strong">{{ formatAr(abs(d.entete.totalTTC)) }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Articles retournés ({{ d.lignes.length }})</h2>
+      @if (d.lignes.length === 0) {
+        <p class="muted">Aucune ligne.</p>
+      } @else {
+        <div class="lines-scroll">
+          <table class="lines">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Désignation</th>
+                <th class="num">Qté retournée</th>
+                <th class="num">P.U.</th>
+                <th class="num">HT</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.lignes; track $index) {
+                <tr>
+                  <td class="mono">{{ l.articleReference || '—' }}</td>
+                  <td>{{ l.designation || '—' }}</td>
+                  <td class="num">{{ l.quantite != null ? (abs(l.quantite) | number: '1.0-3') : '—' }}</td>
+                  <td class="num">{{ formatAr(l.prixUnitaire) }}</td>
+                  <td class="num">{{ formatAr(abs(l.montantHT)) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>

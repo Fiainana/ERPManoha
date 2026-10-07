@@ -1,0 +1,37 @@
+/* Complète bons-retour.page.scss : une colonne « facture d'origine » en plus. */
+.thead--fr,
+.trow--fr {
+  grid-template-columns:
+    minmax(100px, 1fr) minmax(120px, 1.1fr) minmax(160px, 2fr) minmax(90px, 0.9fr)
+    minmax(110px, 1fr);
+  min-width: 680px;
+}
+
+.ref--muted {
+  color: var(--me-text-muted);
+  font-weight: 600;
+}
+
+.date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--me-fs-md);
+  color: var(--me-text-muted);
+
+  input {
+    height: 40px;
+    padding: 0 0.6rem;
+    border: 1px solid var(--me-border);
+    border-radius: var(--me-radius);
+    background: var(--me-bg-subtle);
+    font: inherit;
+    color: var(--me-text);
+
+    &:focus {
+      outline: none;
+      border-color: var(--me-red);
+      background: var(--me-white);
+    }
+  }
+}

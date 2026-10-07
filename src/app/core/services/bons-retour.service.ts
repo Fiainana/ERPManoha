@@ -44,6 +44,35 @@ export class BonsRetourService {
       );
   }
 
+  /** Factures de retour (issues de la validation dépôt des bons de retour). */
+  listFacturesRetour(opts: BonRetourListParams = {}) {
+    let params = new HttpParams();
+    if (opts.search) params = params.set('search', opts.search);
+    if (opts.aujourdhui) params = params.set('aujourdhui', 'true');
+    if (opts.dateDebut) params = params.set('dateDebut', opts.dateDebut);
+    if (opts.dateFin) params = params.set('dateFin', opts.dateFin);
+    if (opts.page) params = params.set('page', String(opts.page));
+    if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
+
+    return this.http.get<ApiResponse<unknown>>(`${this.base}/factures-retour`, { params }).pipe(
+      map((res) => this.normalizeList(this.unwrap(res))),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
+  }
+
+  getFactureRetour(numeroPiece: string) {
+    return this.http
+      .get<ApiResponse<unknown>>(`${this.base}/factures-retour/${encodeURIComponent(numeroPiece)}`)
+      .pipe(
+        map((res) => {
+          const data = this.unwrap(res) as Record<string, unknown>;
+          if (!data) throw new Error('Facture de retour introuvable');
+          return this.normalizeDetail(data);
+        }),
+        catchError((err) => throwError(() => new Error(this.readError(err))))
+      );
+  }
+
   /** Valide le retour au dépôt → génère facture de retour */
   valider(numeroPiece: string) {
     return this.http

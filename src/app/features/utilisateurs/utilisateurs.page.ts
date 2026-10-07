@@ -1,7 +1,9 @@
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../core/services/users.service';
-import { APP_ROLE_OPTIONS, UserApp } from '../../core/models/user-app.model';
+import { APP_ROLE_OPTIONS, CollaborateurSage, UserApp } from '../../core/models/user-app.model';
+
+type Secret = 'password' | 'rfid' | 'pin';
 
 @Component({
   selector: 'app-utilisateurs-page',
@@ -23,13 +25,34 @@ export class UtilisateursPage implements OnInit {
   readonly items = signal<UserApp[]>([]);
   readonly modalOpen = signal(false);
 
+  /** Collaborateurs Sage (chargés à l'ouverture d'un formulaire). */
+  readonly collaborateurs = signal<CollaborateurSage[]>([]);
+  readonly collabError = signal<string | null>(null);
+
+  /** Création : nouveau collaborateur Sage ou lien vers un existant. */
+  lienSage: 'nouveau' | 'existant' = 'nouveau';
+  sageMatricule = '';
+
+  // ── Fiche de modification ──
+  readonly editUser = signal<UserApp | null>(null);
+  readonly editError = signal<string | null>(null);
+  readonly secretSaving = signal<Secret | null>(null);
+  eLogin = '';
+  eNom = '';
+  ePrenom = '';
+  eActif = true;
+  eSageMatricule = '';
+  eRoles: Record<string, boolean> = {};
+  nouveauPassword = '';
+  nouveauRfid = '';
+  nouveauPin = '';
+
   search = '';
 
   login = '';
   password = '';
   nom = '';
   prenom = '';
-  matricule = '';
   fonction = '';
   service = '';
   selectedRoles: Record<string, boolean> = {
@@ -54,6 +77,7 @@ export class UtilisateursPage implements OnInit {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.modalOpen()) this.closeModal();
+    if (this.editUser()) this.closeEdit();
   }
 
   filtered(): UserApp[] {
@@ -88,6 +112,153 @@ export class UtilisateursPage implements OnInit {
     this.resetForm();
     this.formError.set(null);
     this.modalOpen.set(true);
+    this.chargerCollaborateurs();
+  }
+
+  /** Libellé d'un collaborateur dans les listes de choix. */
+  libelleCollab(c: CollaborateurSage, pourLogin?: string | null): string {
+    const nom = [c.prenom, c.nom].filter(Boolean).join(' ');
+    const fonctions = [c.vendeur && 'vendeur', c.caissier && 'caissier', c.acheteur && 'acheteur']
+      .filter(Boolean)
+      .join(', ');
+    const autres = c.utilisateurs.filter((l) => l !== pourLogin);
+    return (
+      `${c.matricule ?? 'sans matricule'} — ${nom}` +
+      (fonctions ? ` (${fonctions})` : '') +
+      (autres.length ? ` · lié à ${autres.join(', ')}` : '') +
+      (c.sommeil ? ' · en sommeil' : '')
+    );
+  }
+
+  /** Un collaborateur sans matricule ne peut pas être lié (matricule à attribuer dans Sage). */
+  collabLiable(c: CollaborateurSage): boolean {
+    return !!c.matricule && !c.sommeil;
+  }
+
+  // ── Fiche de modification ──
+
+  openEdit(u: UserApp): void {
+    this.editUser.set(u);
+    this.editError.set(null);
+    this.eLogin = u.login || '';
+    this.eNom = u.nom || '';
+    this.ePrenom = u.prenom || '';
+    this.eActif = u.actif !== false;
+    this.eSageMatricule = u.sageMatricule || '';
+    const roles = this.rolesOf(u);
+    this.eRoles = Object.fromEntries(this.roleOptions.map((o) => [o.value, roles.includes(o.value)]));
+    this.nouveauPassword = '';
+    this.nouveauRfid = '';
+    this.nouveauPin = '';
+    this.chargerCollaborateurs();
+  }
+
+  closeEdit(): void {
+    if (this.saving() || this.secretSaving()) return;
+    this.editUser.set(null);
+  }
+
+  saveProfile(): void {
+    const u = this.editUser();
+    if (!u?.id || this.saving()) return;
+    if (!this.eLogin.trim() || !this.eNom.trim()) {
+      this.editError.set('Login et nom sont obligatoires.');
+      return;
+    }
+    const roles = Object.entries(this.eRoles)
+      .filter(([, on]) => on)
+      .map(([r]) => r);
+    if (roles.length === 0) {
+      this.editError.set('Sélectionnez au moins un rôle applicatif.');
+      return;
+    }
+
+    this.saving.set(true);
+    this.editError.set(null);
+    this.api
+      .update(u.id, {
+        login: this.eLogin.trim(),
+        nom: this.eNom.trim(),
+        prenom: this.ePrenom.trim(),
+        actif: this.eActif,
+        roles,
+        isAdmin: roles.includes('Admin'),
+        sageMatricule: this.eSageMatricule.trim(),
+      })
+      .subscribe({
+        next: (maj) => {
+          this.saving.set(false);
+          this.majLigne(u.id!, maj);
+          this.editUser.set({ ...u, ...maj });
+          this.showToast('Utilisateur mis à jour');
+          this.chargerCollaborateurs();
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.editError.set(err?.message || 'Mise à jour impossible');
+        },
+      });
+  }
+
+  saveSecret(type: Secret, retirer = false): void {
+    const u = this.editUser();
+    if (!u?.id || this.secretSaving()) return;
+
+    let req;
+    if (type === 'password') {
+      if (this.nouveauPassword.length < 4) {
+        this.editError.set('Le mot de passe doit faire au moins 4 caractères.');
+        return;
+      }
+      req = this.api.setPassword(u.id, this.nouveauPassword);
+    } else if (type === 'rfid') {
+      const code = this.nouveauRfid.trim();
+      if (!retirer && !code) {
+        this.editError.set('Scanner ou saisir le badge RFID.');
+        return;
+      }
+      if (retirer && !confirm(`Retirer le badge RFID de ${this.displayName(u)} ?`)) return;
+      req = this.api.setRfid(u.id, retirer ? null : code);
+    } else {
+      const pin = this.nouveauPin.trim();
+      if (!retirer && !/^\d{4,8}$/.test(pin)) {
+        this.editError.set('Le PIN doit contenir 4 à 8 chiffres.');
+        return;
+      }
+      if (retirer && !confirm(`Retirer le PIN de ${this.displayName(u)} ?`)) return;
+      req = this.api.setPin(u.id, retirer ? null : pin);
+    }
+
+    this.secretSaving.set(type);
+    this.editError.set(null);
+    req.subscribe({
+      next: (maj) => {
+        this.secretSaving.set(null);
+        this.majLigne(u.id!, maj);
+        this.editUser.set({ ...u, ...maj });
+        if (type === 'password') this.nouveauPassword = '';
+        if (type === 'rfid') this.nouveauRfid = '';
+        if (type === 'pin') this.nouveauPin = '';
+        const libelle = { password: 'Mot de passe', rfid: 'Badge RFID', pin: 'PIN' }[type];
+        this.showToast(`${libelle} ${retirer ? 'retiré' : 'enregistré'}`);
+      },
+      error: (err) => {
+        this.secretSaving.set(null);
+        this.editError.set(err?.message || 'Enregistrement impossible');
+      },
+    });
+  }
+
+  private majLigne(id: number, maj: UserApp): void {
+    this.items.update((list) => list.map((x) => (x.id === id ? { ...x, ...maj } : x)));
+  }
+
+  private chargerCollaborateurs(): void {
+    this.collabError.set(null);
+    this.api.collaborateursSage().subscribe({
+      next: (list) => this.collaborateurs.set(list),
+      error: (err) => this.collabError.set(err?.message || 'Collaborateurs Sage indisponibles'),
+    });
   }
 
   closeModal(): void {
@@ -153,6 +324,11 @@ export class UtilisateursPage implements OnInit {
 
     const isAdmin = roles.includes('Admin');
 
+    if (this.lienSage === 'existant' && !this.sageMatricule) {
+      this.formError.set('Choisissez le collaborateur Sage à lier.');
+      return;
+    }
+
     this.saving.set(true);
     this.formError.set(null);
     this.api
@@ -161,7 +337,7 @@ export class UtilisateursPage implements OnInit {
         password: this.password,
         nom: this.nom,
         prenom: this.prenom,
-        matricule: this.matricule,
+        sageMatricule: this.lienSage === 'existant' ? this.sageMatricule : undefined,
         fonction: this.fonction,
         service: this.service,
         vendeur: this.vendeur || roles.includes('Vendeur') || roles.includes('Commercial'),
@@ -198,9 +374,10 @@ export class UtilisateursPage implements OnInit {
     this.password = '';
     this.nom = '';
     this.prenom = '';
-    this.matricule = '';
     this.fonction = '';
     this.service = '';
+    this.lienSage = 'nouveau';
+    this.sageMatricule = '';
     this.selectedRoles = {
       Commercial: true,
       Vendeur: false,

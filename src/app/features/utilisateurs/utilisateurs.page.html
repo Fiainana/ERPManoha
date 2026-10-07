@@ -115,10 +115,16 @@
               @for (r of rolesOf(u); track r) {
                 <span class="chip" [class.chip--admin]="r === 'Admin'">{{ r }}</span>
               }
-              @if (u.sageMatricule || u.matricule) {
-                <span class="chip chip--muted">Sage {{ u.sageMatricule || u.matricule }}</span>
+              @if (u.sageMatricule) {
+                <span class="chip chip--muted">Sage {{ u.sageMatricule }}</span>
+              } @else {
+                <span class="chip chip--warn">Sans collaborateur Sage</span>
               }
+              <span class="chip chip--access" [class.is-on]="u.hasPassword" title="Mot de passe">Mot de passe</span>
+              <span class="chip chip--access" [class.is-on]="u.hasRfid" title="Badge RFID">Badge</span>
+              <span class="chip chip--access" [class.is-on]="u.hasPin" title="Code PIN">PIN</span>
             </div>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="openEdit(u)">Modifier</button>
             <button
               type="button"
               class="status"
@@ -166,7 +172,7 @@
 
       <form class="modal__body" (ngSubmit)="submit()">
         <section class="form-section">
-          <h3>Identité Sage</h3>
+          <h3>Identité</h3>
           <div class="form-grid">
             <label class="field">
               <span>Nom <span class="req">*</span></span>
@@ -176,24 +182,56 @@
               <span>Prénom</span>
               <input [(ngModel)]="prenom" name="prenom" autocomplete="given-name" />
             </label>
-            <label class="field">
-              <span>Matricule Sage</span>
-              <input
-                [(ngModel)]="matricule"
-                name="matricule"
-                maxlength="10"
-                placeholder="vide = auto"
-              />
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Collaborateur Sage</h3>
+          <div class="roles roles--compact">
+            <label class="choice" [class.on]="lienSage === 'nouveau'">
+              <input type="radio" [(ngModel)]="lienSage" name="lienSage" value="nouveau" />
+              <span>
+                <strong>Nouveau collaborateur</strong>
+                <small>Créé dans Sage avec un matricule automatique</small>
+              </span>
             </label>
-            <label class="field">
-              <span>Fonction</span>
-              <input [(ngModel)]="fonction" name="fonction" />
-            </label>
-            <label class="field field--wide">
-              <span>Service</span>
-              <input [(ngModel)]="service" name="service" />
+            <label class="choice" [class.on]="lienSage === 'existant'">
+              <input type="radio" [(ngModel)]="lienSage" name="lienSage" value="existant" />
+              <span>
+                <strong>Collaborateur existant</strong>
+                <small>Déjà présent dans Sage (évite les doublons)</small>
+              </span>
             </label>
           </div>
+
+          @if (lienSage === 'existant') {
+            <label class="field field--wide collab-select">
+              <span>Collaborateur <span class="req">*</span></span>
+              <select [(ngModel)]="sageMatricule" name="sageMatricule">
+                <option value="">— Choisir —</option>
+                @for (c of collaborateurs(); track c.no) {
+                  <option [value]="c.matricule ?? ''" [disabled]="!collabLiable(c)">{{ libelleCollab(c) }}</option>
+                }
+              </select>
+              <small class="hint">
+                Un collaborateur « sans matricule » doit d’abord recevoir un matricule dans Sage.
+              </small>
+            </label>
+            @if (collabError()) {
+              <small class="hint hint--error">{{ collabError() }}</small>
+            }
+          } @else {
+            <div class="form-grid">
+              <label class="field">
+                <span>Fonction</span>
+                <input [(ngModel)]="fonction" name="fonction" />
+              </label>
+              <label class="field">
+                <span>Service</span>
+                <input [(ngModel)]="service" name="service" />
+              </label>
+            </div>
+          }
         </section>
 
         <section class="form-section">
@@ -242,6 +280,7 @@
           </div>
         </section>
 
+        @if (lienSage === 'nouveau') {
         <section class="form-section">
           <h3>Profil collaborateur Sage</h3>
           <div class="roles roles--compact">
@@ -267,6 +306,7 @@
             </label>
           </div>
         </section>
+        }
 
         <footer class="modal__foot">
           <button type="button" class="btn btn--ghost" (click)="closeModal()" [disabled]="saving()">
@@ -282,6 +322,213 @@
           </button>
         </footer>
       </form>
+    </div>
+  </div>
+}
+
+@if (editUser(); as u) {
+  <div class="overlay" (click)="closeEdit()">
+    <div
+      class="modal"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-modal-title"
+    >
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ u.login }}</p>
+          <h2 id="edit-modal-title">{{ displayName(u) }}</h2>
+        </div>
+        <button type="button" class="icon-btn" (click)="closeEdit()" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path
+              fill="currentColor"
+              d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+            />
+          </svg>
+        </button>
+      </header>
+
+      @if (editError()) {
+        <div class="alert modal__alert" role="alert">{{ editError() }}</div>
+      }
+
+      <div class="modal__body">
+        <form class="form-section" (ngSubmit)="saveProfile()">
+          <h3>Profil</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Login <span class="req">*</span></span>
+              <input [(ngModel)]="eLogin" name="eLogin" required autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Nom <span class="req">*</span></span>
+              <input [(ngModel)]="eNom" name="eNom" required />
+            </label>
+            <label class="field">
+              <span>Prénom</span>
+              <input [(ngModel)]="ePrenom" name="ePrenom" />
+            </label>
+            <label class="field">
+              <span>Collaborateur Sage</span>
+              <select [(ngModel)]="eSageMatricule" name="eSageMatricule">
+                <option value="">— Aucun —</option>
+                @for (c of collaborateurs(); track c.no) {
+                  <option
+                    [value]="c.matricule ?? ''"
+                    [disabled]="!collabLiable(c) && c.matricule !== eSageMatricule"
+                  >
+                    {{ libelleCollab(c, u.login) }}
+                  </option>
+                }
+              </select>
+            </label>
+          </div>
+          <small class="hint">
+            Vendeurs et commerciaux doivent être liés à un collaborateur Sage vendeur (bons de commande, devis).
+          </small>
+
+          <div class="roles">
+            @for (opt of roleOptions; track opt.value) {
+              <label class="choice" [class.on]="eRoles[opt.value]">
+                <input type="checkbox" [(ngModel)]="eRoles[opt.value]" [name]="'erole_' + opt.value" />
+                <span>
+                  <strong>{{ opt.label }}</strong>
+                  <small>{{ opt.hint }}</small>
+                </span>
+              </label>
+            }
+            <label class="choice" [class.on]="eActif">
+              <input type="checkbox" [(ngModel)]="eActif" name="eActif" />
+              <span>
+                <strong>Actif</strong>
+                <small>Peut se connecter</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" [disabled]="saving()">
+              @if (saving()) {
+                <span class="spinner" aria-hidden="true"></span>
+                Enregistrement…
+              } @else {
+                Enregistrer le profil
+              }
+            </button>
+          </div>
+        </form>
+
+        <section class="form-section">
+          <h3>Accès</h3>
+
+          <div class="access">
+            <div class="access__head">
+              <strong>Mot de passe</strong>
+              <span class="chip chip--access" [class.is-on]="u.hasPassword">
+                {{ u.hasPassword ? 'Défini' : 'Aucun' }}
+              </span>
+            </div>
+            <div class="access__row">
+              <input
+                type="password"
+                [(ngModel)]="nouveauPassword"
+                placeholder="Nouveau mot de passe"
+                autocomplete="new-password"
+                aria-label="Nouveau mot de passe"
+              />
+              <button
+                type="button"
+                class="btn btn--ghost"
+                (click)="saveSecret('password')"
+                [disabled]="secretSaving() !== null"
+              >
+                {{ secretSaving() === 'password' ? '…' : 'Réinitialiser' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="access">
+            <div class="access__head">
+              <strong>Badge RFID</strong>
+              <span class="chip chip--access" [class.is-on]="u.hasRfid">
+                {{ u.hasRfid ? 'Attribué' : 'Aucun' }}
+              </span>
+            </div>
+            <div class="access__row">
+              <input
+                type="password"
+                [(ngModel)]="nouveauRfid"
+                placeholder="Scanner ou saisir le badge"
+                autocomplete="off"
+                aria-label="Badge RFID"
+                (keydown.enter)="saveSecret('rfid')"
+              />
+              <button
+                type="button"
+                class="btn btn--ghost"
+                (click)="saveSecret('rfid')"
+                [disabled]="secretSaving() !== null"
+              >
+                {{ secretSaving() === 'rfid' ? '…' : u.hasRfid ? 'Remplacer' : 'Attribuer' }}
+              </button>
+              @if (u.hasRfid) {
+                <button
+                  type="button"
+                  class="btn btn--danger-ghost"
+                  (click)="saveSecret('rfid', true)"
+                  [disabled]="secretSaving() !== null"
+                >
+                  Retirer
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="access">
+            <div class="access__head">
+              <strong>Code PIN</strong>
+              <span class="chip chip--access" [class.is-on]="u.hasPin">
+                {{ u.hasPin ? 'Défini' : 'Aucun' }}
+              </span>
+            </div>
+            <div class="access__row">
+              <input
+                type="password"
+                inputmode="numeric"
+                maxlength="8"
+                [(ngModel)]="nouveauPin"
+                placeholder="4 à 8 chiffres"
+                autocomplete="off"
+                aria-label="Code PIN"
+              />
+              <button
+                type="button"
+                class="btn btn--ghost"
+                (click)="saveSecret('pin')"
+                [disabled]="secretSaving() !== null"
+              >
+                {{ secretSaving() === 'pin' ? '…' : u.hasPin ? 'Remplacer' : 'Définir' }}
+              </button>
+              @if (u.hasPin) {
+                <button
+                  type="button"
+                  class="btn btn--danger-ghost"
+                  (click)="saveSecret('pin', true)"
+                  [disabled]="secretSaving() !== null"
+                >
+                  Retirer
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="closeEdit()">Fermer</button>
+      </footer>
     </div>
   </div>
 }

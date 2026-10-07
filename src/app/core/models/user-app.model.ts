@@ -30,6 +30,8 @@ export interface CreateUserAppRequest {
   nom: string;
   prenom?: string;
   matricule?: string;
+  /** Collaborateur Sage existant à lier ; vide = création d'un nouveau collaborateur */
+  sageMatricule?: string;
   fonction?: string;
   service?: string;
   vendeur?: boolean;
@@ -52,11 +54,23 @@ export interface UpdateUserAppRequest {
   isAdmin?: boolean;
   actif?: boolean;
   roles?: string[];
-  vendeur?: boolean;
-  acheteur?: boolean;
-  caissier?: boolean;
-  chargeRecouvrement?: boolean;
-  receptionnaire?: boolean;
+  /** Absent = inchangé, '' = délier, sinon matricule du collaborateur Sage */
+  sageMatricule?: string;
+}
+
+/** Collaborateur Sage (GET /api/admin/users/collaborateurs-sage) */
+export interface CollaborateurSage {
+  no: number;
+  matricule: string | null;
+  nom: string;
+  prenom: string | null;
+  fonction: string | null;
+  vendeur: boolean;
+  caissier: boolean;
+  acheteur: boolean;
+  sommeil: boolean;
+  /** Logins déjà liés à ce collaborateur */
+  utilisateurs: string[];
 }
 
 export const APP_ROLE_OPTIONS = [
