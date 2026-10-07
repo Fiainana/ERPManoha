@@ -31,6 +31,7 @@ import { BonRetourDetailPage } from './features/depot/bon-retour-detail.page';
 import { BcReceptionPage } from './features/depot/bc-reception.page';
 import { BcReceptionDetailPage } from './features/depot/bc-reception-detail.page';
 import { InventairePage } from './features/depot/inventaire.page';
+import { InventaireDetailPage } from './features/depot/inventaire-detail.page';
 import { MouvementsStockPage } from './features/depot/mouvements-stock.page';
 import { FacturesRetourPage } from './features/depot/factures-retour.page';
 import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
@@ -223,6 +224,11 @@ export const routes: Routes = [
       {
         path: 'depot/inventaire',
         component: InventairePage,
+        canActivate: [roleGuard(...DEPOT_ROLES)],
+      },
+      {
+        path: 'depot/inventaire/:id',
+        component: InventaireDetailPage,
         canActivate: [roleGuard(...DEPOT_ROLES)],
       },
       {

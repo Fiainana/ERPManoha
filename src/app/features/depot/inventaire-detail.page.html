@@ -1,0 +1,185 @@
+<div class="invd">
+  <header class="invd__header">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/depot/inventaire">Inventaire</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>#{{ detail()?.entete?.id || '…' }}</strong>
+      </nav>
+      @if (detail()?.entete; as e) {
+        <h1>
+          {{ e.origine === 'Auto' ? 'Inventaire hebdomadaire ' + (e.semaine || '') : 'Inventaire #' + e.id }}
+          <span class="badge" [attr.data-statut]="e.statut">{{ libelleStatut(e.statut) }}</span>
+        </h1>
+        <p class="invd__subtitle">
+          {{ e.depotIntitule || 'Dépôt ' + e.depotNo }}
+          · créé le {{ utc(e.dateCreation) | date: 'dd/MM/yyyy HH:mm' }}
+          @if (e.dateSoumission) {
+            · soumis le {{ utc(e.dateSoumission) | date: 'dd/MM/yyyy HH:mm' }}
+          }
+          @if (e.dateValidation) {
+            · validé le {{ utc(e.dateValidation) | date: 'dd/MM/yyyy HH:mm' }}
+          }
+        </p>
+      } @else {
+        <h1>Inventaire</h1>
+      }
+    </div>
+
+    <div class="invd__actions">
+      <a routerLink="/depot/inventaire" class="btn btn--ghost">Retour</a>
+      @if (enComptage()) {
+        <button type="button" class="btn btn--ghost" (click)="annuler()" [disabled]="acting() || loading()">
+          Annuler l’inventaire
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="enregistrer()" [disabled]="acting() || loading()">
+          {{ acting() ? '…' : 'Enregistrer' }}
+        </button>
+        <button type="button" class="btn btn--primary" (click)="soumettre()" [disabled]="acting() || loading()">
+          Soumettre à l’admin
+        </button>
+      }
+      @if (aValider() && auth.isAdmin()) {
+        <button type="button" class="btn btn--ghost" (click)="renvoyer()" [disabled]="acting() || loading()">
+          Renvoyer au dépôt
+        </button>
+        <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting() || loading()">
+          {{ acting() ? 'Ajustement Sage…' : 'Valider l’ajustement' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !detail()) {
+    <div class="skeleton">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (detail(); as d) {
+    @if (enComptage()) {
+      <div class="banner">
+        Compter chaque article physiquement présent dans le dépôt et saisir la quantité (0 si absent).
+        {{ nbSaisies() }} / {{ d.lignes.length }} compté(s).
+        @if (d.entete.note && d.entete.note.includes('Renvoi admin')) {
+          <br />{{ d.entete.note }}
+        }
+      </div>
+    } @else if (aValider() && !auth.isAdmin()) {
+      <div class="banner banner--wait">Comptage soumis — en attente de validation par l’admin.</div>
+    } @else if (aValider()) {
+      <div class="banner banner--wait">
+        {{ d.nbEcarts ?? 0 }} écart(s) sur {{ d.lignes.length }} article(s). Cocher « Ne pas ajuster » pour écarter
+        une ligne (aucun mouvement Sage).
+      </div>
+    } @else if (d.entete.statut === 'Valide') {
+      <div class="banner banner--ok">
+        Inventaire validé.
+        @if (d.entete.pieceSageEntree || d.entete.pieceSageSortie) {
+          Ajustement Sage : entrée {{ d.entete.pieceSageEntree || '—' }} · sortie {{ d.entete.pieceSageSortie || '—' }}.
+        } @else {
+          Aucun ajustement de stock.
+        }
+      </div>
+    }
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Articles ({{ lignesAffichees().length }})</h2>
+        @if (!aveugle()) {
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="ecartsSeulement" />
+            <span>Écarts seulement</span>
+          </label>
+        }
+      </div>
+
+      <div class="lines-scroll">
+        <table class="lines">
+          <thead>
+            <tr>
+              <th>Article</th>
+              <th>Désignation</th>
+              <th>Sélection</th>
+              @if (!aveugle()) {
+                <th class="num">Théorique</th>
+              }
+              <th class="num">Compté</th>
+              @if (!aveugle()) {
+                <th class="num">Écart</th>
+              }
+              @if (!aveugle() && (aValider() || d.entete.statut === 'Valide')) {
+                <th>Ne pas ajuster</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lignesAffichees(); track l.id) {
+              <tr [class.row--ignored]="l.aIgnorer">
+                <td class="mono">{{ l.articleReference }}</td>
+                <td>{{ l.designation || '—' }}</td>
+                <td><span class="motif">{{ l.motif || '—' }}</span></td>
+                @if (!aveugle()) {
+                  <td class="num">{{ l.qteTheorique | number: '1.0-3' }}</td>
+                }
+                <td class="num qte-input">
+                  @if (enComptage()) {
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      inputmode="decimal"
+                      [(ngModel)]="l.saisie"
+                      [attr.aria-label]="'Quantité comptée ' + l.articleReference"
+                    />
+                  } @else {
+                    {{ l.qteComptee != null ? (l.qteComptee | number: '1.0-3') : '—' }}
+                  }
+                </td>
+                @if (!aveugle()) {
+                  <td
+                    class="num ecart"
+                    [class.ecart--plus]="(l.ecart ?? 0) > 0.0001"
+                    [class.ecart--moins]="(l.ecart ?? 0) < -0.0001"
+                  >
+                    {{ formatEcart(l.ecart) }}
+                  </td>
+                }
+                @if (!aveugle() && (aValider() || d.entete.statut === 'Valide')) {
+                  <td>
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="l.aIgnorer"
+                      [disabled]="!aValider()"
+                      [attr.aria-label]="'Ne pas ajuster ' + l.articleReference"
+                    />
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (enComptage()) {
+        <div class="add">
+          <span class="muted">Article trouvé en rayon mais absent de la liste :</span>
+          <input type="text" [(ngModel)]="nouvelArticle" placeholder="Réf. article" maxlength="19" />
+          <input type="number" min="0" step="any" [(ngModel)]="nouvelleQte" placeholder="Qté" />
+          <button type="button" class="btn btn--ghost" (click)="ajouterArticle()" [disabled]="acting()">
+            Ajouter
+          </button>
+        </div>
+      }
+    </section>
+  }
+</div>

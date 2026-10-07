@@ -1,0 +1,97 @@
+<div class="inv">
+  <header class="inv__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Dépôt</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Inventaire</strong>
+      </nav>
+      <div class="inv__title-row">
+        <h1>Inventaires</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="inv__subtitle">
+        Inventaire partiel hebdomadaire : comptage dépôt, puis validation de l’ajustement par l’admin
+      </p>
+    </div>
+    @if (auth.isAdmin()) {
+      <div class="inv__actions">
+        <button type="button" class="btn btn--ghost" (click)="genererHebdo()" [disabled]="acting()">
+          {{ acting() ? 'Génération…' : 'Générer l’inventaire de la semaine' }}
+        </button>
+      </div>
+    }
+  </header>
+
+  <div class="inv__toolbar">
+    <select [(ngModel)]="statut" (ngModelChange)="reload()" aria-label="Statut">
+      @for (s of statuts; track s.value) {
+        <option [value]="s.value">{{ s.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucun inventaire</h2>
+        <p>L’inventaire hebdomadaire est généré automatiquement chaque lundi matin.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>N°</span>
+          <span>Inventaire</span>
+          <span>Dépôt</span>
+          <span>Créé le</span>
+          <span class="num">Comptés</span>
+          <span>Statut</span>
+        </div>
+        <ul class="tbody">
+          @for (i of items(); track i.id) {
+            <li>
+              <a [routerLink]="['/depot/inventaire', i.id]" class="trow">
+                <span class="ref">#{{ i.id }}</span>
+                <span class="name">
+                  {{ i.origine === 'Auto' ? 'Hebdomadaire ' + (i.semaine || '') : i.note || 'Manuel' }}
+                </span>
+                <span>{{ i.depotIntitule || i.depotNo }}</span>
+                <span>{{ i.dateCreation ? (utc(i.dateCreation) | date: 'dd/MM/yyyy HH:mm') : '—' }}</span>
+                <span class="num">{{ i.nbComptees }} / {{ i.nbLignes }}</span>
+                <span><span class="badge" [attr.data-statut]="i.statut">{{ libelleStatut(i.statut) }}</span></span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        @if (totalPages() > 1) {
+          <button type="button" class="linkish" (click)="goTo(page() - 1)" [disabled]="page() <= 1">
+            Précédent
+          </button>
+          Page {{ page() }} / {{ totalPages() }}
+          <button type="button" class="linkish" (click)="goTo(page() + 1)" [disabled]="page() >= totalPages()">
+            Suivant
+          </button>
+        } @else {
+          {{ items().length }} inventaire(s)
+        }
+      </footer>
+    }
+  </div>
+</div>
