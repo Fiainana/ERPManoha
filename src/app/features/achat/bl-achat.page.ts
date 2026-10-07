@@ -18,7 +18,7 @@ import { BcAchatEntete } from '../../core/models/bc-achat.model';
 
 @Component({
   selector: 'app-bl-achat-page',
-  imports: [RouterLink, FormsModule, DatePipe, DecimalPipe],
+  imports: [RouterLink, FormsModule, DatePipe],
   templateUrl: './doc-achat-list.page.html',
   styleUrl: './doc-achat-list.page.scss',
 })

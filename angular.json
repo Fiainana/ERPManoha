@@ -57,6 +57,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+      "allowedHosts": ["crm.manoha-energie.online"]
+    },
           "configurations": {
             "production": {
               "buildTarget": "ERPManoha:build:production"
@@ -72,5 +75,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "9d1cddb2-0271-4f56-8656-1840e505048b"
   }
 }
