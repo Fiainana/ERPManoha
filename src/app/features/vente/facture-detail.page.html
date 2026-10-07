@@ -20,7 +20,7 @@
     </div>
     <div class="fd__actions">
       <a routerLink="/vente/factures" class="btn btn--ghost">Retour</a>
-      @if (auth.isAdmin()) {
+      @if (auth.isAdmin() && (detail()?.entete?.totalTTC ?? 0) > 0) {
         <button
           type="button"
           class="btn btn--ghost"

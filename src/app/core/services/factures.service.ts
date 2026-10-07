@@ -159,10 +159,14 @@ export class FacturesService {
     return this.readError(err);
   }
 
+  /** Réponse API : { transformation: { numeroPieceBonRetour }, validePar } */
   private pickBonRetour(raw: unknown): string {
     if (!raw || typeof raw !== 'object') return '';
-    const o = raw as Record<string, unknown>;
+    const bag = raw as Record<string, unknown>;
+    const o = (bag['transformation'] || bag['Transformation'] || bag) as Record<string, unknown>;
     const keys = [
+      'numeroPieceBonRetour',
+      'NumeroPieceBonRetour',
       'numeroPieceRetour',
       'NumeroPieceRetour',
       'numeroBonRetour',
