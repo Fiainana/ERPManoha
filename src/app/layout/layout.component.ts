@@ -17,7 +17,6 @@ import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { NavigationService } from '../core/services/navigation.service';
 import { NotificationService } from '../core/services/notification.service';
-import { environment } from '../../environments/environment';
 import { NavGroup } from '../core/navigation/nav.config';
 
 const SIDEBAR_KEY = 'erpmanoha.sidebar.collapsed';
@@ -34,7 +33,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
   readonly nav = inject(NavigationService);
   readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
-  readonly appName = environment.appName;
 
   readonly collapsed = signal(this.readCollapsed());
   readonly mobileOpen = signal(false);

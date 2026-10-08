@@ -82,42 +82,42 @@
   min-height: var(--topbar-h);
 }
 
-.sidebar__logo {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
+/* Symbole seul : visible uniquement quand le menu est replié. */
+.sidebar__mark {
+  display: none;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--me-red) 0%, var(--me-red-deeper) 100%);
-  color: var(--me-white);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+  object-fit: contain;
+}
+
+.sidebar.is-collapsed .sidebar__mark {
+  display: block;
 }
 
 .sidebar__brand-text {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
   min-width: 0;
   flex: 1;
 }
 
-.sidebar__name {
-  font-size: 0.9rem;
-  font-weight: 650;
-  color: var(--me-text);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.sidebar__logo-img {
+  display: block;
+  height: 41px;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .sidebar__product {
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--me-red-soft);
+  color: var(--me-red-deeper);
   font-size: 0.65rem;
-  color: var(--me-text-muted);
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .sidebar__close {

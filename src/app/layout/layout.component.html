@@ -14,10 +14,11 @@
     [attr.aria-hidden]="!isDesktop() && !mobileOpen() ? 'true' : null"
   >
     <div class="sidebar__brand">
-      <span class="sidebar__logo" aria-hidden="true">EM</span>
+      <!-- Menu replié : symbole seul ; déplié : logo complet. -->
+      <img class="sidebar__mark" src="logo-mark.png" alt="Manoha Énergie" width="32" height="32" />
       <div class="sidebar__brand-text">
-        <span class="sidebar__name">{{ appName }}</span>
-        <span class="sidebar__product">Manoha Énergie</span>
+        <img class="sidebar__logo-img" src="logo-manoha.png" alt="Manoha Énergie" width="104" height="41" />
+        <span class="sidebar__product">ERP</span>
       </div>
       @if (!isDesktop()) {
         <button type="button" class="sidebar__close" (click)="closeMobile()" aria-label="Fermer le menu">
