@@ -10,9 +10,7 @@
       </nav>
       <div class="ev__title-row">
         <h1>État de vente — {{ scopeLabel }}</h1>
-        <span class="count-pill">
-          {{ loading() ? '…' : (result()?.count ?? 0) }}
-        </span>
+        <span class="count-pill">{{ loading() ? '…' : (result()?.count ?? 0) }}</span>
       </div>
       <p class="ev__subtitle">{{ subtitle }}</p>
     </div>
@@ -20,19 +18,21 @@
 
   <div class="ev__toolbar">
     <div class="field field--date">
-      <label for="ev-date">Date</label>
-      <input id="ev-date" type="date" [(ngModel)]="date" (change)="reload()" />
+      <label for="ev-debut">Du</label>
+      <input id="ev-debut" type="date" [(ngModel)]="dateDebut" (change)="reload()" />
+    </div>
+    <div class="field field--date">
+      <label for="ev-fin">Au</label>
+      <input id="ev-fin" type="date" [(ngModel)]="dateFin" (change)="reload()" />
     </div>
     <button type="button" class="btn btn--primary" (click)="reload()" [disabled]="loading()">
       {{ loading() ? 'Chargement…' : 'Afficher' }}
     </button>
-    <button
-      type="button"
-      class="btn btn--ghost"
-      (click)="exportPdf()"
-      [disabled]="exporting() || loading()"
-    >
-      {{ exporting() ? 'Export…' : 'Exporter PDF' }}
+    <button type="button" class="btn btn--ghost" (click)="exportPdf()" [disabled]="exporting() || loading()">
+      {{ exporting() ? 'Export…' : 'PDF' }}
+    </button>
+    <button type="button" class="btn btn--ghost" (click)="exportExcel()" [disabled]="exporting() || loading()">
+      Excel
     </button>
   </div>
 
@@ -75,7 +75,7 @@
     } @else if (!result() || result()!.items.length === 0) {
       <div class="empty">
         <h2>Aucune facture</h2>
-        <p>Aucune vente pour cette date sur le périmètre {{ scopeLabel }}.</p>
+        <p>Aucune vente sur cette période ({{ scopeLabel }}).</p>
       </div>
     } @else {
       <div class="table-scroll">
@@ -95,7 +95,7 @@
               <span class="ref">{{ it.numeroPiece || '—' }}</span>
               <span class="client">
                 <span class="client__name">{{ clientLabel(it) }}</span>
-                @if (it.clientNumero && scope === 'b2b') {
+                @if (it.clientNumero && scope !== 'comptoir') {
                   <span class="client__num">{{ it.clientNumero }}</span>
                 }
               </span>
@@ -110,7 +110,7 @@
         </ul>
       </div>
       <footer class="panel__footer">
-        {{ result()!.count }} facture(s) · {{ date }}
+        {{ result()!.count }} facture(s) · {{ dateDebut }} → {{ dateFin }}
       </footer>
     }
   </div>

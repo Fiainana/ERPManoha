@@ -3,53 +3,74 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response';
-import { EtatVenteItem, EtatVenteResult, EtatVenteScope } from '../models/etat-vente.model';
+import {
+  EtatVenteItem,
+  EtatVenteResult,
+  EtatVenteScope,
+  JournalCaisseItem,
+  JournalCaisseResult,
+} from '../models/etat-vente.model';
 
 @Injectable({ providedIn: 'root' })
 export class EtatVenteService {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/admin/factures/etat-vente`;
+  private readonly base = `${environment.apiUrl}/admin/factures`;
 
-  getListe(scope: EtatVenteScope, date: string) {
+  getListe(scope: EtatVenteScope, dateDebut: string, dateFin: string) {
     return this.http
-      .post<ApiResponse<unknown>>(`${this.base}/${scope}`, { date })
+      .post<ApiResponse<unknown>>(`${this.base}/etat-vente/${scope}`, {
+        dateDebut,
+        dateFin,
+      })
       .pipe(
-        map((res) => this.normalize(this.unwrap(res))),
+        map((res) => this.normalizeEtat(this.unwrap(res))),
         catchError((err) => throwError(() => new Error(this.readError(err))))
       );
   }
 
-  downloadPdf(scope: EtatVenteScope, date: string) {
+  downloadPdf(scope: EtatVenteScope, dateDebut: string, dateFin: string) {
+    return this.downloadFile(`${this.base}/etat-vente/${scope}/pdf`, { dateDebut, dateFin });
+  }
+
+  downloadExcel(scope: EtatVenteScope, dateDebut: string, dateFin: string) {
+    return this.downloadFile(`${this.base}/etat-vente/${scope}/excel`, { dateDebut, dateFin });
+  }
+
+  getJournalCaisse(date: string, comptoirUniquement = true) {
     return this.http
-      .post(`${this.base}/${scope}/pdf`, { date }, {
-        responseType: 'blob',
-        observe: 'response',
+      .post<ApiResponse<unknown>>(`${this.base}/journal-caisse`, {
+        date,
+        comptoirUniquement,
       })
       .pipe(
-        map((resp) => {
-          const blob = resp.body;
-          if (!blob || blob.size === 0) throw new Error('PDF vide');
-          if (blob.type && blob.type.includes('json')) {
-            throw new Error('Erreur lors de la génération du PDF');
-          }
-          const cd = resp.headers.get('content-disposition') || '';
-          const match = /filename\*?=(?:UTF-8''|"?)([^";]+)/i.exec(cd);
-          const fileName = match
-            ? decodeURIComponent(match[1].replace(/"/g, ''))
-            : `Etat-vente-${scope}-${date}.pdf`;
-          return { blob, fileName };
-        }),
-        map(({ blob, fileName }) => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
-          return fileName;
-        }),
+        map((res) => this.normalizeJournal(this.unwrap(res))),
         catchError((err) => throwError(() => new Error(this.readError(err))))
       );
+  }
+
+  private downloadFile(url: string, body: object) {
+    return this.http.post(url, body, { responseType: 'blob', observe: 'response' }).pipe(
+      map((resp) => {
+        const blob = resp.body;
+        if (!blob || blob.size === 0) throw new Error('Fichier vide');
+        if (blob.type && blob.type.includes('json')) {
+          throw new Error('Erreur lors de la génération du fichier');
+        }
+        const cd = resp.headers.get('content-disposition') || '';
+        const match = /filename\*?=(?:UTF-8''|"?)([^";]+)/i.exec(cd);
+        const fileName = match
+          ? decodeURIComponent(match[1].replace(/"/g, ''))
+          : 'export.bin';
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(objectUrl);
+        return fileName;
+      }),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
   }
 
   private unwrap(res: unknown): unknown {
@@ -60,13 +81,15 @@ export class EtatVenteService {
     return res;
   }
 
-  private normalize(raw: unknown): EtatVenteResult {
+  private normalizeEtat(raw: unknown): EtatVenteResult {
     const bag = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const rows = (bag['items'] || bag['Items'] || []) as Record<string, unknown>[];
     return {
       scope: String(bag['scope'] ?? bag['Scope'] ?? ''),
       titre: String(bag['titre'] ?? bag['Titre'] ?? 'État de vente'),
-      date: String(bag['date'] ?? bag['Date'] ?? ''),
+      date: (bag['date'] ?? bag['Date']) as string | null,
+      dateDebut: (bag['dateDebut'] ?? bag['DateDebut']) as string | null,
+      dateFin: (bag['dateFin'] ?? bag['DateFin']) as string | null,
       clientComptoir: (bag['clientComptoir'] ?? bag['ClientComptoir']) as string | null,
       count: Number(bag['count'] ?? bag['Count'] ?? rows.length),
       totalHT: this.num(bag['totalHT'] ?? bag['TotalHT']) ?? 0,
@@ -96,6 +119,47 @@ export class EtatVenteService {
     };
   }
 
+  private normalizeJournal(raw: unknown): JournalCaisseResult {
+    const bag = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const items = (bag['items'] || bag['Items'] || []) as Record<string, unknown>[];
+    const parMode = (bag['parMode'] || bag['ParMode'] || []) as Record<string, unknown>[];
+    const parJournal = (bag['parJournal'] || bag['ParJournal'] || []) as Record<string, unknown>[];
+
+    return {
+      date: String(bag['date'] ?? bag['Date'] ?? ''),
+      comptoirUniquement: Boolean(bag['comptoirUniquement'] ?? bag['ComptoirUniquement'] ?? true),
+      clientComptoir: (bag['clientComptoir'] ?? bag['ClientComptoir']) as string | null,
+      count: Number(bag['count'] ?? bag['Count'] ?? items.length),
+      totalEncaissements: this.num(bag['totalEncaissements'] ?? bag['TotalEncaissements']) ?? 0,
+      parMode: parMode.map((m) => ({
+        mode: String(m['mode'] ?? m['Mode'] ?? '—'),
+        count: Number(m['count'] ?? m['Count'] ?? 0),
+        total: this.num(m['total'] ?? m['Total']) ?? 0,
+      })),
+      parJournal: parJournal.map((j) => ({
+        journal: String(j['journal'] ?? j['Journal'] ?? '—'),
+        count: Number(j['count'] ?? j['Count'] ?? 0),
+        total: this.num(j['total'] ?? j['Total']) ?? 0,
+      })),
+      items: items.map((r) => this.normalizeJournalItem(r)),
+    };
+  }
+
+  private normalizeJournalItem(row: Record<string, unknown>): JournalCaisseItem {
+    return {
+      numero: (row['numero'] ?? row['Numero']) as string | null,
+      dateReglement: (row['dateReglement'] ?? row['DateReglement']) as string | null,
+      montant: this.num(row['montant'] ?? row['Montant']) ?? 0,
+      libelle: (row['libelle'] ?? row['Libelle']) as string | null,
+      clientNumero: (row['clientNumero'] ?? row['ClientNumero']) as string | null,
+      clientIntitule: (row['clientIntitule'] ?? row['ClientIntitule']) as string | null,
+      codeJournal: (row['codeJournal'] ?? row['CodeJournal']) as string | null,
+      journalIntitule: (row['journalIntitule'] ?? row['JournalIntitule']) as string | null,
+      modeIndex: (row['modeIndex'] ?? row['ModeIndex']) as string | null,
+      modeIntitule: (row['modeIntitule'] ?? row['ModeIntitule']) as string | null,
+    };
+  }
+
   private num(v: unknown): number | null {
     if (v === null || v === undefined || v === '') return null;
     const n = Number(v);
@@ -105,9 +169,7 @@ export class EtatVenteService {
   private readError(err: unknown): string {
     const http = err as HttpErrorResponse;
     if (http?.error instanceof Blob) {
-      return http.status === 403
-        ? 'Accès refusé (Admin requis).'
-        : `Erreur (${http.status})`;
+      return http.status === 403 ? 'Accès refusé (Admin requis).' : `Erreur (${http.status})`;
     }
     const body = http?.error as ApiResponse | undefined;
     if (body?.errors?.length) return body.errors.join(' · ');
