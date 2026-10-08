@@ -39,6 +39,7 @@ import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
 import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
 import { EtatVentePage } from './features/etat/etat-vente.page';
 import { JournalCaissePage } from './features/etat/journal-caisse.page';
+import { RapportVenteMailPage } from './features/etat/rapport-vente-mail.page';
 
 const ARTICLES_ROLES = [
   'Admin',
@@ -140,6 +141,11 @@ export const routes: Routes = [
       {
         path: 'etat/journal-caisse',
         component: JournalCaissePage,
+        canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'etat/rapport-mail',
+        component: RapportVenteMailPage,
         canActivate: [roleGuard('Admin')],
       },
 
