@@ -27,7 +27,7 @@ const MQ_DESKTOP = '(min-width: 960px)';
   selector: 'app-layout',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './layout.component.html',
-  styleUrl: './layout.component.scss',
+  styleUrls: ['./layout.component.scss', './layout.notif.scss'],
 })
 export class LayoutComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
