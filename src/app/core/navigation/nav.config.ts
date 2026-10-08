@@ -73,6 +73,24 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: 'etat',
+    label: 'État',
+    icon: 'assessment',
+    roles: ['Admin'],
+    items: [
+      {
+        label: 'État vente comptoir',
+        route: '/etat/comptoir',
+        roles: ['Admin'],
+      },
+      {
+        label: 'État vente B2B',
+        route: '/etat/b2b',
+        roles: ['Admin'],
+      },
+    ],
+  },
+  {
     id: 'achat',
     label: 'Achat',
     icon: 'shopping',

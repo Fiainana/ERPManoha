@@ -37,6 +37,7 @@ import { FacturesRetourPage } from './features/depot/factures-retour.page';
 import { FactureRetourDetailPage } from './features/depot/facture-retour-detail.page';
 import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
 import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
+import { EtatVentePage } from './features/etat/etat-vente.page';
 
 const ARTICLES_ROLES = [
   'Admin',
@@ -115,6 +116,19 @@ export const routes: Routes = [
         path: 'vente/demandes-devis-import',
         component: DemandesDevisImportPage,
         canActivate: [roleGuard('Admin', 'Commercial')],
+      },
+
+      {
+        path: 'etat/comptoir',
+        component: EtatVentePage,
+        canActivate: [roleGuard('Admin')],
+        data: { scope: 'comptoir' },
+      },
+      {
+        path: 'etat/b2b',
+        component: EtatVentePage,
+        canActivate: [roleGuard('Admin')],
+        data: { scope: 'b2b' },
       },
 
       {
