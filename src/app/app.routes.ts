@@ -209,6 +209,11 @@ export const routes: Routes = [
         path: 'achat/bl-achat',
         component: BlAchatPage,
         canActivate: [roleGuard('Admin', 'Depot')],
+      },
+      {
+        path: 'achat/bl-achat/:piece',
+        component: DocAchatDetailPage,
+        canActivate: [roleGuard('Admin', 'Depot')],
         data: { kind: 'receptions', listPath: '/achat/bl-achat', titleLabel: 'BL' },
       },
       {
