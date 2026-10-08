@@ -1,0 +1,117 @@
+<div class="ev">
+  <header class="ev__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>État</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>État de vente — {{ scopeLabel }}</strong>
+      </nav>
+      <div class="ev__title-row">
+        <h1>État de vente — {{ scopeLabel }}</h1>
+        <span class="count-pill">
+          {{ loading() ? '…' : (result()?.count ?? 0) }}
+        </span>
+      </div>
+      <p class="ev__subtitle">{{ subtitle }}</p>
+    </div>
+  </header>
+
+  <div class="ev__toolbar">
+    <div class="field field--date">
+      <label for="ev-date">Date</label>
+      <input id="ev-date" type="date" [(ngModel)]="date" (change)="reload()" />
+    </div>
+    <button type="button" class="btn btn--primary" (click)="reload()" [disabled]="loading()">
+      {{ loading() ? 'Chargement…' : 'Afficher' }}
+    </button>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="exportPdf()"
+      [disabled]="exporting() || loading()"
+    >
+      {{ exporting() ? 'Export…' : 'Exporter PDF' }}
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (result(); as r) {
+    <div class="ev__kpis">
+      <div class="kpi">
+        <span class="kpi__label">Factures</span>
+        <strong class="kpi__value">{{ r.count }}</strong>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Total HT</span>
+        <strong class="kpi__value">{{ r.totalHT | number: '1.0-0' }} <small>Ar</small></strong>
+      </div>
+      <div class="kpi kpi--accent">
+        <span class="kpi__label">Total TTC</span>
+        <strong class="kpi__value">{{ r.totalTTC | number: '1.0-0' }} <small>Ar</small></strong>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Encaissé</span>
+        <strong class="kpi__value">{{ r.totalRegle | number: '1.0-0' }} <small>Ar</small></strong>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Reste à payer</span>
+        <strong class="kpi__value">{{ r.totalReste | number: '1.0-0' }} <small>Ar</small></strong>
+      </div>
+    </div>
+  }
+
+  <div class="panel">
+    @if (loading() && !result()) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (!result() || result()!.items.length === 0) {
+      <div class="empty">
+        <h2>Aucune facture</h2>
+        <p>Aucune vente pour cette date sur le périmètre {{ scopeLabel }}.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>#</span>
+          <span>N° FA</span>
+          <span>Client</span>
+          <span>Tél.</span>
+          <span class="num">Total TTC</span>
+          <span class="num">Encaissé</span>
+          <span class="num">Reste</span>
+        </div>
+        <ul class="tbody">
+          @for (it of result()!.items; track it.numeroPiece; let i = $index) {
+            <li class="trow">
+              <span class="idx">{{ (i + 1).toString().padStart(2, '0') }}</span>
+              <span class="ref">{{ it.numeroPiece || '—' }}</span>
+              <span class="client">
+                <span class="client__name">{{ clientLabel(it) }}</span>
+                @if (it.clientNumero && scope === 'b2b') {
+                  <span class="client__num">{{ it.clientNumero }}</span>
+                }
+              </span>
+              <span class="tel">{{ it.telephone || it.numClient || '—' }}</span>
+              <span class="num">{{ (it.totalTTC ?? 0) | number: '1.0-0' }}</span>
+              <span class="num">{{ (it.montantRegle ?? 0) | number: '1.0-0' }}</span>
+              <span class="num" [class.num--warn]="(it.resteAPayer ?? 0) > 0">
+                {{ (it.resteAPayer ?? 0) | number: '1.0-0' }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        {{ result()!.count }} facture(s) · {{ date }}
+      </footer>
+    }
+  </div>
+</div>
