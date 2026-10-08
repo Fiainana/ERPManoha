@@ -1,0 +1,136 @@
+<div class="ev obj">
+  <header class="ev__header">
+    <p class="breadcrumb"><span>État</span> · <strong>Objectifs commerciaux</strong></p>
+    <div class="ev__title-row">
+      <h1>Objectifs CA</h1>
+    </div>
+    <p class="ev__subtitle">
+      Objectif mensuel par commercial (matricule Sage). Le réalisé = CA factures TTC du mois sur le
+      représentant.
+    </p>
+  </header>
+
+  <div class="ev__toolbar">
+    <div class="field field--date">
+      <label>Année</label>
+      <input type="number" [(ngModel)]="annee" min="2020" max="2100" />
+    </div>
+    <div class="field field--date">
+      <label>Mois</label>
+      <select [(ngModel)]="mois" class="obj-select">
+        @for (label of moisLabels; track $index) {
+          @if ($index > 0) {
+            <option [ngValue]="$index">{{ label }}</option>
+          }
+        }
+      </select>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="reload()" [disabled]="loading()">
+      {{ loading() ? 'Chargement…' : 'Afficher' }}
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+  @if (success()) {
+    <div class="obj-ok" role="status">{{ success() }}</div>
+  }
+
+  @if (resume(); as r) {
+    <section class="ev__kpis">
+      <div class="kpi kpi--accent">
+        <span class="kpi__label">Objectif total</span>
+        <span class="kpi__value">{{ money(r.objectifTotal) }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">CA réalisé</span>
+        <span class="kpi__value">{{ money(r.caRealiseTotal) }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Taux moyen</span>
+        <span class="kpi__value">{{ r.tauxMoyenPct | number: '1.0-1' }} %</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Commerciaux</span>
+        <span class="kpi__value">{{ r.lignes.length }}</span>
+      </div>
+    </section>
+
+    <div class="panel">
+      <div class="table-scroll">
+        <div class="obj-thead">
+          <span>Commercial</span>
+          <span>Objectif</span>
+          <span>Réalisé</span>
+          <span>Taux</span>
+          <span></span>
+        </div>
+        <ul class="tbody">
+          @for (l of r.lignes; track l.sageMatricule) {
+            <li class="obj-trow">
+              <div class="obj-who">
+                <strong>{{ l.nomComplet || l.login || '—' }}</strong>
+                <small>{{ l.sageMatricule }}@if (l.login) { · {{ l.login }} }</small>
+              </div>
+              <div class="obj-input-wrap">
+                <input
+                  type="text"
+                  class="obj-input"
+                  [(ngModel)]="drafts[l.sageMatricule]"
+                  placeholder="0"
+                  inputmode="numeric"
+                />
+                <span class="obj-unit">Ar</span>
+              </div>
+              <div class="obj-real">
+                <strong>{{ money(l.caRealise) }}</strong>
+                <small>{{ l.nbFactures }} facture(s)</small>
+              </div>
+              <div class="obj-taux">
+                <div class="obj-bar">
+                  <div
+                    class="obj-bar__fill"
+                    [class]="'obj-bar__fill--' + tone(l.tauxRealisationPct)"
+                    [style.width]="progressWidth(l.tauxRealisationPct)"
+                  ></div>
+                </div>
+                <span>{{ l.tauxRealisationPct | number: '1.0-1' }} %</span>
+              </div>
+              <div class="obj-actions">
+                <button
+                  type="button"
+                  class="btn btn--primary"
+                  (click)="saveLigne(l)"
+                  [disabled]="saving() === l.sageMatricule"
+                >
+                  {{ saving() === l.sageMatricule ? '…' : 'OK' }}
+                </button>
+                @if (l.id) {
+                  <button
+                    type="button"
+                    class="btn btn--ghost"
+                    (click)="clearLigne(l)"
+                    [disabled]="saving() === l.sageMatricule"
+                  >
+                    ×
+                  </button>
+                }
+              </div>
+            </li>
+          } @empty {
+            <li class="empty">
+              <h2>Aucun commercial</h2>
+              <p>Liez un matricule Sage aux utilisateurs rôle Commercial.</p>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  } @else if (loading()) {
+    <div class="panel">
+      <div class="skeleton__row"></div>
+      <div class="skeleton__row"></div>
+    </div>
+  }
+</div>
