@@ -5,7 +5,6 @@ import {
   OnInit,
   inject,
   signal,
-  computed,
 } from '@angular/core';
 import {
   NavigationEnd,
@@ -17,6 +16,7 @@ import {
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { NavigationService } from '../core/services/navigation.service';
+import { NotificationService } from '../core/services/notification.service';
 import { environment } from '../../environments/environment';
 import { NavGroup } from '../core/navigation/nav.config';
 
@@ -32,6 +32,7 @@ const MQ_DESKTOP = '(min-width: 960px)';
 export class LayoutComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   readonly nav = inject(NavigationService);
+  readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
   readonly appName = environment.appName;
 
@@ -63,6 +64,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
     this.pageTitle.set(this.nav.titleForRoute(this.router.url));
     this.expandActiveGroup(this.router.url);
+    this.notifications.start();
 
     this.navSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
@@ -71,11 +73,13 @@ export class LayoutComponent implements OnInit, OnDestroy {
         this.syncBodyScroll();
         this.pageTitle.set(this.nav.titleForRoute(e.urlAfterRedirects));
         this.expandActiveGroup(e.urlAfterRedirects);
+        this.notifications.closePanel();
       });
   }
 
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
+    this.notifications.stop();
     if (this.mq && this.mqHandler) {
       this.mq.removeEventListener('change', this.mqHandler);
     }
@@ -84,7 +88,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.notifications.panelOpen()) {
+      this.notifications.closePanel();
+      return;
+    }
     if (this.mobileOpen()) this.closeMobile();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocClick(ev: MouseEvent): void {
+    if (!this.notifications.panelOpen()) return;
+    const t = ev.target as HTMLElement | null;
+    if (t?.closest?.('.notif')) return;
+    this.notifications.closePanel();
   }
 
   toggleSidebar(): void {
@@ -128,6 +144,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
+    this.notifications.stop();
     this.auth.logout();
   }
 

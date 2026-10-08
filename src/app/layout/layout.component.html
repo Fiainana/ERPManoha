@@ -127,6 +127,65 @@
         </div>
       </div>
       <div class="topbar__right">
+        <div class="notif">
+          <button
+            type="button"
+            class="notif__btn"
+            (click)="$event.stopPropagation(); notifications.togglePanel()"
+            [attr.aria-expanded]="notifications.panelOpen()"
+            aria-label="Notifications"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2m6-6V11c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1z" />
+            </svg>
+            @if (notifications.badge() > 0) {
+              <span class="notif__badge">{{ notifications.badge() > 9 ? '9+' : notifications.badge() }}</span>
+            }
+          </button>
+          @if (notifications.panelOpen()) {
+            <div class="notif__panel" role="menu" (click)="$event.stopPropagation()">
+              <div class="notif__head">
+                <strong>Alertes</strong>
+                <div class="notif__head-actions">
+                  <button type="button" class="notif__linkish" (click)="notifications.refresh()">Actualiser</button>
+                  @if (notifications.visibleItems().length) {
+                    <button type="button" class="notif__linkish" (click)="notifications.dismissAll()">Tout écarter</button>
+                  }
+                </div>
+              </div>
+              @if (notifications.loading() && !notifications.items().length) {
+                <p class="notif__empty">Chargement…</p>
+              } @else if (!notifications.visibleItems().length) {
+                <p class="notif__empty">Aucune alerte pour votre profil</p>
+              } @else {
+                <ul class="notif__list">
+                  @for (n of notifications.visibleItems(); track n.id) {
+                    <li>
+                      <a
+                        [routerLink]="n.route"
+                        class="notif__item"
+                        [class]="'notif__item--' + n.severity"
+                        (click)="notifications.closePanel()"
+                      >
+                        <span class="notif__item-body">
+                          <strong>{{ n.title }}</strong>
+                          <small>{{ n.message }}</small>
+                        </span>
+                        <span class="notif__count">{{ n.count }}</span>
+                      </a>
+                      <button
+                        type="button"
+                        class="notif__dismiss"
+                        title="Écarter"
+                        (click)="notifications.dismiss(n.id, n.count)"
+                      >×</button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
         <span class="topbar__chip">{{ auth.roles()[0] || 'Utilisateur' }}</span>
         <span class="topbar__user">{{ auth.displayName() || auth.user()?.login }}</span>
       </div>
