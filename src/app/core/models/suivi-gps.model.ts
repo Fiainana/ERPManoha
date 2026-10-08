@@ -55,6 +55,49 @@ export interface DevisGeolocalise {
   pieceTransformee: string | null;
 }
 
+/** Rapport d'activité — une ligne par commercial et par jour local. */
+export interface ActiviteJour {
+  userId: number;
+  login: string;
+  libelle: string;
+  /** Jour local, yyyy-MM-dd. */
+  jour: string;
+  premiereActivite: string | null;
+  derniereActivite: string | null;
+  sessions: number;
+  dureeSecondes: number;
+  distanceMetres: number;
+  nbPoints: number;
+  devis: number;
+  montantDevisTtc: number;
+  devisFactures: number;
+  montantFactureTtc: number;
+}
+
+/** Synthèse de la période pour un commercial (présent même sans activité). */
+export interface ActiviteCommercial {
+  userId: number;
+  login: string;
+  libelle: string;
+  joursActifs: number;
+  sessions: number;
+  dureeSecondes: number;
+  distanceMetres: number;
+  devis: number;
+  montantDevisTtc: number;
+  devisFactures: number;
+  montantFactureTtc: number;
+  premiereActivite: string | null;
+  derniereActivite: string | null;
+}
+
+export interface RapportActivite {
+  debutUtc: string;
+  finUtc: string;
+  lignes: ActiviteJour[];
+  commerciaux: ActiviteCommercial[];
+}
+
 export interface JourneeCommercial {
   utilisateur: { userId: number; login: string; libelle: string };
   debutUtc: string;

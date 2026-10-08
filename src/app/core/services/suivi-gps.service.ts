@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response';
-import { JourneeCommercial, PositionsLive } from '../models/suivi-gps.model';
+import { JourneeCommercial, PositionsLive, RapportActivite } from '../models/suivi-gps.model';
 
 /** Suivi GPS des commerciaux (admin) — /api/admin/presence */
 @Injectable({ providedIn: 'root' })
@@ -38,6 +38,18 @@ export class SuiviGpsService {
         map((res) => this.unwrap(res)),
         catchError((err) => throwError(() => new Error(this.readError(err))))
       );
+  }
+
+  /** Activité sur une période locale (debut / fin = yyyy-MM-dd inclus, 92 jours max). */
+  rapport(debut: string, fin: string) {
+    const params = new HttpParams()
+      .set('debut', debut)
+      .set('fin', fin)
+      .set('tzOffset', this.tzOffset);
+    return this.http.get<ApiResponse<RapportActivite>>(`${this.base}/rapport`, { params }).pipe(
+      map((res) => this.unwrap(res)),
+      catchError((err) => throwError(() => new Error(this.readError(err))))
+    );
   }
 
   private unwrap<T>(res: ApiResponse<T>): T {

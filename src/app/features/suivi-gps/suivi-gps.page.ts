@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import * as L from 'leaflet';
 import { SuiviGpsService } from '../../core/services/suivi-gps.service';
+import { SuiviGpsTableauComponent } from './suivi-gps-tableau.component';
 import {
   JourneeCommercial,
   PointTrajet,
@@ -30,7 +31,7 @@ const RAFRAICHISSEMENT_MS = 30_000;
  */
 @Component({
   selector: 'app-suivi-gps-page',
-  imports: [FormsModule, DatePipe, RouterLink],
+  imports: [FormsModule, DatePipe, RouterLink, SuiviGpsTableauComponent],
   templateUrl: './suivi-gps.page.html',
   styleUrl: './suivi-gps.page.scss',
 })
@@ -56,6 +57,9 @@ export class SuiviGpsPage {
   readonly chargementJournee = signal(false);
 
   readonly nbEnLigne = computed(() => this.commerciaux().filter((c) => c.enLigne).length);
+
+  /** Carte (positions et trajets) ou tableau d'activité sur une période. */
+  readonly vue = signal<'carte' | 'tableau'>('carte');
 
   date = this.aujourdhui();
   autoRefresh = true;
@@ -141,6 +145,21 @@ export class SuiviGpsPage {
         this.erreur.set(err?.message || 'Trajet indisponible');
       },
     });
+  }
+
+  afficherVue(v: 'carte' | 'tableau'): void {
+    this.vue.set(v);
+    // Leaflet doit recalculer sa taille après avoir été masquée.
+    if (v === 'carte') setTimeout(() => this.map?.invalidateSize());
+  }
+
+  /** Depuis le tableau : affiche le trajet du commercial pour la journée choisie. */
+  ouvrirJournee(e: { userId: number; date: string }): void {
+    const c = this.commerciaux().find((x) => x.userId === e.userId);
+    if (!c) return;
+    this.date = e.date;
+    this.afficherVue('carte');
+    this.selectionner(c);
   }
 
   centrerSur(lat: number | null, lng: number | null): void {

@@ -100,6 +100,39 @@
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
+
+  // display: grid l'emporterait sur l'attribut [hidden].
+  &[hidden] {
+    display: none;
+  }
+}
+
+/* Bascule Carte / Tableau */
+.vues {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--me-radius);
+  background: var(--me-bg-subtle);
+  border: 1px solid var(--me-border);
+
+  button {
+    height: 30px;
+    padding: 0 1rem;
+    border: none;
+    border-radius: calc(var(--me-radius) - 2px);
+    background: transparent;
+    font: inherit;
+    font-size: var(--me-fs-md);
+    font-weight: 600;
+    color: var(--me-text-muted);
+    cursor: pointer;
+
+    &.on {
+      background: var(--me-white);
+      color: var(--me-red-deeper);
+      box-shadow: var(--me-shadow-xs);
+    }
+  }
 }
 
 .panel {

@@ -17,13 +17,23 @@
       </p>
     </div>
     <div class="gps__actions">
-      <label class="check">
-        <input type="checkbox" [(ngModel)]="autoRefresh" />
-        <span>Actualiser toutes les 30 s</span>
-      </label>
-      <button type="button" class="btn btn--ghost" (click)="chargerLive()" [disabled]="chargement()">
-        {{ chargement() ? 'Chargement…' : 'Actualiser' }}
-      </button>
+      <div class="vues" role="tablist" aria-label="Affichage">
+        <button type="button" role="tab" [attr.aria-selected]="vue() === 'carte'" [class.on]="vue() === 'carte'" (click)="afficherVue('carte')">
+          Carte
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="vue() === 'tableau'" [class.on]="vue() === 'tableau'" (click)="afficherVue('tableau')">
+          Tableau
+        </button>
+      </div>
+      @if (vue() === 'carte') {
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="autoRefresh" />
+          <span>Actualiser toutes les 30 s</span>
+        </label>
+        <button type="button" class="btn btn--ghost" (click)="chargerLive()" [disabled]="chargement()">
+          {{ chargement() ? 'Chargement…' : 'Actualiser' }}
+        </button>
+      }
     </div>
   </header>
 
@@ -31,7 +41,12 @@
     <div class="alert" role="alert">{{ erreur() }}</div>
   }
 
-  <div class="gps__body">
+  @if (vue() === 'tableau') {
+    <app-suivi-gps-tableau (ouvrirJournee)="ouvrirJournee($event)" />
+  }
+
+  <!-- Masquée plutôt que détruite : la carte Leaflet garde son état. -->
+  <div class="gps__body" [hidden]="vue() !== 'carte'">
     <aside class="panel liste">
       @if (selection(); as s) {
         <div class="detail">

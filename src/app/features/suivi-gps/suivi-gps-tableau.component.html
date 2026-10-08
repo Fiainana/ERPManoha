@@ -1,0 +1,187 @@
+<section class="tab">
+  <div class="toolbar">
+    <div class="presets" role="group" aria-label="Période rapide">
+      <button type="button" [class.on]="preset() === 'jour'" (click)="appliquerPreset('jour')">Aujourd'hui</button>
+      <button type="button" [class.on]="preset() === '7j'" (click)="appliquerPreset('7j')">7 jours</button>
+      <button type="button" [class.on]="preset() === '30j'" (click)="appliquerPreset('30j')">30 jours</button>
+      <button type="button" [class.on]="preset() === 'mois'" (click)="appliquerPreset('mois')">Ce mois</button>
+      <button type="button" [class.on]="preset() === 'mois-prec'" (click)="appliquerPreset('mois-prec')">Mois dernier</button>
+    </div>
+
+    <div class="periode">
+      <label>
+        <span>Du</span>
+        <input type="date" [(ngModel)]="debut" (change)="onPeriodeChange()" [max]="fin" />
+      </label>
+      <label>
+        <span>Au</span>
+        <input type="date" [(ngModel)]="fin" (change)="onPeriodeChange()" [min]="debut" />
+      </label>
+    </div>
+
+    <div class="filtres">
+      <select
+        aria-label="Commercial"
+        [ngModel]="filtreUser()"
+        (ngModelChange)="filtreUser.set(+$event)"
+      >
+        <option [ngValue]="0">Tous les commerciaux</option>
+        @for (c of listeCommerciaux(); track c.userId) {
+          <option [ngValue]="c.userId">{{ c.libelle }}</option>
+        }
+      </select>
+      <input
+        type="search"
+        placeholder="Rechercher…"
+        aria-label="Rechercher un commercial"
+        [ngModel]="recherche()"
+        (ngModelChange)="recherche.set($event)"
+      />
+    </div>
+
+    <div class="actions">
+      <div class="segment" role="tablist" aria-label="Regroupement">
+        <button type="button" role="tab" [attr.aria-selected]="mode() === 'commercial'" [class.on]="mode() === 'commercial'" (click)="changerMode('commercial')">
+          Par commercial
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="mode() === 'jour'" [class.on]="mode() === 'jour'" (click)="changerMode('jour')">
+          Par jour
+        </button>
+      </div>
+      <button type="button" class="btn" (click)="exporterCsv()" [disabled]="!rapport()">Exporter (Excel)</button>
+    </div>
+  </div>
+
+  @if (erreur()) {
+    <div class="alert" role="alert">{{ erreur() }}</div>
+  }
+
+  @if (rapport(); as r) {
+    <div class="kpis">
+      <div><span>Temps d'activité</span><strong>{{ duree(totaux().dureeSecondes) }}</strong></div>
+      <div><span>Jours actifs</span><strong>{{ totaux().joursActifs }}</strong></div>
+      <div><span>Distance</span><strong>{{ distance(totaux().distanceMetres) }}</strong></div>
+      <div><span>Devis créés</span><strong>{{ totaux().devis }}</strong><small>{{ ar(totaux().montantDevisTtc) }} Ar</small></div>
+      <div>
+        <span>Devis facturés</span><strong>{{ totaux().devisFactures }}</strong>
+        <small>{{ taux(totaux().devisFactures, totaux().devis).toFixed(0) }} % de transformation</small>
+      </div>
+    </div>
+  }
+
+  <div class="table-wrap" [class.loading]="chargement()">
+    @if (mode() === 'commercial') {
+      <table>
+        <thead>
+          <tr>
+            @for (c of colonnesCommercial; track c.id) {
+              <th scope="col" [class.num]="c.num" [attr.aria-sort]="indicateurTri(c.id)">
+                <button type="button" (click)="trierPar(c.id)">
+                  {{ c.libelle }}
+                  <span class="sort" aria-hidden="true">{{ indicateurTri(c.id) === 'ascending' ? '▲' : indicateurTri(c.id) === 'descending' ? '▼' : '' }}</span>
+                </button>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of lignesCommercial(); track row.userId) {
+            <tr (click)="ouvrirCommercial(row)" [class.inactif]="row.joursActifs === 0 && row.devis === 0" title="Voir sur la carte">
+              <td class="name">{{ row.libelle }}</td>
+              <td class="num">{{ row.joursActifs || '—' }}</td>
+              <td class="num">{{ row.sessions || '—' }}</td>
+              <td class="num">
+                <span class="bar"><i [style.width.%]="partDuree(row.dureeSecondes)"></i></span>
+                {{ duree(row.dureeSecondes) }}
+              </td>
+              <td class="num">{{ duree(moyenne(row)) }}</td>
+              <td class="num">{{ distance(row.distanceMetres) }}</td>
+              <td class="num">{{ row.devis || '—' }}</td>
+              <td class="num">{{ ar(row.montantDevisTtc) }}</td>
+              <td class="num">{{ row.devisFactures || '—' }}</td>
+              <td class="num strong">{{ ar(row.montantFactureTtc) }}</td>
+              <td class="num">{{ row.devis ? taux(row.devisFactures, row.devis).toFixed(0) + ' %' : '—' }}</td>
+              <td class="muted">{{ row.derniereActivite ? (row.derniereActivite | date: 'dd/MM HH:mm') : 'Aucune' }}</td>
+            </tr>
+          } @empty {
+            <tr><td [attr.colspan]="colonnesCommercial.length" class="empty">Aucun commercial.</td></tr>
+          }
+        </tbody>
+        @if (lignesCommercial().length) {
+          <tfoot>
+            <tr>
+              <td>Total · {{ lignesCommercial().length }} commercial(aux)</td>
+              <td class="num">{{ totaux().joursActifs }}</td>
+              <td class="num">{{ totaux().sessions }}</td>
+              <td class="num">{{ duree(totaux().dureeSecondes) }}</td>
+              <td class="num">—</td>
+              <td class="num">{{ distance(totaux().distanceMetres) }}</td>
+              <td class="num">{{ totaux().devis }}</td>
+              <td class="num">{{ ar(totaux().montantDevisTtc) }}</td>
+              <td class="num">{{ totaux().devisFactures }}</td>
+              <td class="num">{{ ar(totaux().montantFactureTtc) }}</td>
+              <td class="num">{{ totaux().devis ? taux(totaux().devisFactures, totaux().devis).toFixed(0) + ' %' : '—' }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            @for (c of colonnesJour; track c.id) {
+              <th scope="col" [class.num]="c.num" [attr.aria-sort]="indicateurTri(c.id)">
+                <button type="button" (click)="trierPar(c.id)">
+                  {{ c.libelle }}
+                  <span class="sort" aria-hidden="true">{{ indicateurTri(c.id) === 'ascending' ? '▲' : indicateurTri(c.id) === 'descending' ? '▼' : '' }}</span>
+                </button>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of lignesJour(); track row.userId + row.jour) {
+            <tr (click)="ouvrirJour(row)" title="Voir le trajet sur la carte">
+              <td class="date">{{ row.jour + 'T12:00:00' | date: 'EEE dd/MM/yyyy' }}</td>
+              <td class="name">{{ row.libelle }}</td>
+              <td class="num">{{ heure(row.premiereActivite) }}</td>
+              <td class="num">{{ heure(row.derniereActivite) }}</td>
+              <td class="num">{{ row.sessions || '—' }}</td>
+              <td class="num">{{ duree(row.dureeSecondes) }}</td>
+              <td class="num">{{ distance(row.distanceMetres) }}</td>
+              <td class="num muted">{{ row.nbPoints || '—' }}</td>
+              <td class="num">{{ row.devis || '—' }}</td>
+              <td class="num">{{ ar(row.montantDevisTtc) }}</td>
+              <td class="num">{{ row.devisFactures || '—' }}</td>
+              <td class="num strong">{{ ar(row.montantFactureTtc) }}</td>
+            </tr>
+          } @empty {
+            <tr><td [attr.colspan]="colonnesJour.length" class="empty">Aucune activité sur cette période.</td></tr>
+          }
+        </tbody>
+        @if (lignesJour().length) {
+          <tfoot>
+            <tr>
+              <td colspan="4">Total · {{ lignesJour().length }} journée(s)</td>
+              <td class="num">{{ totaux().sessions }}</td>
+              <td class="num">{{ duree(totaux().dureeSecondes) }}</td>
+              <td class="num">{{ distance(totaux().distanceMetres) }}</td>
+              <td class="num"></td>
+              <td class="num">{{ totaux().devis }}</td>
+              <td class="num">{{ ar(totaux().montantDevisTtc) }}</td>
+              <td class="num">{{ totaux().devisFactures }}</td>
+              <td class="num">{{ ar(totaux().montantFactureTtc) }}</td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    }
+  </div>
+
+  <p class="note">
+    Temps d'activité : durée entre le premier et le dernier signal GPS de chaque session de l'application mobile.
+    Distance : trajets GPS précis (± 100 m), hors micro-déplacements. Montants TTC en Ariary.
+    Cliquez sur une ligne pour voir le trajet sur la carte.
+  </p>
+</section>
