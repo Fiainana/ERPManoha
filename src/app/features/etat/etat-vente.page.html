@@ -84,6 +84,7 @@
           <span>N° FA</span>
           <span>Client</span>
           <span>Tél.</span>
+          <span>Représentant</span>
           <span class="num">Total TTC</span>
           <span class="num">Encaissé</span>
           <span class="num">Reste</span>
@@ -100,6 +101,7 @@
                 }
               </span>
               <span class="tel">{{ it.telephone || it.numClient || '—' }}</span>
+              <span class="rep" [title]="it.representant || ''">{{ it.representant || '—' }}</span>
               <span class="num">{{ (it.totalTTC ?? 0) | number: '1.0-0' }}</span>
               <span class="num">{{ (it.montantRegle ?? 0) | number: '1.0-0' }}</span>
               <span class="num" [class.num--warn]="(it.resteAPayer ?? 0) > 0">

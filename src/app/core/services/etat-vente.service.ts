@@ -29,11 +29,26 @@ export class EtatVenteService {
   }
 
   downloadPdf(scope: EtatVenteScope, dateDebut: string, dateFin: string) {
-    return this.downloadFile(`${this.base}/etat-vente/${scope}/pdf`, { dateDebut, dateFin });
+    return this.downloadFile(
+      `${this.base}/etat-vente/${scope}/pdf`,
+      { dateDebut, dateFin },
+      this.nomFichier(scope, dateDebut, dateFin, 'pdf')
+    );
   }
 
   downloadExcel(scope: EtatVenteScope, dateDebut: string, dateFin: string) {
-    return this.downloadFile(`${this.base}/etat-vente/${scope}/excel`, { dateDebut, dateFin });
+    return this.downloadFile(
+      `${this.base}/etat-vente/${scope}/excel`,
+      { dateDebut, dateFin },
+      this.nomFichier(scope, dateDebut, dateFin, 'csv')
+    );
+  }
+
+  /** Nom de repli si l'en-tête Content-Disposition n'est pas lisible (CORS). */
+  private nomFichier(scope: EtatVenteScope, dateDebut: string, dateFin: string, ext: string): string {
+    const d = (s: string) => s.replaceAll('-', '');
+    const periode = dateDebut === dateFin ? d(dateDebut) : `${d(dateDebut)}_${d(dateFin)}`;
+    return `Etat-vente-${scope}-${periode}.${ext}`;
   }
 
   getJournalCaisse(date: string, comptoirUniquement = true) {
@@ -48,7 +63,7 @@ export class EtatVenteService {
       );
   }
 
-  private downloadFile(url: string, body: object) {
+  private downloadFile(url: string, body: object, nomParDefaut: string) {
     return this.http.post(url, body, { responseType: 'blob', observe: 'response' }).pipe(
       map((resp) => {
         const blob = resp.body;
@@ -58,15 +73,18 @@ export class EtatVenteService {
         }
         const cd = resp.headers.get('content-disposition') || '';
         const match = /filename\*?=(?:UTF-8''|"?)([^";]+)/i.exec(cd);
-        const fileName = match
-          ? decodeURIComponent(match[1].replace(/"/g, ''))
-          : 'export.bin';
-        const objectUrl = URL.createObjectURL(blob);
+        const fileName = match ? decodeURIComponent(match[1].replace(/"/g, '')) : nomParDefaut;
+        // Type explicite : sans lui, certains navigateurs enregistrent un .bin.
+        const type = fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : blob.type || 'text/csv';
+        const objectUrl = URL.createObjectURL(new Blob([blob], { type }));
         const a = document.createElement('a');
         a.href = objectUrl;
         a.download = fileName;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(objectUrl);
+        a.remove();
+        // Révocation différée : une révocation immédiate peut annuler le téléchargement.
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
         return fileName;
       }),
       catchError((err) => throwError(() => new Error(this.readError(err))))
