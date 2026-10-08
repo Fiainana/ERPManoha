@@ -7,6 +7,9 @@
         <span class="dash__name">{{ auth.displayName() || auth.user()?.login }}</span>
       </h1>
       <p class="dash__focus">{{ dashboard.profile().focus }}</p>
+      @if (dashboard.kpis()?.periodeLabel) {
+        <p class="dash__periode">Période · {{ dashboard.kpis()!.periodeLabel }}</p>
+      }
     </div>
     <div class="dash__session">
       <div class="dash__avatar" aria-hidden="true">
@@ -27,6 +30,88 @@
       </div>
     </div>
   </header>
+
+  @if (dashboard.error()) {
+    <div class="dash-alert" role="alert">{{ dashboard.error() }}</div>
+  }
+
+  <!-- KPI réels -->
+  @if (dashboard.loading() && !dashboard.kpis()) {
+    <section class="kpi-grid" aria-busy="true">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="kpi-card kpi-card--skeleton"></div>
+      }
+    </section>
+  } @else if (dashboard.kpis(); as k) {
+    @if (k.cards.length) {
+      <section class="kpi-grid" aria-label="Indicateurs">
+        @for (c of k.cards; track c.id) {
+          @if (c.route) {
+            <a [routerLink]="c.route" class="kpi-card" [class]="'kpi-card--' + (c.tone || 'default')">
+              <span class="kpi-card__label">{{ c.label }}</span>
+              <strong class="kpi-card__value">{{ c.value }}</strong>
+              @if (c.hint) {
+                <span class="kpi-card__hint">{{ c.hint }}</span>
+              }
+            </a>
+          } @else {
+            <div class="kpi-card" [class]="'kpi-card--' + (c.tone || 'default')">
+              <span class="kpi-card__label">{{ c.label }}</span>
+              <strong class="kpi-card__value">{{ c.value }}</strong>
+              @if (c.hint) {
+                <span class="kpi-card__hint">{{ c.hint }}</span>
+              }
+            </div>
+          }
+        }
+      </section>
+    }
+
+    @if (k.lists.length) {
+      <section class="kpi-lists">
+        @for (list of k.lists; track list.title) {
+          <div class="kpi-list-panel">
+            <h2>{{ list.title }}</h2>
+            @if (!list.items.length) {
+              <p class="kpi-list-empty">{{ list.empty || 'Aucune donnée' }}</p>
+            } @else {
+              <ul>
+                @for (it of list.items; track it.title + (it.subtitle || '') + $index) {
+                  <li>
+                    @if (it.route) {
+                      <a [routerLink]="it.route" class="kpi-list-row">
+                        <span class="kpi-list-row__main">
+                          <strong>{{ it.title }}</strong>
+                          @if (it.subtitle) {
+                            <small>{{ it.subtitle }}</small>
+                          }
+                        </span>
+                        @if (it.value) {
+                          <span class="kpi-list-row__val">{{ it.value }}</span>
+                        }
+                      </a>
+                    } @else {
+                      <div class="kpi-list-row">
+                        <span class="kpi-list-row__main">
+                          <strong>{{ it.title }}</strong>
+                          @if (it.subtitle) {
+                            <small>{{ it.subtitle }}</small>
+                          }
+                        </span>
+                        @if (it.value) {
+                          <span class="kpi-list-row__val">{{ it.value }}</span>
+                        }
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
 
   @if (dashboard.insights().length) {
     <section class="insights" aria-label="Points d'attention">
@@ -65,29 +150,5 @@
         }
       </div>
     }
-  </section>
-
-  <section class="dash__section">
-    <div class="dash__section-head">
-      <h2>Session</h2>
-    </div>
-    <div class="session-panel">
-      <div class="session-row">
-        <span>Identifiant</span>
-        <strong>{{ auth.user()?.login || '—' }}</strong>
-      </div>
-      <div class="session-row">
-        <span>Rôles</span>
-        <strong>{{ auth.roles().join(', ') || '—' }}</strong>
-      </div>
-      <div class="session-row">
-        <span>Administration</span>
-        <strong>{{ auth.isAdmin() ? 'Oui' : 'Non' }}</strong>
-      </div>
-      <div class="session-row">
-        <span>Matricule Sage</span>
-        <strong>{{ auth.user()?.sageMatricule || '—' }}</strong>
-      </div>
-    </div>
   </section>
 </div>
