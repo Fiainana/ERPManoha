@@ -1,0 +1,299 @@
+<div class="prm">
+  <header class="prm__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Administration</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Paramètres</strong>
+      </nav>
+      <h1>Paramètres</h1>
+      <p class="prm__subtitle">
+        Valeurs enregistrées en base et appliquées tout de suite, sans redémarrer l'API.
+        L'infrastructure (connexion Sage, SQL, sécurité) reste dans appsettings.
+      </p>
+    </div>
+  </header>
+
+  @if (erreur()) {
+    <div class="alert alert--err" role="alert">{{ erreur() }}</div>
+  }
+  @if (succes()) {
+    <div class="alert alert--ok" role="status">{{ succes() }}</div>
+  }
+
+  @if (chargement() && !donnees()) {
+    <p class="muted">Chargement…</p>
+  } @else if (onglet(); as g) {
+    <div class="prm__body">
+      <nav class="tabs" aria-label="Groupes de paramètres">
+        @for (gr of groupes(); track gr.id) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="gr.id === g.id"
+            [attr.aria-current]="gr.id === g.id ? 'page' : null"
+            (click)="choisirOnglet(gr.id)"
+          >
+            <span>{{ gr.libelle }}</span>
+            @if (erreursGroupe(gr)) {
+              <span class="pill pill--err">{{ erreursGroupe(gr) }}</span>
+            } @else if (modificationsGroupe(gr)) {
+              <span class="pill">{{ modificationsGroupe(gr) }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      <section class="card">
+        <header class="card__head">
+          <h2>{{ g.libelle }}</h2>
+          <p>{{ g.description }}</p>
+        </header>
+
+        <div class="fields">
+          @for (p of g.parametres; track p.cle) {
+            <div class="field" [class.field--err]="erreursChamps()[p.cle]" [class.field--dirty]="estModifie(p)">
+              <div class="field__label">
+                <label [for]="'prm-' + p.cle">
+                  {{ p.libelle }}
+                  @if (p.obligatoire) {
+                    <span class="req" aria-hidden="true">*</span>
+                  }
+                </label>
+                @if (p.description) {
+                  <p class="field__desc">{{ p.description }}</p>
+                }
+              </div>
+
+              <div class="field__control">
+                @switch (p.type) {
+                  @case ('Booleen') {
+                    <label class="switch">
+                      <input
+                        type="checkbox"
+                        [id]="'prm-' + p.cle"
+                        [(ngModel)]="form[p.cle]"
+                        (ngModelChange)="onChange(p)"
+                      />
+                      <span class="switch__track" aria-hidden="true"></span>
+                      <span>{{ form[p.cle] ? 'Activé' : 'Désactivé' }}</span>
+                    </label>
+                  }
+                  @case ('JourSemaine') {
+                    <select
+                      class="input"
+                      [id]="'prm-' + p.cle"
+                      [(ngModel)]="form[p.cle]"
+                      (ngModelChange)="onChange(p)"
+                    >
+                      @for (j of jours; track j.valeur) {
+                        <option [value]="j.valeur">{{ j.libelle }}</option>
+                      }
+                    </select>
+                  }
+                  @case ('Entier') {
+                    <div class="input-unit">
+                      <input
+                        type="number"
+                        class="input"
+                        step="1"
+                        [id]="'prm-' + p.cle"
+                        [attr.min]="p.min"
+                        [attr.max]="p.max"
+                        [(ngModel)]="form[p.cle]"
+                        (ngModelChange)="onChange(p)"
+                      />
+                      @if (p.unite) {
+                        <span>{{ p.unite }}</span>
+                      }
+                    </div>
+                  }
+                  @case ('Decimal') {
+                    <div class="input-unit">
+                      <input
+                        type="number"
+                        class="input"
+                        step="any"
+                        [id]="'prm-' + p.cle"
+                        [attr.min]="p.min"
+                        [attr.max]="p.max"
+                        [(ngModel)]="form[p.cle]"
+                        (ngModelChange)="onChange(p)"
+                      />
+                      @if (p.unite) {
+                        <span>{{ p.unite }}</span>
+                      }
+                    </div>
+                  }
+                  @case ('ListeTexte') {
+                    <textarea
+                      class="input input--area"
+                      rows="3"
+                      placeholder="Une valeur par ligne"
+                      [id]="'prm-' + p.cle"
+                      [(ngModel)]="form[p.cle]"
+                      (ngModelChange)="onChange(p)"
+                    ></textarea>
+                  }
+                  @case ('ListeEntier') {
+                    @if (p.verification === 'Depots' && depots().length) {
+                      <div class="checks" role="group" [attr.aria-label]="p.libelle">
+                        @for (d of depots(); track d.numero) {
+                          <label class="check">
+                            <input
+                              type="checkbox"
+                              [checked]="depotCoche(p, d.numero)"
+                              (change)="basculerDepot(p, d.numero, $any($event.target).checked)"
+                            />
+                            <span>{{ d.intitule || 'Dépôt' }} <small>n° {{ d.numero }}</small></span>
+                          </label>
+                        }
+                      </div>
+                    } @else {
+                      <input
+                        type="text"
+                        class="input"
+                        placeholder="Ex. 1, 2"
+                        [id]="'prm-' + p.cle"
+                        [(ngModel)]="form[p.cle]"
+                        (ngModelChange)="onChange(p)"
+                      />
+                    }
+                  }
+                  @case ('Secret') {
+                    <input
+                      type="password"
+                      class="input"
+                      autocomplete="new-password"
+                      [id]="'prm-' + p.cle"
+                      [placeholder]="p.secretDefini ? '•••••••• (enregistré)' : 'Aucun mot de passe'"
+                      [disabled]="secretsEfface.has(p.cle)"
+                      [(ngModel)]="form[p.cle]"
+                      (ngModelChange)="onChange(p)"
+                    />
+                    @if (p.secretDefini) {
+                      <label class="check check--small">
+                        <input
+                          type="checkbox"
+                          [checked]="secretsEfface.has(p.cle)"
+                          (change)="basculerSecretEfface(p, $any($event.target).checked)"
+                        />
+                        <span>Supprimer le mot de passe enregistré</span>
+                      </label>
+                    }
+                  }
+                  @default {
+                    <input
+                      [type]="p.type === 'Email' ? 'email' : 'text'"
+                      class="input"
+                      [id]="'prm-' + p.cle"
+                      [(ngModel)]="form[p.cle]"
+                      (ngModelChange)="onChange(p)"
+                    />
+                  }
+                }
+
+                @if (erreursChamps()[p.cle]; as msg) {
+                  <p class="field__err" role="alert">{{ msg }}</p>
+                }
+
+                <p class="field__meta">
+                  @if (aRetablir.has(p.cle)) {
+                    <span class="tag tag--warn">Revient à la valeur par défaut</span>
+                    <button type="button" class="linkish" (click)="annulerRetablir(p)">Annuler</button>
+                  } @else if (p.enBase) {
+                    <span class="tag">Personnalisé</span>
+                    @if (p.modifiePar === 'appsettings') {
+                      <span>repris d'appsettings</span>
+                    } @else if (p.modifiePar) {
+                      <span>par {{ p.modifiePar }}</span>
+                    }
+                    @if (p.modifieLe) {
+                      <span>le {{ p.modifieLe | date: 'dd/MM/yyyy HH:mm' }}</span>
+                    }
+                    @if (!p.obligatoire && p.type !== 'Secret') {
+                      <button type="button" class="linkish" (click)="retablir(p)">
+                        Rétablir ({{ defautLisible(p) }})
+                      </button>
+                    }
+                  } @else {
+                    <span class="tag tag--muted">Par défaut</span>
+                    @if (bornes(p)) {
+                      <span>{{ bornes(p) }}</span>
+                    }
+                  }
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (g.id === 'email') {
+          <div class="test">
+            <h3>Tester l'envoi</h3>
+            <p class="field__desc">
+              Le test utilise la configuration <strong>enregistrée</strong>.
+              @if (modificationsGroupe(g)) {
+                Enregistrez d'abord vos modifications.
+              }
+            </p>
+            <div class="test__row">
+              <input
+                type="email"
+                class="input"
+                placeholder="destinataire@exemple.mg"
+                aria-label="Destinataire du test"
+                [(ngModel)]="testDestinataire"
+              />
+              <button
+                type="button"
+                class="btn"
+                (click)="envoyerTest()"
+                [disabled]="testEnCours() || !testDestinataire.trim()"
+              >
+                {{ testEnCours() ? 'Envoi…' : 'Envoyer un test' }}
+              </button>
+            </div>
+            @if (testResultat(); as r) {
+              <p class="test__res" [class.test__res--ok]="r.ok" role="status">{{ r.message }}</p>
+            }
+            <p class="field__desc">
+              Destinataires et heure du rapport des ventes :
+              <a routerLink="/etat/rapport-mail">Rapport e-mail</a>.
+            </p>
+          </div>
+        }
+      </section>
+    </div>
+
+    <div class="savebar" [class.savebar--on]="modifications().length > 0">
+      <span>
+        @if (modifications().length) {
+          {{ modifications().length }} modification{{ modifications().length > 1 ? 's' : '' }} non enregistrée{{ modifications().length > 1 ? 's' : '' }}
+        } @else {
+          Aucune modification
+        }
+      </span>
+      <div class="savebar__actions">
+        <button
+          type="button"
+          class="btn"
+          (click)="annuler()"
+          [disabled]="enregistrement() || modifications().length === 0"
+        >
+          Annuler
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="enregistrer()"
+          [disabled]="enregistrement() || modifications().length === 0"
+        >
+          {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

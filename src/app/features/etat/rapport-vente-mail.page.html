@@ -65,8 +65,9 @@
           <p>
             SMTP :
             <strong [class.ok]="c.emailSmtpConfigure" [class.ko]="!c.emailSmtpConfigure">
-              {{ c.emailSmtpConfigure ? 'configuré' : 'non configuré (appsettings Email:*)' }}
+              {{ c.emailSmtpConfigure ? 'configuré' : 'non configuré' }}
             </strong>
+            — <a routerLink="/parametres">Paramètres → E-mail (SMTP)</a>
           </p>
           @if (c.derniereExecution) {
             <p>

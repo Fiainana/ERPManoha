@@ -1,0 +1,158 @@
+<div class="gps">
+  <header class="gps__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Administration</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Suivi GPS</strong>
+      </nav>
+      <h1>Suivi GPS des commerciaux</h1>
+      <p class="gps__subtitle">
+        {{ nbEnLigne() }} en ligne sur {{ commerciaux().length }}
+        @if (derniereMaj(); as maj) {
+          · mis à jour à {{ maj | date: 'HH:mm:ss' }}
+        }
+      </p>
+    </div>
+    <div class="gps__actions">
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="autoRefresh" />
+        <span>Actualiser toutes les 30 s</span>
+      </label>
+      <button type="button" class="btn btn--ghost" (click)="chargerLive()" [disabled]="chargement()">
+        {{ chargement() ? 'Chargement…' : 'Actualiser' }}
+      </button>
+    </div>
+  </header>
+
+  @if (erreur()) {
+    <div class="alert" role="alert">{{ erreur() }}</div>
+  }
+
+  <div class="gps__body">
+    <aside class="panel liste">
+      @if (selection(); as s) {
+        <div class="detail">
+          <button type="button" class="linkish" (click)="retourVueGlobale()">← Tous les commerciaux</button>
+          <div class="detail__head">
+            <span class="dot" [class.dot--on]="s.enLigne"></span>
+            <div>
+              <strong>{{ s.libelle || s.login }}</strong>
+              <small>{{ s.enLigne ? 'En ligne' : 'Hors ligne' }} · {{ ilYa(s.derniereActivite) }}</small>
+            </div>
+          </div>
+
+          <div class="jour">
+            <button type="button" class="btn btn--ghost btn--icon" (click)="jourPrecedent()" aria-label="Jour précédent">‹</button>
+            <input type="date" [(ngModel)]="date" (change)="onDateChange()" aria-label="Date" />
+            <button
+              type="button"
+              class="btn btn--ghost btn--icon"
+              (click)="jourSuivant()"
+              [disabled]="estAujourdhui()"
+              aria-label="Jour suivant"
+            >›</button>
+          </div>
+
+          @if (chargementJournee() && !journee()) {
+            <p class="muted">Chargement du trajet…</p>
+          } @else if (journee(); as j) {
+            <div class="kpis">
+              <div><span>Temps d’activité</span><strong>{{ dureeLisible(j.dureeSecondes) }}</strong></div>
+              <div><span>Distance</span><strong>{{ distanceLisible(j.distanceMetres) }}</strong></div>
+              <div><span>Sessions</span><strong>{{ j.sessions.length }}</strong></div>
+              <div><span>Devis</span><strong>{{ j.devis.length }}</strong></div>
+            </div>
+
+            @if (j.points.length === 0 && j.devis.length === 0) {
+              <p class="muted">Aucune activité ce jour-là.</p>
+            }
+
+            @if (j.devis.length) {
+              <h3>Devis créés</h3>
+              <ul class="items">
+                @for (d of j.devis; track d.numeroPiece) {
+                  <li>
+                    <button type="button" class="item" (click)="centrerSur(d.latitude, d.longitude)">
+                      <span class="badge badge--devis">D</span>
+                      <span class="item__main">
+                        <strong>{{ d.numeroPiece }}</strong>
+                        <small>{{ d.clientIntitule || d.clientNumero || '—' }}</small>
+                      </span>
+                      <span class="item__side">
+                        <strong>{{ formatAr(d.totalTTC) }}</strong>
+                        <small>{{ d.creeLe | date: 'HH:mm' }}</small>
+                      </span>
+                    </button>
+                    @if (d.pieceTransformee) {
+                      <a class="facture" [routerLink]="['/vente/factures', d.pieceTransformee]">
+                        Facturé : {{ d.pieceTransformee }}
+                      </a>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (j.sessions.length) {
+              <h3>Sessions</h3>
+              <ul class="items">
+                @for (se of j.sessions; track se.sessionId) {
+                  <li class="session">
+                    <span>{{ se.debut | date: 'HH:mm' }} → {{ se.fin | date: 'HH:mm' }}</span>
+                    <span>{{ dureeLisible(se.dureeSecondes) }}</span>
+                    <span>{{ distanceLisible(se.distanceMetres) }}</span>
+                    <span class="muted">{{ se.nbPoints }} pts</span>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      } @else {
+        @if (chargement() && commerciaux().length === 0) {
+          <p class="muted pad">Chargement…</p>
+        } @else if (commerciaux().length === 0) {
+          <p class="muted pad">Aucun commercial suivi.</p>
+        } @else {
+          <ul class="people">
+            @for (c of commerciaux(); track c.userId) {
+              <li>
+                <button type="button" class="person" (click)="selectionner(c)">
+                  <span class="dot" [class.dot--on]="c.enLigne"></span>
+                  <span class="person__main">
+                    <strong>{{ c.libelle || c.login }}</strong>
+                    <small>{{ c.enLigne ? 'En ligne' : ilYa(c.derniereActivite) }}</small>
+                  </span>
+                  <span class="person__side">
+                    <small>Aujourd’hui</small>
+                    <strong>{{ dureeLisible(c.dureeJourSecondes) }}</strong>
+                    <small>{{ c.devisJour }} devis</small>
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+          <p class="legend">
+            <span class="dot dot--on"></span> En ligne (signal &lt; {{ minutesEnLigne() }} min)
+            <span class="dot"></span> Hors ligne
+          </p>
+        }
+      }
+    </aside>
+
+    <section class="panel carte">
+      <div #map class="map" aria-label="Carte des positions"></div>
+      @if (selection()) {
+        <p class="legend legend--map">
+          <span class="leg leg--start"></span> Début
+          <span class="leg leg--end"></span> Fin
+          <span class="leg leg--line"></span> Trajet
+          <span class="leg leg--devis">D</span> Devis
+        </p>
+      }
+    </section>
+  </div>
+</div>

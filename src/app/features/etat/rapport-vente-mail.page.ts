@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   RapportVenteMailService,
   RapportVenteMailConfig,
@@ -8,7 +9,7 @@ import {
 
 @Component({
   selector: 'app-rapport-vente-mail-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, RouterLink],
   templateUrl: './rapport-vente-mail.page.html',
   styleUrls: ['./etat-vente.page.scss', './rapport-mail.extra.scss'],
 })

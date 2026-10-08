@@ -41,6 +41,8 @@ import { EtatVentePage } from './features/etat/etat-vente.page';
 import { JournalCaissePage } from './features/etat/journal-caisse.page';
 import { RapportVenteMailPage } from './features/etat/rapport-vente-mail.page';
 import { ObjectifsPage } from './features/etat/objectifs.page';
+import { SuiviGpsPage } from './features/suivi-gps/suivi-gps.page';
+import { ParametresPage } from './features/parametres/parametres.page';
 
 const ARTICLES_ROLES = [
   'Admin',
@@ -295,6 +297,16 @@ export const routes: Routes = [
       {
         path: 'utilisateurs',
         component: UtilisateursPage,
+        canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'suivi-gps',
+        component: SuiviGpsPage,
+        canActivate: [roleGuard('Admin')],
+      },
+      {
+        path: 'parametres',
+        component: ParametresPage,
         canActivate: [roleGuard('Admin')],
       },
 

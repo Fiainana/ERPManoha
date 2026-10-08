@@ -103,4 +103,20 @@ export const NAV_GROUPS: NavGroup[] = [
     roles: ['Admin'],
     items: [],
   },
+  {
+    id: 'suivi-gps',
+    label: 'Suivi GPS',
+    icon: 'gps',
+    route: '/suivi-gps',
+    roles: ['Admin'],
+    items: [],
+  },
+  {
+    id: 'parametres',
+    label: 'Paramètres',
+    icon: 'settings',
+    route: '/parametres',
+    roles: ['Admin'],
+    items: [],
+  },
 ];
