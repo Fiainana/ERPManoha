@@ -161,6 +161,7 @@ export class DashboardApiService {
     const fa = this.bag(b['factures'] ?? b['Factures']);
     const clients = this.bag(b['clients'] ?? b['Clients']);
     const periode = this.bag(b['periode'] ?? b['Periode']);
+    const obj = this.bag(b['objectif'] ?? b['Objectif']);
 
     const cards: DashboardKpiCard[] = [
       {
@@ -171,6 +172,34 @@ export class DashboardApiService {
         tone: 'accent',
         route: '/vente/factures',
       },
+    ];
+
+    // Objectif du mois (individuel ou équipe)
+    const objMontant = this.num(
+      obj['montantObjectif'] ?? obj['MontantObjectif'] ?? obj['objectifTotal'] ?? obj['ObjectifTotal']
+    );
+    const objRealise = this.num(
+      obj['caRealise'] ?? obj['CaRealise'] ?? obj['caRealiseTotal'] ?? obj['CaRealiseTotal']
+    );
+    const objTaux = this.num(
+      obj['tauxRealisationPct'] ?? obj['TauxRealisationPct'] ?? obj['tauxMoyenPct'] ?? obj['TauxMoyenPct']
+    );
+
+    if (objMontant > 0 || Object.keys(obj).length > 0) {
+      cards.push({
+        id: 'objectif',
+        label: mes ? 'Objectif du mois' : 'Objectifs équipe',
+        value: this.money(objMontant),
+        hint:
+          objMontant > 0
+            ? `${this.money(objRealise)} réalisé · ${objTaux.toFixed(0)} %`
+            : 'Non défini',
+        tone: objTaux >= 100 ? 'ok' : objTaux >= 70 ? 'default' : objMontant > 0 ? 'warn' : 'default',
+        route: mes ? undefined : '/vente/objectifs',
+      });
+    }
+
+    cards.push(
       {
         id: 'devis-ca',
         label: mes ? 'Mon CA devis' : 'CA devis',
@@ -198,8 +227,8 @@ export class DashboardApiService {
         value: this.money(this.num(clients['encoursTotal'] ?? clients['EncoursTotal'])),
         hint: `${this.int(clients['avecEncoursNb'] ?? clients['AvecEncoursNb'])} client(s)`,
         route: '/vente/clients',
-      },
-    ];
+      }
+    );
 
     const topClients = this.arr(b['topClientsCa'] ?? b['TopClientsCa']).map((r) => {
       const row = this.bag(r);
@@ -286,7 +315,7 @@ export class DashboardApiService {
 
     return {
       mode: 'depot',
-      periodeLabel: 'Aujourd\'hui',
+      periodeLabel: "Aujourd'hui",
       cards,
       lists: [
         { title: 'Stocks critiques', items: critiques, empty: 'Aucun stock sous minimum' },
@@ -338,9 +367,7 @@ export class DashboardApiService {
   }
 
   private money(n: number): string {
-    return (
-      new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar'
-    );
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar';
   }
 
   private fmtQty(n: number): string {
