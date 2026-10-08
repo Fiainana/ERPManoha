@@ -12,111 +12,130 @@ export interface NavGroup {
   id: string;
   label: string;
   icon: string;
+  /** Section du menu (titre affiché au-dessus du premier groupe visible de la section). */
+  section: NavSection;
   roles?: AppRole[];
   items: NavItem[];
+  /** Lien direct sans sous-menu */
   route?: string;
 }
 
+export type NavSection = 'Pilotage' | 'Commercial' | 'Stock & dépôt' | 'Administration';
+
+const ADMIN: AppRole[] = ['Admin'];
+const DEPOT: AppRole[] = ['Admin', 'Depot'];
+
+/**
+ * Menu ERP, organisé par métier (hors comptoir et borne d'impression).
+ * Un groupe n'apparaît que si l'utilisateur a accès à au moins un de ses écrans.
+ */
 export const NAV_GROUPS: NavGroup[] = [
+  // —— Pilotage ——
   {
     id: 'dashboard',
     label: 'Tableau de bord',
     icon: 'dashboard',
+    section: 'Pilotage',
     route: '/',
     items: [],
   },
   {
-    id: 'articles',
-    label: 'Articles',
-    icon: 'inventory',
-    route: '/articles',
-    roles: ['Admin', 'Commercial', 'Vendeur', 'Rayon', 'Caisse', 'Depot', 'Recouvrement'],
-    items: [],
+    id: 'rapports',
+    label: 'Rapports',
+    icon: 'report',
+    section: 'Pilotage',
+    roles: ADMIN,
+    items: [
+      { label: 'État de vente comptoir', route: '/etat/comptoir', roles: ADMIN },
+      { label: 'État de vente B2B', route: '/etat/b2b', roles: ADMIN },
+      { label: 'État de vente consolidé', route: '/etat/tous', roles: ADMIN },
+      { label: 'Journal de caisse', route: '/etat/journal-caisse', roles: ADMIN },
+      { label: 'Rapport par e-mail', route: '/etat/rapport-mail', roles: ADMIN },
+    ],
   },
+
+  // —— Commercial ——
   {
     id: 'vente',
-    label: 'Vente',
+    label: 'Ventes',
     icon: 'sell',
+    section: 'Commercial',
     roles: ['Admin', 'Commercial', 'Recouvrement'],
     items: [
       { label: 'Clients', route: '/vente/clients', roles: ['Admin', 'Commercial', 'Recouvrement'] },
       { label: 'Devis', route: '/vente/devis', roles: ['Admin', 'Commercial'] },
       { label: 'Factures', route: '/vente/factures', roles: ['Admin', 'Commercial'] },
-      { label: 'Demandes devis import', route: '/vente/demandes-devis-import', roles: ['Admin', 'Commercial'] },
-      { label: 'Objectifs CA', route: '/vente/objectifs', roles: ['Admin'] },
-    ],
-  },
-  {
-    id: 'etat',
-    label: 'État',
-    icon: 'dashboard',
-    roles: ['Admin'],
-    items: [
-      { label: 'État vente comptoir', route: '/etat/comptoir', roles: ['Admin'] },
-      { label: 'État vente B2B', route: '/etat/b2b', roles: ['Admin'] },
-      { label: 'État vente consolidé', route: '/etat/tous', roles: ['Admin'] },
-      { label: 'Journal de caisse', route: '/etat/journal-caisse', roles: ['Admin'] },
-      { label: 'Rapport e-mail', route: '/etat/rapport-mail', roles: ['Admin'] },
+      { label: 'Objectifs CA', route: '/vente/objectifs', roles: ADMIN },
     ],
   },
   {
     id: 'achat',
-    label: 'Achat',
+    label: 'Achats',
     icon: 'shopping',
+    section: 'Commercial',
     roles: ['Admin', 'Commercial', 'Depot'],
     items: [
-      { label: 'Fournisseurs', route: '/achat/fournisseurs', roles: ['Admin'] },
       { label: "Mes demandes d'achat", route: '/achat/demandes-achat', roles: ['Admin', 'Commercial'] },
-      { label: "Demandes d'achat (Admin)", route: '/achat/demandes-achat-admin', roles: ['Admin'] },
-      { label: "Préparations d'achat", route: '/achat/prepa-achat', roles: ['Admin'] },
-      { label: 'BC Achat', route: '/achat/bc-achat', roles: ['Admin', 'Depot'] },
-      { label: 'BL / Réceptions', route: '/achat/bl-achat', roles: ['Admin', 'Depot'] },
-      { label: 'Factures achat', route: '/achat/factures-achat', roles: ['Admin'] },
+      { label: "Demandes d'achat à traiter", route: '/achat/demandes-achat-admin', roles: ADMIN },
+      { label: "Préparations d'achat", route: '/achat/prepa-achat', roles: ADMIN },
+      { label: 'Bons de commande', route: '/achat/bc-achat', roles: DEPOT },
+      { label: 'Réceptions (BL)', route: '/achat/bl-achat', roles: DEPOT },
+      { label: 'Factures fournisseurs', route: '/achat/factures-achat', roles: ADMIN },
+      { label: 'Fournisseurs', route: '/achat/fournisseurs', roles: ADMIN },
     ],
+  },
+
+  // —— Stock & dépôt ——
+  {
+    id: 'articles',
+    label: 'Articles',
+    icon: 'inventory',
+    section: 'Stock & dépôt',
+    route: '/articles',
+    roles: ['Admin', 'Commercial', 'Vendeur', 'Rayon', 'Caisse', 'Depot', 'Recouvrement'],
+    items: [],
   },
   {
     id: 'depot',
     label: 'Dépôt',
     icon: 'warehouse',
-    roles: ['Admin', 'Depot'],
+    section: 'Stock & dépôt',
+    roles: DEPOT,
     items: [
-      { label: 'Bons de retour', route: '/depot/bons-retour', roles: ['Admin', 'Depot'] },
-      { label: 'BC Achat (réception)', route: '/depot/bc-reception', roles: ['Admin', 'Depot'] },
-      { label: 'Inventaire', route: '/depot/inventaire', roles: ['Admin', 'Depot'] },
-      { label: 'Mouvements de stock', route: '/depot/mouvements-stock', roles: ['Admin', 'Depot'] },
-      { label: 'Factures retour', route: '/depot/factures-retour', roles: ['Admin', 'Depot'] },
+      { label: 'Réception des commandes', route: '/depot/bc-reception', roles: DEPOT },
+      { label: 'Bons de retour', route: '/depot/bons-retour', roles: DEPOT },
+      { label: 'Factures de retour', route: '/depot/factures-retour', roles: DEPOT },
+      { label: 'Inventaire', route: '/depot/inventaire', roles: DEPOT },
+      { label: 'Mouvements de stock', route: '/depot/mouvements-stock', roles: DEPOT },
     ],
   },
-  {
-    id: 'recouvrement',
-    label: 'Recouvrement',
-    icon: 'payments',
-    route: '/recouvrement',
-    roles: ['Admin', 'Recouvrement'],
-    items: [],
-  },
+
+  // —— Administration ——
   {
     id: 'utilisateurs',
     label: 'Utilisateurs',
     icon: 'users',
+    section: 'Administration',
     route: '/utilisateurs',
-    roles: ['Admin'],
+    roles: ADMIN,
     items: [],
   },
   {
     id: 'suivi-gps',
     label: 'Suivi GPS',
     icon: 'gps',
+    section: 'Administration',
     route: '/suivi-gps',
-    roles: ['Admin'],
+    roles: ADMIN,
     items: [],
   },
   {
     id: 'parametres',
     label: 'Paramètres',
     icon: 'settings',
+    section: 'Administration',
     route: '/parametres',
-    roles: ['Admin'],
+    roles: ADMIN,
     items: [],
   },
 ];

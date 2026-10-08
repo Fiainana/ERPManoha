@@ -30,7 +30,10 @@
     </div>
 
     <nav class="sidebar__nav" aria-label="Navigation principale">
-      @for (group of groups(); track group.id) {
+      @for (group of groups(); track group.id; let i = $index) {
+        @if (i === 0 || groups()[i - 1].section !== group.section) {
+          <p class="sidebar__section">{{ group.section }}</p>
+        }
         @if (group.items.length === 0 && group.route) {
           <a
             [routerLink]="group.route"

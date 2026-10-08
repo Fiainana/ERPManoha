@@ -77,8 +77,17 @@ export class DashboardApiService {
         id: 'fa-mois',
         label: 'CA factures (période)',
         value: this.money(this.num(per['facturesCaTtc'] ?? per['FacturesCaTtc'])),
-        hint: `${this.int(per['facturesNb'] ?? per['FacturesNb'])} facture(s)`,
+        hint: `${this.int(per['facturesNb'] ?? per['FacturesNb'])} facture(s) de vente`,
         route: '/vente/factures',
+      },
+      {
+        // Factures de retour : comptées à part, jamais déduites du CA ci-dessus.
+        id: 'retours-mois',
+        label: 'Retours clients (période)',
+        value: this.money(this.num(per['retoursTtc'] ?? per['RetoursTtc'])),
+        hint: this.retoursHint(per),
+        tone: this.int(per['retoursNb'] ?? per['RetoursNb']) > 0 ? 'warn' : 'ok',
+        route: '/depot/factures-retour',
       },
       {
         id: 'devis-mois',
@@ -93,7 +102,7 @@ export class DashboardApiService {
         value: this.money(this.num(imp['resteAPayer'] ?? imp['ResteAPayer'])),
         hint: `${this.int(imp['nb'] ?? imp['Nb'])} facture(s) impayée(s)`,
         tone: 'warn',
-        route: '/recouvrement',
+        route: '/vente/factures',
       },
       {
         id: 'da',
@@ -155,6 +164,14 @@ export class DashboardApiService {
     };
   }
 
+  /** « 4 facture(s) de retour · CA net 1 234 Ar » ou « Aucun retour ». */
+  private retoursHint(per: Record<string, unknown>): string {
+    const nb = this.int(per['retoursNb'] ?? per['RetoursNb']);
+    if (nb === 0) return 'Aucun retour';
+    const net = this.num(per['facturesCaNetTtc'] ?? per['FacturesCaNetTtc']);
+    return `${nb} facture(s) de retour · CA net ${this.money(net)}`;
+  }
+
   private mapCommercial(raw: unknown, mes: boolean): DashboardKpiBundle {
     const b = this.bag(raw);
     const devis = this.bag(b['devis'] ?? b['Devis']);
@@ -168,7 +185,11 @@ export class DashboardApiService {
         id: 'fa-ca',
         label: mes ? 'Mon CA factures' : 'CA factures',
         value: this.money(this.num(fa['periodeCaTtc'] ?? fa['PeriodeCaTtc'])),
-        hint: `${this.int(fa['periodeNb'] ?? fa['PeriodeNb'])} facture(s)`,
+        hint:
+          `${this.int(fa['periodeNb'] ?? fa['PeriodeNb'])} facture(s)` +
+          (this.int(fa['retoursNb'] ?? fa['RetoursNb']) > 0
+            ? ` · retours ${this.money(this.num(fa['retoursTtc'] ?? fa['RetoursTtc']))}`
+            : ''),
         tone: 'accent',
         route: '/vente/factures',
       },
@@ -219,7 +240,7 @@ export class DashboardApiService {
         value: this.money(this.num(fa['resteAPayer'] ?? fa['ResteAPayer'])),
         hint: `${this.int(fa['impayeesNb'] ?? fa['ImpayeesNb'])} impayée(s)`,
         tone: 'warn',
-        route: '/recouvrement',
+        route: '/vente/factures',
       },
       {
         id: 'encours',

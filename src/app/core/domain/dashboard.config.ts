@@ -95,14 +95,6 @@ export const DASHBOARD_ACTIONS: DashboardAction[] = [
     roles: ['Admin', 'Depot'],
   },
   {
-    id: 'recouvrement',
-    label: 'Recouvrement',
-    description: 'Suivi des encaissements',
-    route: '/recouvrement',
-    icon: 'recouvrement',
-    roles: ['Admin', 'Recouvrement'],
-  },
-  {
     id: 'utilisateurs',
     label: 'Utilisateurs',
     description: 'Comptes & rôles',
@@ -126,13 +118,6 @@ export const DASHBOARD_INSIGHTS: DashboardInsight[] = [
     description: 'Réceptions, retours et inventaires centralisés hors borne RFID.',
     roles: ['Admin', 'Depot'],
     tone: 'info',
-  },
-  {
-    id: 'recouvrement-focus',
-    title: 'Recouvrement',
-    description: 'Suivi des factures et règlements multi-clients.',
-    roles: ['Admin', 'Recouvrement'],
-    tone: 'default',
   },
   {
     id: 'admin-governance',

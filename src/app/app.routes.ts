@@ -12,7 +12,6 @@ import { DevisDetailPage } from './features/vente/devis-detail.page';
 import { DevisFormPage } from './features/vente/devis-form.page';
 import { FacturesPage } from './features/vente/factures.page';
 import { FactureDetailPage } from './features/vente/facture-detail.page';
-import { DemandesDevisImportPage } from './features/vente/demandes-devis-import.page';
 import { FournisseursPage } from './features/achat/fournisseurs.page';
 import { FournisseurDetailPage } from './features/achat/fournisseur-detail.page';
 import { FournisseurFormPage } from './features/achat/fournisseur-form.page';
@@ -35,7 +34,6 @@ import { InventaireDetailPage } from './features/depot/inventaire-detail.page';
 import { MouvementsStockPage } from './features/depot/mouvements-stock.page';
 import { FacturesRetourPage } from './features/depot/factures-retour.page';
 import { FactureRetourDetailPage } from './features/depot/facture-retour-detail.page';
-import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
 import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
 import { EtatVentePage } from './features/etat/etat-vente.page';
 import { JournalCaissePage } from './features/etat/journal-caisse.page';
@@ -116,11 +114,6 @@ export const routes: Routes = [
         path: 'vente/factures/:numeroPiece',
         component: FactureDetailPage,
         canActivate: [roleGuard(...FACTURES_ROLES)],
-      },
-      {
-        path: 'vente/demandes-devis-import',
-        component: DemandesDevisImportPage,
-        canActivate: [roleGuard('Admin', 'Commercial')],
       },
       {
         path: 'vente/objectifs',
@@ -288,11 +281,6 @@ export const routes: Routes = [
         canActivate: [roleGuard(...DEPOT_ROLES)],
       },
 
-      {
-        path: 'recouvrement',
-        component: RecouvrementPage,
-        canActivate: [roleGuard('Admin', 'Recouvrement')],
-      },
 
       {
         path: 'utilisateurs',
