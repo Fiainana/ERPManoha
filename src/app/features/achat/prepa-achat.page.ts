@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -18,7 +18,7 @@ import { BcAchatEntete } from '../../core/models/bc-achat.model';
 
 @Component({
   selector: 'app-prepa-achat-page',
-  imports: [RouterLink, FormsModule, DatePipe, DecimalPipe],
+  imports: [RouterLink, FormsModule, DatePipe],
   templateUrl: './doc-achat-list.page.html',
   styleUrl: './doc-achat-list.page.scss',
 })

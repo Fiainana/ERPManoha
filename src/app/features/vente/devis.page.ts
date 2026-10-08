@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DevisService } from '../../core/services/devis.service';
@@ -19,7 +19,7 @@ import { DevisEntete } from '../../core/models/devis.model';
 
 @Component({
   selector: 'app-devis-page',
-  imports: [RouterLink, FormsModule, DatePipe, DecimalPipe],
+  imports: [RouterLink, FormsModule, DatePipe],
   templateUrl: './devis.page.html',
   styleUrl: './devis.page.scss',
 })
