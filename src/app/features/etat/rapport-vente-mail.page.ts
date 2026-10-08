@@ -10,7 +10,7 @@ import {
   selector: 'app-rapport-vente-mail-page',
   imports: [FormsModule, DatePipe],
   templateUrl: './rapport-vente-mail.page.html',
-  styleUrl: './etat-vente.page.scss',
+  styleUrls: ['./etat-vente.page.scss', './rapport-mail.extra.scss'],
 })
 export class RapportVenteMailPage implements OnInit {
   private readonly api = inject(RapportVenteMailService);
