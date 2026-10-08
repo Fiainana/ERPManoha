@@ -75,7 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'etat',
     label: 'État',
-    icon: 'assessment',
+    icon: 'dashboard',
     roles: ['Admin'],
     items: [
       {
