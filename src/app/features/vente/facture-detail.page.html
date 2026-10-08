@@ -30,8 +30,8 @@
           Bon de retour
         </button>
       }
-      <button type="button" class="btn btn--primary" (click)="imprimer()" [disabled]="acting() || loading()">
-        Imprimer
+      <button type="button" class="btn btn--primary" (click)="ouvrirImpression()" [disabled]="acting() || loading()">
+        {{ acting() && impressionOpen() ? 'Préparation…' : 'Imprimer' }}
       </button>
     </div>
   </header>
@@ -153,6 +153,42 @@
           </div>
         }
       </section>
+    </div>
+  }
+
+  @if (impressionOpen()) {
+    <div class="modal-backdrop" (click)="fermerImpression()"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="impression-title">
+      <h2 id="impression-title">Imprimer la facture</h2>
+      <p class="modal__hint">
+        Facture <strong>{{ detail()?.entete?.numeroPiece }}</strong>
+        @if (!auth.isAdmin()) {
+          — une seule impression est autorisée, la réimpression est réservée à l'administrateur.
+        }
+      </p>
+      <div class="print-choices" role="group" aria-label="Format d'impression">
+        <button type="button" class="print-choice" (click)="imprimer('tva')" [disabled]="acting()">
+          <span class="print-choice__icon print-choice__icon--portrait" aria-hidden="true"></span>
+          <span class="print-choice__text">
+            <strong>Avec TVA</strong>
+            <small>A4 portrait · HT, TVA et TTC détaillés</small>
+          </span>
+        </button>
+        <button type="button" class="print-choice" (click)="imprimer('sans-tva')" [disabled]="acting()">
+          <span class="print-choice__icon print-choice__icon--paysage" aria-hidden="true">
+            <i></i><i></i>
+          </span>
+          <span class="print-choice__text">
+            <strong>Sans TVA</strong>
+            <small>A4 paysage · 2 exemplaires A5 (client + Manoha), prix TTC</small>
+          </span>
+        </button>
+      </div>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" (click)="fermerImpression()" [disabled]="acting()">
+          Annuler
+        </button>
+      </div>
     </div>
   }
 

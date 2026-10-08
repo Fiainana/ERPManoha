@@ -11,6 +11,8 @@ import {
   FactureListResult,
 } from '../models/facture.model';
 
+export type FormatImpressionFacture = 'tva' | 'sans-tva';
+
 @Injectable({ providedIn: 'root' })
 export class FacturesService {
   private readonly http = inject(HttpClient);
@@ -48,9 +50,14 @@ export class FacturesService {
       );
   }
 
-  getPdf(numeroPiece: string) {
+  /**
+   * Document d'impression. `tva` : A4 portrait avec TVA ;
+   * `sans-tva` : A4 paysage, deux exemplaires A5 côte à côte, sans TVA.
+   */
+  getPdf(numeroPiece: string, format: FormatImpressionFacture = 'tva') {
     return this.http
       .get(`${this.base}/${encodeURIComponent(numeroPiece)}/pdf`, {
+        params: new HttpParams().set('format', format),
         responseType: 'blob',
         observe: 'response',
       })
@@ -72,18 +79,37 @@ export class FacturesService {
       );
   }
 
-  downloadPdf(numeroPiece: string) {
-    return this.getPdf(numeroPiece).pipe(
-      map(({ blob, fileName }) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        return fileName;
-      })
-    );
+  /**
+   * Impression directe : le PDF est chargé dans une iframe invisible et la boîte d'impression
+   * du navigateur s'ouvre (pas de téléchargement, pas de nouvel onglet). L'orientation
+   * (portrait / paysage) suit la page du PDF.
+   */
+  imprimerDirect(blob: Blob): void {
+    const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+    const frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    frame.src = url;
+
+    const nettoyer = () => {
+      frame.remove();
+      URL.revokeObjectURL(url);
+    };
+    frame.onload = () => {
+      // Laisse le lecteur PDF du navigateur finir le rendu avant d'imprimer.
+      setTimeout(() => {
+        try {
+          frame.contentWindow?.focus();
+          frame.contentWindow?.print();
+        } catch {
+          // Lecteur PDF indisponible dans l'iframe : repli sur un onglet.
+          this.openPrint(blob);
+        }
+        // La boîte d'impression est modale ; on nettoie bien après.
+        setTimeout(nettoyer, 120_000);
+      }, 400);
+    };
+    document.body.appendChild(frame);
   }
 
   openPrint(blob: Blob): void {

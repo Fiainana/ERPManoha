@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FacturesService } from '../../core/services/factures.service';
+import { FacturesService, FormatImpressionFacture } from '../../core/services/factures.service';
 import { AuthService } from '../../core/services/auth.service';
 import { FactureDetail } from '../../core/models/facture.model';
 
@@ -24,6 +24,7 @@ export class FactureDetailPage implements OnInit {
   readonly toast = signal<string | null>(null);
   readonly detail = signal<FactureDetail | null>(null);
   readonly retourOpen = signal(false);
+  readonly impressionOpen = signal(false);
 
   rfid = '';
   private piece = '';
@@ -57,19 +58,32 @@ export class FactureDetailPage implements OnInit {
     return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar';
   }
 
-  imprimer(): void {
+  ouvrirImpression(): void {
+    this.error.set(null);
+    this.impressionOpen.set(true);
+  }
+
+  fermerImpression(): void {
+    if (this.acting()) return;
+    this.impressionOpen.set(false);
+  }
+
+  /** Génère le document et ouvre directement la boîte d'impression (pas de téléchargement). */
+  imprimer(format: FormatImpressionFacture): void {
     if (this.acting()) return;
     this.acting.set(true);
     this.error.set(null);
-    this.api.getPdf(this.piece).subscribe({
+    this.api.getPdf(this.piece, format).subscribe({
       next: ({ blob }) => {
-        this.api.openPrint(blob);
+        this.api.imprimerDirect(blob);
         this.acting.set(false);
-        this.showToast('Impression lancée');
+        this.impressionOpen.set(false);
+        this.showToast(format === 'tva' ? 'Impression avec TVA lancée' : 'Impression sans TVA (2 exemplaires) lancée');
         this.load();
       },
       error: (err) => {
         this.acting.set(false);
+        this.impressionOpen.set(false);
         this.error.set(err?.message || 'Impression impossible');
       },
     });

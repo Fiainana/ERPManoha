@@ -317,3 +317,87 @@
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+/* —— Choix du format d'impression —— */
+.print-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.print-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--me-border);
+  border-radius: var(--me-radius);
+  background: var(--me-white);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    border-color: var(--me-red-border);
+    background: var(--me-red-soft);
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+}
+
+.print-choice__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  strong {
+    font-weight: 650;
+  }
+
+  small {
+    font-size: var(--me-fs-sm);
+    color: var(--me-text-muted);
+  }
+}
+
+/* Pictogramme de la feuille : portrait, ou paysage coupé en deux A5. */
+.print-choice__icon {
+  flex-shrink: 0;
+  display: flex;
+  gap: 2px;
+  border: 1.5px solid var(--me-text-secondary);
+  border-radius: 2px;
+  background: var(--me-white);
+
+  &--portrait {
+    width: 26px;
+    height: 36px;
+    background: linear-gradient(var(--me-red), var(--me-red)) 4px 5px / 12px 2px no-repeat,
+      repeating-linear-gradient(transparent 0 5px, var(--me-border) 5px 6px) 4px 11px / 16px 20px no-repeat;
+  }
+
+  &--paysage {
+    width: 40px;
+    height: 28px;
+    padding: 3px;
+
+    i {
+      flex: 1;
+      border-radius: 1px;
+      background: repeating-linear-gradient(transparent 0 4px, var(--me-border) 4px 5px);
+      border-top: 2px solid var(--me-red);
+    }
+
+    i + i {
+      border-left: 1px dashed var(--me-text-muted);
+    }
+  }
+}
