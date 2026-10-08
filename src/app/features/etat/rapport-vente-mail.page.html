@@ -1,0 +1,98 @@
+<div class="etat">
+  <header class="etat__head">
+    <div>
+      <p class="eyebrow">État · Admin</p>
+      <h1>Rapport ventes par e-mail</h1>
+      <p class="etat__sub">
+        Envoi automatique du résumé + PDF d'état de vente. Heure et destinataires configurables.
+      </p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="etat-alert" role="alert">{{ error() }}</div>
+  }
+  @if (success()) {
+    <div class="etat-ok" role="status">{{ success() }}</div>
+  }
+
+  @if (loading() && !config()) {
+    <p class="etat-muted">Chargement…</p>
+  } @else {
+    <section class="etat-card">
+      <h2>Planification</h2>
+
+      <label class="etat-check">
+        <input type="checkbox" [(ngModel)]="actif" />
+        Activer l'envoi automatique
+      </label>
+
+      <div class="etat-row">
+        <label>
+          Heure
+          <input type="number" min="0" max="23" [(ngModel)]="heure" class="etat-input" />
+        </label>
+        <label>
+          Minute
+          <input type="number" min="0" max="59" [(ngModel)]="minute" class="etat-input" />
+        </label>
+      </div>
+      <p class="etat-hint">Heure locale du serveur API (défaut 17:00).</p>
+
+      <label class="etat-label">Destinataires (un e-mail par ligne)</label>
+      <textarea
+        class="etat-textarea"
+        rows="5"
+        [(ngModel)]="destinatairesText"
+        placeholder="direction@exemple.mg&#10;compta@exemple.mg"
+      ></textarea>
+
+      <p class="etat-label">PDF joints</p>
+      <div class="etat-checks">
+        <label class="etat-check"><input type="checkbox" [(ngModel)]="scopeComptoir" /> Comptoir</label>
+        <label class="etat-check"><input type="checkbox" [(ngModel)]="scopeB2b" /> B2B</label>
+        <label class="etat-check"><input type="checkbox" [(ngModel)]="scopeTous" /> Consolidé</label>
+      </div>
+
+      <div class="etat-actions">
+        <button type="button" class="btn-primary" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+
+      @if (config(); as c) {
+        <div class="etat-meta">
+          <p>
+            SMTP :
+            <strong [class.ok]="c.emailSmtpConfigure" [class.ko]="!c.emailSmtpConfigure">
+              {{ c.emailSmtpConfigure ? 'configuré' : 'non configuré (appsettings Email:*)' }}
+            </strong>
+          </p>
+          @if (c.derniereExecution) {
+            <p>
+              Dernier envoi :
+              <strong>{{ c.derniereExecution | date: 'dd/MM/yyyy' }}</strong>
+              @if (c.dernierStatut) {
+                — {{ c.dernierStatut }}
+              }
+            </p>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="etat-card">
+      <h2>Envoi manuel</h2>
+      <p class="etat-hint">Test immédiat ou rattrapage pour une date donnée.</p>
+      <label>
+        Date du rapport
+        <input type="date" [(ngModel)]="dateTest" class="etat-input" />
+      </label>
+      <div class="etat-actions">
+        <button type="button" class="btn-secondary" (click)="envoyerTest()" [disabled]="sending()">
+          {{ sending() ? 'Envoi…' : 'Envoyer maintenant' }}
+        </button>
+      </div>
+    </section>
+  }
+</div>

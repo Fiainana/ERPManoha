@@ -55,6 +55,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'État vente B2B', route: '/etat/b2b', roles: ['Admin'] },
       { label: 'État vente consolidé', route: '/etat/tous', roles: ['Admin'] },
       { label: 'Journal de caisse', route: '/etat/journal-caisse', roles: ['Admin'] },
+      { label: 'Rapport e-mail', route: '/etat/rapport-mail', roles: ['Admin'] },
     ],
   },
   {
