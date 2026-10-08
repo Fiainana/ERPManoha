@@ -1,0 +1,132 @@
+<div class="ev">
+  <header class="ev__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>État</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Journal de caisse</strong>
+      </nav>
+      <div class="ev__title-row">
+        <h1>Journal de caisse</h1>
+        <span class="count-pill">{{ loading() ? '…' : (result()?.count ?? 0) }}</span>
+      </div>
+      <p class="ev__subtitle">Encaissements du jour (lecture seule) — clôture indicative</p>
+    </div>
+  </header>
+
+  <div class="ev__toolbar">
+    <div class="field field--date">
+      <label for="jc-date">Date</label>
+      <input id="jc-date" type="date" [(ngModel)]="date" (change)="reload()" />
+    </div>
+    <div class="field" style="flex: 0 0 auto; justify-content: flex-end">
+      <label style="display: flex; align-items: center; gap: 0.4rem; height: 40px; cursor: pointer">
+        <input type="checkbox" [(ngModel)]="comptoirUniquement" (change)="reload()" />
+        Comptoir uniquement
+      </label>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="reload()" [disabled]="loading()">
+      {{ loading() ? 'Chargement…' : 'Afficher' }}
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (result(); as r) {
+    <div class="ev__kpis">
+      <div class="kpi">
+        <span class="kpi__label">Règlements</span>
+        <strong class="kpi__value">{{ r.count }}</strong>
+      </div>
+      <div class="kpi kpi--accent">
+        <span class="kpi__label">Total encaissé</span>
+        <strong class="kpi__value">{{ r.totalEncaissements | number: '1.0-0' }} <small>Ar</small></strong>
+      </div>
+    </div>
+
+    @if (r.parMode.length) {
+      <div class="panel" style="margin-bottom: 0.75rem">
+        <div class="thead" style="grid-template-columns: 2fr 1fr 1fr; min-width: 0">
+          <span>Mode de règlement</span>
+          <span class="num">Nb</span>
+          <span class="num">Total</span>
+        </div>
+        <ul class="tbody">
+          @for (m of r.parMode; track m.mode) {
+            <li class="trow" style="grid-template-columns: 2fr 1fr 1fr; min-width: 0">
+              <span>{{ m.mode }}</span>
+              <span class="num">{{ m.count }}</span>
+              <span class="num">{{ m.total | number: '1.0-0' }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (r.parJournal.length) {
+      <div class="panel" style="margin-bottom: 0.75rem">
+        <div class="thead" style="grid-template-columns: 2fr 1fr 1fr; min-width: 0">
+          <span>Journal trésorerie</span>
+          <span class="num">Nb</span>
+          <span class="num">Total</span>
+        </div>
+        <ul class="tbody">
+          @for (j of r.parJournal; track j.journal) {
+            <li class="trow" style="grid-template-columns: 2fr 1fr 1fr; min-width: 0">
+              <span>{{ j.journal }}</span>
+              <span class="num">{{ j.count }}</span>
+              <span class="num">{{ j.total | number: '1.0-0' }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
+
+  <div class="panel">
+    @if (loading() && !result()) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4, 5]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (!result() || result()!.items.length === 0) {
+      <div class="empty">
+        <h2>Aucun encaissement</h2>
+        <p>Aucun règlement enregistré pour cette date.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead" style="grid-template-columns: 0.8fr 1.2fr 1.4fr 1.2fr 1fr 1fr; min-width: 640px">
+          <span>N°</span>
+          <span>Mode</span>
+          <span>Client</span>
+          <span>Libellé</span>
+          <span>Journal</span>
+          <span class="num">Montant</span>
+        </div>
+        <ul class="tbody">
+          @for (it of result()!.items; track it.numero + '-' + $index) {
+            <li class="trow" style="grid-template-columns: 0.8fr 1.2fr 1.4fr 1.2fr 1fr 1fr; min-width: 640px">
+              <span class="ref">{{ it.numero || '—' }}</span>
+              <span>{{ it.modeIntitule || '—' }}</span>
+              <span class="client">
+                <span class="client__name">{{ it.clientIntitule || it.clientNumero || '—' }}</span>
+              </span>
+              <span class="tel">{{ it.libelle || '—' }}</span>
+              <span class="tel">{{ it.codeJournal || '—' }}</span>
+              <span class="num">{{ it.montant | number: '1.0-0' }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        {{ result()!.count }} règlement(s) · total {{ result()!.totalEncaissements | number: '1.0-0' }} Ar
+      </footer>
+    }
+  </div>
+</div>
