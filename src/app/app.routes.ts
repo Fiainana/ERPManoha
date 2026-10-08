@@ -38,6 +38,7 @@ import { FactureRetourDetailPage } from './features/depot/facture-retour-detail.
 import { RecouvrementPage } from './features/recouvrement/recouvrement.page';
 import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
 import { EtatVentePage } from './features/etat/etat-vente.page';
+import { JournalCaissePage } from './features/etat/journal-caisse.page';
 
 const ARTICLES_ROLES = [
   'Admin',
@@ -130,6 +131,17 @@ export const routes: Routes = [
         canActivate: [roleGuard('Admin')],
         data: { scope: 'b2b' },
       },
+      {
+        path: 'etat/tous',
+        component: EtatVentePage,
+        canActivate: [roleGuard('Admin')],
+        data: { scope: 'tous' },
+      },
+      {
+        path: 'etat/journal-caisse',
+        component: JournalCaissePage,
+        canActivate: [roleGuard('Admin')],
+      },
 
       {
         path: 'achat/fournisseurs',
@@ -196,11 +208,6 @@ export const routes: Routes = [
       {
         path: 'achat/bl-achat',
         component: BlAchatPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
-      },
-      {
-        path: 'achat/bl-achat/:piece',
-        component: DocAchatDetailPage,
         canActivate: [roleGuard('Admin', 'Depot')],
         data: { kind: 'receptions', listPath: '/achat/bl-achat', titleLabel: 'BL' },
       },
