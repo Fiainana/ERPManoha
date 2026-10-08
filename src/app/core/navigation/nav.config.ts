@@ -43,6 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Devis', route: '/vente/devis', roles: ['Admin', 'Commercial'] },
       { label: 'Factures', route: '/vente/factures', roles: ['Admin', 'Commercial'] },
       { label: 'Demandes devis import', route: '/vente/demandes-devis-import', roles: ['Admin', 'Commercial'] },
+      { label: 'Objectifs CA', route: '/vente/objectifs', roles: ['Admin'] },
     ],
   },
   {

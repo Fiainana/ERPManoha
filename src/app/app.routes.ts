@@ -40,6 +40,7 @@ import { UtilisateursPage } from './features/utilisateurs/utilisateurs.page';
 import { EtatVentePage } from './features/etat/etat-vente.page';
 import { JournalCaissePage } from './features/etat/journal-caisse.page';
 import { RapportVenteMailPage } from './features/etat/rapport-vente-mail.page';
+import { ObjectifsPage } from './features/etat/objectifs.page';
 
 const ARTICLES_ROLES = [
   'Admin',
@@ -118,6 +119,11 @@ export const routes: Routes = [
         path: 'vente/demandes-devis-import',
         component: DemandesDevisImportPage,
         canActivate: [roleGuard('Admin', 'Commercial')],
+      },
+      {
+        path: 'vente/objectifs',
+        component: ObjectifsPage,
+        canActivate: [roleGuard('Admin')],
       },
 
       {
