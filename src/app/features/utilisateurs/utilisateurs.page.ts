@@ -61,6 +61,7 @@ export class UtilisateursPage implements OnInit {
     Caisse: false,
     Depot: false,
     Recouvrement: false,
+    Responsable: false,
     Admin: false,
   };
   vendeur = true;
@@ -384,6 +385,7 @@ export class UtilisateursPage implements OnInit {
       Caisse: false,
       Depot: false,
       Recouvrement: false,
+      Responsable: false,
       Admin: false,
     };
     this.vendeur = true;

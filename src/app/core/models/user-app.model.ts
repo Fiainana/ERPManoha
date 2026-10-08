@@ -41,7 +41,7 @@ export interface CreateUserAppRequest {
   receptionnaire?: boolean;
   isAdmin?: boolean;
   actif?: boolean;
-  /** Admin, Vendeur, Caisse, Commercial, Depot, Recouvrement */
+  /** Admin, Vendeur, Caisse, Commercial, Depot, Recouvrement, Responsable */
   roles?: string[];
 }
 
@@ -79,5 +79,10 @@ export const APP_ROLE_OPTIONS = [
   { value: 'Caisse', label: 'Caisse', hint: 'Encaissement comptoir' },
   { value: 'Depot', label: 'Dépôt', hint: 'Stock, réceptions, BR' },
   { value: 'Recouvrement', label: 'Recouvrement', hint: 'Impayés & règlements' },
+  {
+    value: 'Responsable',
+    label: 'Responsable',
+    hint: 'Validation retours caisse (FA → BR) via badge RFID',
+  },
   { value: 'Admin', label: 'Admin', hint: 'Administration complète' },
 ] as const;
