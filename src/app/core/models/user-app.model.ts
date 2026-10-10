@@ -84,5 +84,11 @@ export const APP_ROLE_OPTIONS = [
     label: 'Responsable',
     hint: 'Validation retours caisse (FA → BR) via badge RFID',
   },
+  { value: 'HR', label: 'RH', hint: 'Ressources humaines : employés, congés, présence, pointeuse' },
+  {
+    value: 'ResponsableRH',
+    label: 'Responsable d’équipe',
+    hint: 'Avis sur les demandes d’absence de son département',
+  },
   { value: 'Admin', label: 'Admin', hint: 'Administration complète' },
 ] as const;

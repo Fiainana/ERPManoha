@@ -1,0 +1,199 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <a routerLink="/rh/absences">Congés & absences</a>
+        <span>›</span>
+        <strong>#{{ id }}</strong>
+      </nav>
+      @if (detail(); as d) {
+        <div class="title-row">
+          <h1>{{ typeAbsence(d.absence.type) }} — {{ d.absence.nom }}{{ d.absence.prenom ? ' ' + d.absence.prenom : '' }}</h1>
+          <span class="badge" [attr.data-tone]="tonAbsence(d.absence.statut)">{{ libelleStatut(d.absence.statut) }}</span>
+        </div>
+        <p class="subtitle">
+          {{ d.absence.dateDebut | date: 'EEEE dd/MM/yyyy' }}{{ d.absence.debutApresMidi ? ' (après-midi)' : '' }}
+          @if (d.absence.dateFin !== d.absence.dateDebut || d.absence.finMatin) {
+            → {{ d.absence.dateFin | date: 'EEEE dd/MM/yyyy' }}{{ d.absence.finMatin ? ' (matin)' : '' }}
+          }
+          · {{ d.absence.nbJours | number: '1.0-1' }} jour(s)
+        </p>
+      } @else {
+        <h1>Absence #{{ id }}</h1>
+      }
+    </div>
+    @if (detail(); as d) {
+      <div class="rh__actions">
+        <a class="btn btn--ghost" [routerLink]="['/rh/employes', d.absence.employeId]">Fiche employé</a>
+        @if (enAttente) {
+          <button type="button" class="btn btn--danger" (click)="demander('refuser')" [disabled]="acting()">Refuser</button>
+          <button type="button" class="btn btn--ok" (click)="demander('valider')" [disabled]="acting()">Valider</button>
+        }
+        @if (annulable) {
+          <button type="button" class="btn btn--ghost" (click)="demander('annuler')" [disabled]="acting()">Annuler l’absence</button>
+        }
+      </div>
+    }
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (detail(); as d) {
+    @if (d.absence.statut === 'EnAttenteResponsable') {
+      <div class="alert alert--warn">
+        En attente de l’avis du responsable du département{{ d.absence.departement ? ' ' + d.absence.departement : '' }}.
+        Vous pouvez quand même décider maintenant : l’historique le mentionnera.
+      </div>
+    }
+    @if (d.alertesEffectif.length) {
+      <div class="alert alert--warn">
+        Effectif du département :
+        <ul>
+          @for (al of d.alertesEffectif; track al.date) {
+            <li>{{ al.date | date: 'EEE dd/MM' }} : {{ al.absents }} absents pour {{ al.maximum }} autorisés ({{ al.noms.join(', ') }})</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="grid-2">
+      <section class="panel">
+        <header class="panel__head"><h2>Demande</h2></header>
+        <div class="panel__body">
+          <dl class="dl">
+            <div><dt>Employé</dt><dd>{{ d.absence.nom }} {{ d.absence.prenom || '' }} <span class="muted small">({{ d.absence.matricule }})</span></dd></div>
+            <div><dt>Département</dt><dd>{{ d.absence.departement || '—' }}</dd></div>
+            <div><dt>Origine</dt><dd>{{ d.absence.origine === 'Employe' ? 'Demande de l’employé' : 'Saisie RH' }}</dd></div>
+            <div><dt>Demandé le</dt><dd>{{ utc(d.absence.demandeLe) | date: 'dd/MM/yyyy HH:mm' }} <span class="muted small">{{ d.absence.demandePar }}</span></dd></div>
+            <div>
+              <dt>Avis du responsable</dt>
+              <dd>
+                @if (d.absence.avisResponsable === null) {
+                  —
+                } @else {
+                  <span class="badge" [attr.data-tone]="d.absence.avisResponsable ? 'ok' : 'danger'">
+                    {{ d.absence.avisResponsable ? 'Favorable' : 'Défavorable' }}
+                  </span>
+                  <span class="muted small"> {{ d.absence.avisPar }}</span>
+                }
+              </dd>
+            </div>
+            @if (d.absence.traitePar) {
+              <div><dt>Traité par</dt><dd>{{ d.absence.traitePar }} <span class="muted small">{{ utc(d.absence.traiteLe) | date: 'dd/MM HH:mm' }}</span></dd></div>
+            }
+          </dl>
+          @if (d.absence.motif) {
+            <p style="margin: 1rem 0 0"><span class="muted small">Motif :</span> {{ d.absence.motif }}</p>
+          }
+          @if (d.absence.commentaire) {
+            <p style="margin: 0.5rem 0 0"><span class="muted small">Commentaire :</span> {{ d.absence.commentaire }}</p>
+          }
+        </div>
+      </section>
+
+      @if (d.solde; as s) {
+        <section class="panel">
+          <header class="panel__head"><h2>Solde de congés</h2></header>
+          <div class="panel__body">
+            <dl class="dl">
+              <div><dt>Solde actuel</dt><dd class="strong">{{ s.solde | number: '1.0-1' }} j</dd></div>
+              <div><dt>Validés à venir</dt><dd>{{ s.planifies | number: '1.0-1' }} j</dd></div>
+              <div><dt>En attente</dt><dd>{{ s.enAttente | number: '1.0-1' }} j</dd></div>
+              <div><dt>Disponible</dt><dd [style.color]="s.soldeApresDemandes < 0 ? 'var(--me-red-deeper)' : null">{{ s.soldeApresDemandes | number: '1.0-1' }} j</dd></div>
+              <div><dt>Acquis / pris</dt><dd>{{ s.acquis | number: '1.0-1' }} / {{ s.pris | number: '1.0-1' }} j</dd></div>
+            </dl>
+          </div>
+        </section>
+      } @else {
+        <section class="panel">
+          <header class="panel__head"><h2>Solde</h2></header>
+          <div class="panel__body muted">Seuls les congés sont décomptés du solde.</div>
+        </section>
+      }
+    </div>
+
+    <section class="panel">
+      <header class="panel__head">
+        <h2>Justificatifs ({{ d.documents.length }})</h2>
+        @if (d.absence.statut !== 'Annulee' && d.absence.statut !== 'Refusee') {
+          <label class="btn btn--ghost btn--sm">
+            Ajouter
+            <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden (change)="deposer($event)" />
+          </label>
+        }
+      </header>
+      <div class="table-scroll">
+        <table class="tbl">
+          <tbody>
+            @for (doc of d.documents; track doc.id) {
+              <tr>
+                <td><button type="button" class="linkish" (click)="voir(doc)">{{ doc.nomFichier }}</button></td>
+                <td class="muted small">{{ taille(doc.taille) }}</td>
+                <td class="muted small">{{ utc(doc.deposeLe) | date: 'dd/MM/yyyy HH:mm' }} · {{ doc.deposePar }}</td>
+                <td><button type="button" class="linkish small" (click)="supprimerDocument(doc)">Supprimer</button></td>
+              </tr>
+            } @empty {
+              <tr><td class="muted">Aucun justificatif (PDF, JPEG, PNG ou WebP, 5 Mo maximum).</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header class="panel__head"><h2>Historique</h2></header>
+      <div class="table-scroll">
+        <table class="tbl">
+          <tbody>
+            @for (h of d.historique; track $index) {
+              <tr>
+                <td class="nowrap muted small">{{ utc(h.le) | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td class="strong">{{ libellesHistorique[h.action] || h.action }}</td>
+                <td>{{ h.acteur }} <span class="muted small">({{ h.role }})</span></td>
+                <td class="muted small">{{ h.commentaire }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (action(); as a) {
+  <div class="overlay" (click)="action.set(null)">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ detail()?.absence?.nom }}</p>
+          <h2>{{ libellesAction[a] }}</h2>
+        </div>
+      </header>
+      <form (ngSubmit)="confirmer()">
+        <div class="modal__body">
+          <label class="field">
+            <span>Commentaire {{ a === 'valider' ? '(facultatif)' : '' }}</span>
+            <textarea [(ngModel)]="commentaire" name="commentaire" rows="3"
+              [placeholder]="a === 'refuser' ? 'Motif du refus, transmis à l’employé' : ''"></textarea>
+          </label>
+          @if (detail()?.absence?.statut === 'Validee' && a === 'annuler') {
+            <p class="muted small" style="margin: 0">L’absence est déjà validée : l’annuler la retire du solde et du planning.</p>
+          }
+        </div>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="action.set(null)">Retour</button>
+          <button type="submit" [class]="a === 'valider' ? 'btn btn--ok' : 'btn btn--danger'" [disabled]="acting()">
+            {{ acting() ? '…' : libellesAction[a] }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}

@@ -39,6 +39,13 @@ export class NavigationService {
         if (item.route === path) return item.label;
       }
     }
-    return 'ERPManoha';
+    // Écran de détail (ex. /rh/employes/12) : libellé de l'écran parent le plus précis.
+    let parent: NavItem | null = null;
+    for (const g of NAV_GROUPS) {
+      for (const item of g.items) {
+        if (path.startsWith(item.route + '/') && item.route.length > (parent?.route.length ?? 0)) parent = item;
+      }
+    }
+    return parent?.label ?? 'ERPManoha';
   }
 }

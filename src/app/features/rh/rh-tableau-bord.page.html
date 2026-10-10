@@ -1,0 +1,288 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Ressources humaines</span>
+      </nav>
+      <div class="title-row">
+        <h1>Tableau de bord RH</h1>
+      </div>
+      <p class="subtitle">
+        @if (data(); as d) {
+          {{ d.date | date: 'EEEE d MMMM yyyy' }}
+        } @else {
+          Présence du jour, demandes à traiter et points d’attention
+        }
+      </p>
+    </div>
+    <div class="rh__actions">
+      <button type="button" class="btn btn--ghost" (click)="load()" [disabled]="loading()">
+        {{ loading() ? 'Actualisation…' : 'Actualiser' }}
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <div class="panel">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  }
+
+  @if (data(); as d) {
+    @if (d.pointeuse.synchro?.enErreur) {
+      <div class="alert" role="alert">
+        Synchronisation de la pointeuse en erreur : {{ d.pointeuse.synchro?.dernierStatut }}
+        — <a routerLink="/rh/pointeuse" class="linkish">voir la pointeuse</a>
+      </div>
+    }
+
+    <section class="kpis" aria-label="Présence du jour">
+      <a class="kpi" routerLink="/rh/presence" data-tone="ok">
+        <span>Présents</span>
+        <strong>{{ d.presenceDuJour.presents }}</strong>
+        <small>sur {{ d.presenceDuJour.total }} suivis</small>
+      </a>
+      <a class="kpi" routerLink="/rh/presence" data-tone="warn">
+        <span>En retard</span>
+        <strong>{{ d.presenceDuJour.enRetard }}</strong>
+      </a>
+      <a class="kpi" routerLink="/rh/presence" data-tone="danger">
+        <span>Absents non justifiés</span>
+        <strong>{{ d.presenceDuJour.absents }}</strong>
+      </a>
+      <a class="kpi" routerLink="/rh/presence">
+        <span>Pas encore arrivés</span>
+        <strong>{{ d.presenceDuJour.pasEncoreArrives }}</strong>
+      </a>
+      <a class="kpi" routerLink="/rh/planning">
+        <span>Repos / congé</span>
+        <strong>{{ d.presenceDuJour.enRepos + d.presenceDuJour.enAbsenceJustifiee }}</strong>
+        <small>{{ d.presenceDuJour.enRepos }} repos · {{ d.presenceDuJour.enAbsenceJustifiee }} absence(s)</small>
+      </a>
+      <a class="kpi" routerLink="/rh/absences" [attr.data-tone]="d.absencesEnAttente.nb ? 'warn' : ''">
+        <span>Demandes à traiter</span>
+        <strong>{{ d.absencesEnAttente.nb }}</strong>
+      </a>
+    </section>
+
+    @if (d.presenceDuJour.jourFerie) {
+      <div class="alert alert--warn">Jour férié : {{ d.presenceDuJour.jourFerie }}</div>
+    }
+
+    <div class="grid-2">
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Présence du jour</h2>
+          <a routerLink="/rh/presence" class="linkish small">Détail</a>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Employé</th>
+                <th>Statut</th>
+                <th>Arrivée</th>
+                <th class="num">Retard</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.presenceDuJour.lignes; track l.employeId) {
+                <tr class="clickable" [routerLink]="['/rh/employes', l.employeId]">
+                  <td class="strong">{{ l.nom }}</td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="tonPresence(l.statut)">{{ libellePresence(l.statut) }}</span>
+                    @if (l.reposType) {
+                      <span class="muted small"> {{ libelleRepos(l.reposType) }}</span>
+                    }
+                    @if (l.typeAbsence) {
+                      <span class="muted small"> {{ typeAbsence(l.typeAbsence) }}</span>
+                    }
+                  </td>
+                  <td class="nowrap">{{ l.arrivee?.substring(0, 5) || '—' }}</td>
+                  <td class="num">{{ l.retardMinutes ? l.retardMinutes + ' min' : '' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="muted">Aucun employé suivi.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Demandes d’absence à traiter</h2>
+          <a routerLink="/rh/absences" class="linkish small">Toutes</a>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Employé</th>
+                <th>Type</th>
+                <th>Période</th>
+                <th>Étape</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of d.absencesEnAttente.items; track a.id) {
+                <tr class="clickable" [routerLink]="['/rh/absences', a.id]">
+                  <td class="strong">{{ a.nom }}</td>
+                  <td>{{ typeAbsence(a.type) }}</td>
+                  <td class="nowrap">
+                    {{ a.dateDebut | date: 'dd/MM' }}
+                    @if (a.dateFin !== a.dateDebut) {
+                      → {{ a.dateFin | date: 'dd/MM' }}
+                    }
+                    <span class="muted small">({{ a.nbJours | number: '1.0-1' }} j)</span>
+                  </td>
+                  <td><span class="badge" [attr.data-tone]="tonAbsence(a.statut)">{{ libelleStatutAbsence(a.statut) }}</span></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="muted">Rien à traiter.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Anomalies d’hier ({{ d.anomaliesVeille.date | date: 'dd/MM' }})</h2>
+          <a routerLink="/rh/presence" class="linkish small">Corriger</a>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <tbody>
+              @for (a of d.anomaliesVeille.items; track a.employeId) {
+                <tr>
+                  <td class="strong">{{ a.nom }}</td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="a.anomalie === 'SortieManquante' ? 'warn' : 'danger'">
+                      {{ a.anomalie === 'SortieManquante' ? 'Sortie manquante' : 'Absence non justifiée' }}
+                    </span>
+                  </td>
+                  <td class="muted small">{{ a.pointages.join(' · ') }}</td>
+                </tr>
+              } @empty {
+                <tr><td class="muted">Aucune anomalie.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Absents aujourd’hui</h2>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <tbody>
+              @for (a of d.absentsAujourdhui; track a.id) {
+                <tr class="clickable" [routerLink]="['/rh/absences', a.id]">
+                  <td class="strong">{{ a.nom }}</td>
+                  <td>{{ typeAbsence(a.type) }}</td>
+                  <td class="nowrap muted small">jusqu’au {{ a.dateFin | date: 'dd/MM' }}</td>
+                </tr>
+              } @empty {
+                <tr><td class="muted">Personne en congé ou en absence validée.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Contrats à surveiller</h2>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <tbody>
+              @for (c of d.contratsAEcheance.items; track c.contratId) {
+                <tr class="clickable" [routerLink]="['/rh/employes', c.employeId]">
+                  <td class="strong">{{ c.nom }}</td>
+                  <td>{{ c.type }}</td>
+                  <td class="nowrap">fin {{ c.dateFin | date: 'dd/MM/yyyy' }}</td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="c.expire ? 'danger' : 'warn'">
+                      {{ c.expire ? 'Expiré' : c.joursRestants + ' j' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+              @for (e of d.employesSansContrat; track e.employeId) {
+                <tr class="clickable" [routerLink]="['/rh/employes', e.employeId]">
+                  <td class="strong">{{ e.nom }}</td>
+                  <td colspan="3"><span class="badge">Sans contrat</span></td>
+                </tr>
+              }
+              @if (!d.contratsAEcheance.items.length && !d.employesSansContrat.length) {
+                <tr><td class="muted">Aucun contrat à échéance dans les {{ d.contratsAEcheance.joursAlerte }} jours.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Fiches à compléter</h2>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <tbody>
+              @for (f of d.fichesIncompletes; track f.employeId) {
+                <tr class="clickable" [routerLink]="['/rh/employes', f.employeId]">
+                  <td class="strong">{{ f.nom }}</td>
+                  <td class="muted small">Manque : {{ manquants(f.manquants) }}</td>
+                </tr>
+              } @empty {
+                <tr><td class="muted">Toutes les fiches sont complètes.</td></tr>
+              }
+              @for (p of d.pointeuse.personnesSansFiche; track p.pointeuseNo) {
+                <tr class="clickable" routerLink="/rh/pointeuse">
+                  <td class="strong">{{ p.nom || 'N° ' + p.pointeuseNo }}</td>
+                  <td class="muted small">Sur la pointeuse (n° {{ p.pointeuseNo }}) mais sans fiche RH</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <header class="panel__head">
+        <h2>Effectifs</h2>
+        <span class="muted small">
+          @if (d.pointeuse.synchro; as s) {
+            Pointeuse synchronisée le {{ utc(s.dernierSucces) | date: 'dd/MM HH:mm' }}
+          }
+        </span>
+      </header>
+      <div class="panel__body">
+        <dl class="dl">
+          <div><dt>Actifs</dt><dd>{{ d.effectifs.actifs }}</dd></div>
+          <div><dt>Suspendus</dt><dd>{{ d.effectifs.suspendus }}</dd></div>
+          <div><dt>Embauches du mois</dt><dd>{{ d.effectifs.embauchesDuMois }}</dd></div>
+          <div><dt>Sorties du mois</dt><dd>{{ d.effectifs.sortiesDuMois }}</dd></div>
+          @for (p of d.parDepartement; track p.departement) {
+            <div><dt>{{ p.departement }}</dt><dd>{{ p.effectif }}</dd></div>
+          }
+        </dl>
+      </div>
+    </section>
+  }
+</div>

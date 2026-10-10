@@ -6,6 +6,8 @@ export interface NavItem {
   /** Si vide / undefined → visible pour tout utilisateur authentifié */
   roles?: AppRole[];
   icon?: string;
+  /** Actif seulement sur la route exacte (ex. /rh, dont les autres écrans sont des sous-routes). */
+  exact?: boolean;
 }
 
 export interface NavGroup {
@@ -20,10 +22,11 @@ export interface NavGroup {
   route?: string;
 }
 
-export type NavSection = 'Pilotage' | 'Commercial' | 'Stock & dépôt' | 'Administration';
+export type NavSection = 'Pilotage' | 'Commercial' | 'Stock & dépôt' | 'Ressources humaines' | 'Administration';
 
 const ADMIN: AppRole[] = ['Admin'];
 const DEPOT: AppRole[] = ['Admin', 'Depot'];
+const RH: AppRole[] = ['Admin', 'HR'];
 
 /**
  * Menu ERP, organisé par métier (hors comptoir et borne d'impression).
@@ -107,6 +110,24 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Factures de retour', route: '/depot/factures-retour', roles: DEPOT },
       { label: 'Inventaire', route: '/depot/inventaire', roles: DEPOT },
       { label: 'Mouvements de stock', route: '/depot/mouvements-stock', roles: DEPOT },
+    ],
+  },
+
+  // —— Ressources humaines ——
+  {
+    id: 'rh',
+    label: 'Ressources humaines',
+    icon: 'hr',
+    section: 'Ressources humaines',
+    roles: RH,
+    items: [
+      { label: 'Tableau de bord RH', route: '/rh', roles: RH, exact: true },
+      { label: 'Employés', route: '/rh/employes', roles: RH },
+      { label: 'Planning', route: '/rh/planning', roles: RH },
+      { label: 'Congés & absences', route: '/rh/absences', roles: RH },
+      { label: 'Présence', route: '/rh/presence', roles: RH },
+      { label: 'Pointeuse', route: '/rh/pointeuse', roles: RH },
+      { label: 'Référentiels', route: '/rh/referentiels', roles: RH },
     ],
   },
 

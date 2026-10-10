@@ -1,0 +1,282 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <strong>Planning</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Planning</h1>
+      </div>
+      <p class="subtitle">
+        Du {{ lundi | date: 'dd/MM/yyyy' }} au {{ fin | date: 'dd/MM/yyyy' }} · cliquez sur une case pour poser ou retirer un jour off
+      </p>
+    </div>
+    <div class="rh__actions">
+      <button type="button" class="btn btn--primary" (click)="ouvrirRotation()">Générer la rotation</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" class="btn btn--ghost btn--sm" (click)="deplacer(-1)" aria-label="Semaine précédente">‹</button>
+    <button type="button" class="btn btn--ghost btn--sm" (click)="aujourdhui()">Cette semaine</button>
+    <button type="button" class="btn btn--ghost btn--sm" (click)="deplacer(1)" aria-label="Semaine suivante">›</button>
+    <select [(ngModel)]="semaines" (ngModelChange)="load()" aria-label="Durée affichée">
+      <option [ngValue]="1">1 semaine</option>
+      <option [ngValue]="2">2 semaines</option>
+      <option [ngValue]="4">4 semaines</option>
+      <option [ngValue]="8">8 semaines</option>
+    </select>
+    <select [(ngModel)]="departementId" (ngModelChange)="load()" aria-label="Département">
+      <option [ngValue]="null">Tous les départements</option>
+      @for (d of departements(); track d.id) {
+        <option [ngValue]="d.id">{{ d.nom }}</option>
+      }
+    </select>
+    @if (employeId) {
+      <button type="button" class="btn btn--ghost btn--sm" (click)="employeId = null; load()">Tous les employés ✕</button>
+    }
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (avertissements().length) {
+    <div class="alert alert--warn">
+      <ul style="margin: 0">
+        @for (a of avertissements(); track $index) {
+          <li>{{ a }}</li>
+        }
+      </ul>
+    </div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+  @if (aPlanifier().length) {
+    <div class="alert alert--warn">
+      Jours off encore à planifier :
+      @for (a of aPlanifier(); track a.nom; let last = $last) {
+        <strong>{{ a.nom }}</strong> ({{ a.total }}){{ last ? '' : ', ' }}
+      }
+      — utilisez « Générer la rotation » ou cliquez sur une case.
+    </div>
+  }
+
+  <div class="panel">
+    @if (loading() && !planning()) {
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    } @else if (planning(); as p) {
+      <div class="table-scroll">
+        <table class="grille" [class.loading]="loading()">
+          <thead>
+            <tr>
+              <th class="col-nom">Employé</th>
+              @for (j of p.jours; track j.date) {
+                <th class="col-jour" [class.today]="estAujourdhui(j.date)" [class.lundi]="estLundi(j.date)"
+                  [class.ferie]="!!j.jourFerie" [title]="j.jourFerie || ''">
+                  <span class="jour-nom">{{ j.jour.substring(0, 3) }}</span>
+                  <span class="jour-date">{{ j.date | date: 'dd/MM' }}</span>
+                  @if (j.offBloque) {
+                    <span class="jour-bloque" title="Pas de jour off ce jour (Rh:JoursSansOff)">🔒</span>
+                  }
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of p.employes; track e.employeId) {
+              <tr>
+                <th class="col-nom">
+                  <a [routerLink]="['/rh/employes', e.employeId]">{{ e.nom }}</a>
+                  <small>{{ libelleRegime(e.modeRepos, e.joursRepos, e.joursTravailSemaine) }}{{ e.departement ? ' · ' + e.departement : '' }}</small>
+                </th>
+                @for (j of e.jours; track j.date) {
+                  <td class="case" [attr.data-statut]="j.statut" [attr.data-origine]="j.origine"
+                    [class.attente]="!!j.demandeEnAttente" [class.lundi]="estLundi(j.date)" [class.today]="estAujourdhui(j.date)"
+                    [title]="titre(e, j)" (click)="choisir(e, j)">
+                    {{ code(j) }}
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr><td [attr.colspan]="p.jours.length + 1" class="muted" style="padding: 1rem">Aucun employé actif.</td></tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <th class="col-nom">Au travail</th>
+              @for (j of p.jours; track j.date) {
+                <td class="total" [class.lundi]="estLundi(j.date)">{{ j.jourFerie ? '' : j.auTravail }}</td>
+              }
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <footer class="legende">
+        <span><i data-statut="Travail"></i>Travail</span>
+        <span><i data-statut="Repos"></i>Repos fixe / fermeture</span>
+        <span><i data-statut="JourOff" data-origine="Auto"></i>Jour off généré</span>
+        <span><i data-statut="JourOff" data-origine="Manuel"></i>Jour off manuel</span>
+        <span><i data-statut="Absence"></i>Congé / absence</span>
+        <span><i class="attente" data-statut="Travail"></i>Demande en attente</span>
+        <span><i data-statut="Ferie"></i>Férié</span>
+        <span>🔒 jour sans off</span>
+      </footer>
+    }
+  </div>
+</div>
+
+@if (cellule(); as c) {
+  <div class="overlay" (click)="cellule.set(null)">
+    <div class="modal" style="width: min(440px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ c.employe.nom }}</p>
+          <h2>{{ c.jour.date | date: 'EEEE dd MMMM' }}</h2>
+        </div>
+      </header>
+      <div class="modal__body">
+        @switch (c.jour.statut) {
+          @case ('JourOff') {
+            <p style="margin: 0">Jour off {{ c.jour.origine === 'Auto' ? 'généré par la rotation' : 'posé à la main' }}.</p>
+          }
+          @case ('Absence') {
+            <p style="margin: 0">
+              {{ typeAbsence(c.jour.absence?.type) }}{{ c.jour.absence?.demiJournee ? ' (' + c.jour.absence?.demiJournee + ')' : '' }}.
+            </p>
+            <a class="linkish" [routerLink]="['/rh/absences', c.jour.absence?.id]" (click)="cellule.set(null)">Voir l’absence</a>
+          }
+          @case ('Repos') {
+            <p style="margin: 0">Jour de repos {{ c.employe.modeRepos === 'Rotation' ? '(fermeture du magasin)' : 'fixe' }}.</p>
+          }
+          @default {
+            @if (offBloque(c.jour.date)) {
+              <div class="alert alert--warn">Pas de jour off le {{ c.jour.date | date: 'EEEE' }} (paramètre Rh:JoursSansOff).</div>
+            } @else {
+              <label class="field">
+                <span>Motif (facultatif)</span>
+                <input [(ngModel)]="motifOff" name="motifOff" placeholder="Rotation, échange, récupération…" />
+              </label>
+            }
+          }
+        }
+        @if (c.jour.demandeEnAttente) {
+          <div class="alert alert--warn">
+            Demande en attente : {{ typeAbsence(c.jour.demandeEnAttente.type) }} —
+            <a class="linkish" [routerLink]="['/rh/absences', c.jour.demandeEnAttente.id]" (click)="cellule.set(null)">traiter</a>
+          </div>
+        }
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="cellule.set(null)">Fermer</button>
+        @if (c.jour.statut === 'JourOff') {
+          <button type="button" class="btn btn--danger" (click)="retirerOff()" [disabled]="acting()">Retirer le jour off</button>
+        } @else if (c.jour.statut === 'Travail' && !offBloque(c.jour.date)) {
+          <button type="button" class="btn btn--primary" (click)="poserOff()" [disabled]="acting()">Poser un jour off</button>
+        }
+      </footer>
+    </div>
+  </div>
+}
+
+@if (rotationOpen()) {
+  <div class="overlay" (click)="rotationOpen.set(false)">
+    <div class="modal modal--wide" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">Employés en rotation{{ departementId ? '' : ' (tous départements)' }}</p>
+          <h2>Générer le planning de rotation</h2>
+        </div>
+      </header>
+      <div class="modal__body">
+        @if (rotationError()) {
+          <div class="alert">{{ rotationError() }}</div>
+        }
+        <div class="form-grid">
+          <label class="field">
+            <span>Du</span>
+            <input type="date" [(ngModel)]="rot.debut" (ngModelChange)="apercu.set(null)" name="debut" />
+          </label>
+          <label class="field">
+            <span>Au</span>
+            <input type="date" [(ngModel)]="rot.fin" (ngModelChange)="apercu.set(null)" name="fin" />
+            <small>Semaines complètes, 26 au maximum.</small>
+          </label>
+          <div class="field field--wide">
+            <span>Jours à éviter en plus</span>
+            <div class="days">
+              @for (j of jours; track j.iso) {
+                <button type="button" class="day" [class.on]="rot.joursExclus.includes(j.iso) || bloqueParParametre(j.iso)"
+                  [disabled]="bloqueParParametre(j.iso)" (click)="toggleExclu(j.iso)"
+                  [title]="bloqueParParametre(j.iso) ? 'Toujours bloqué (paramètre Rh:JoursSansOff)' : ''">
+                  {{ j.court }}{{ bloqueParParametre(j.iso) ? ' 🔒' : '' }}
+                </button>
+              }
+            </div>
+            <small>Le générateur choisit le jour où le département a le moins de monde au repos, et fait tourner les jours d’une semaine à l’autre.</small>
+          </div>
+          <label class="check field--wide">
+            <input type="checkbox" [(ngModel)]="rot.remplacer" (ngModelChange)="apercu.set(null)" name="remplacer" />
+            Recalculer les jours off déjà générés (les jours off posés à la main sont toujours conservés)
+          </label>
+        </div>
+
+        @if (apercu(); as a) {
+          <div class="alert" [class.alert--ok]="!a.avertissements.length" [class.alert--warn]="a.avertissements.length > 0">
+            Aperçu : {{ a.ajoutes }} jour(s) off à ajouter{{ a.supprimes ? ', ' + a.supprimes + ' à recalculer' : '' }}.
+            @if (a.avertissements.length) {
+              <ul>
+                @for (w of a.avertissements; track $index) {
+                  <li>{{ w }}</li>
+                }
+              </ul>
+            }
+          </div>
+          <div class="table-scroll">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Semaine</th>
+                  @for (e of a.employes; track e.employeId) {
+                    <th>{{ e.nom }} ({{ e.joursTravailSemaine }}/7)</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of a.employes[0]?.semaines ?? []; track s.semaine; let i = $index) {
+                  <tr>
+                    <td class="nowrap">{{ s.lundi | date: 'dd/MM' }}</td>
+                    @for (e of a.employes; track e.employeId) {
+                      <td>
+                        @for (j of joursOffAuto(e.semaines[i]); track j.date) {
+                          <span class="badge" [attr.data-tone]="j.nouveau ? 'violet' : ''">{{ j.jour.substring(0, 3) }} {{ j.date | date: 'dd' }}</span>
+                          {{ ' ' }}
+                        } @empty {
+                          <span class="muted small">—</span>
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="rotationOpen.set(false)">Fermer</button>
+        <button type="button" class="btn btn--ghost" (click)="genererRotation(true)" [disabled]="acting()">
+          {{ acting() && !apercu() ? 'Calcul…' : 'Aperçu' }}
+        </button>
+        <button type="button" class="btn btn--primary" (click)="genererRotation(false)" [disabled]="acting() || !apercu()"
+          [title]="apercu() ? '' : 'Faites d’abord un aperçu'">
+          Enregistrer le planning
+        </button>
+      </footer>
+    </div>
+  </div>
+}

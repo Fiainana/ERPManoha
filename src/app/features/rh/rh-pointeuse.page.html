@@ -1,0 +1,257 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <strong>Pointeuse</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Pointeuse</h1>
+        @if (statut(); as s) {
+          <span class="badge" [attr.data-tone]="s.actif ? 'ok' : 'warn'">{{ s.actif ? 'Synchro automatique active' : 'Synchro automatique désactivée' }}</span>
+        }
+      </div>
+      <p class="subtitle">
+        @if (statut(); as s) {
+          {{ s.url || 'Appareil non configuré' }} · synchronisation à {{ s.heures.join(' h, ') }} h
+          @for (a of s.appareils; track a.appareil) {
+            · dernière synchro {{ utc(a.dernierSucces) | date: 'dd/MM HH:mm' }} ({{ a.nbTotal }} pointages)
+          }
+        } @else {
+          Pointages bruts de l’appareil Hikvision et corrections manuelles
+        }
+      </p>
+    </div>
+    <div class="rh__actions">
+      <button type="button" class="btn btn--ghost" (click)="ouvrirManuel()">Ajouter un pointage</button>
+      <button type="button" class="btn btn--primary" (click)="ouvrirSynchro()" [disabled]="acting()">Synchroniser</button>
+    </div>
+  </header>
+
+  @if (statut()?.appareils?.[0]?.dernierStatut?.startsWith('ERREUR')) {
+    <div class="alert">{{ statut()?.appareils?.[0]?.dernierStatut }}</div>
+  }
+
+  <nav class="tabs">
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'pointages'" (click)="setOnglet('pointages')">Pointages</button>
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'personnes'" (click)="setOnglet('personnes')">Personnes sur l’appareil</button>
+  </nav>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (onglet() === 'pointages') {
+    <div class="toolbar">
+      <label class="inline">Du <input type="date" [(ngModel)]="dateDebut" (ngModelChange)="reload()" /></label>
+      <label class="inline">au <input type="date" [(ngModel)]="dateFin" (ngModelChange)="reload()" /></label>
+      <input class="grow" type="search" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Nom ou n° pointeuse" />
+    </div>
+
+    <div class="panel">
+      @if (loading() && items().length === 0) {
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      } @else if (items().length === 0) {
+        <div class="empty">
+          <h2>Aucun pointage</h2>
+          <p>Aucun passage sur cette période.</p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Date et heure</th>
+                <th>Employé</th>
+                <th>N°</th>
+                <th>Source</th>
+                <th>Mode</th>
+                <th>Remarque</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of items(); track p.id) {
+                <tr [class.dim]="p.ignore">
+                  <td class="nowrap">{{ p.datePointage | date: 'EEE dd/MM HH:mm:ss' }}</td>
+                  <td class="strong">{{ p.nom || '—' }}</td>
+                  <td>{{ p.employeNo }}</td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="p.source === 'Manuel' ? 'info' : ''">{{ p.source }}</span>
+                  </td>
+                  <td class="small muted">{{ p.modeVerification }}</td>
+                  <td class="small">
+                    @if (p.ignore) {
+                      <span class="badge" data-tone="warn">Écarté</span> {{ p.ignoreMotif }} <span class="muted">({{ p.ignorePar }})</span>
+                    } @else if (p.motif) {
+                      {{ p.motif }} <span class="muted">({{ p.saisiPar }})</span>
+                    }
+                  </td>
+                  <td class="nowrap">
+                    @if (p.ignore) {
+                      <button type="button" class="linkish small" (click)="retablir(p)" [disabled]="acting()">Rétablir</button>
+                    } @else {
+                      <button type="button" class="linkish small" (click)="ouvrirIgnorer(p)">{{ p.source === 'Manuel' ? 'Supprimer' : 'Écarter' }}</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer class="panel__footer">
+          @if (totalPages() > 1) {
+            <button type="button" class="linkish" (click)="goTo(page() - 1)" [disabled]="page() <= 1">Précédent</button>
+            Page {{ page() }} / {{ totalPages() }} · {{ total() }} pointages
+            <button type="button" class="linkish" (click)="goTo(page() + 1)" [disabled]="page() >= totalPages()">Suivant</button>
+          } @else {
+            {{ total() }} pointage(s)
+          }
+        </footer>
+      }
+    </div>
+  } @else {
+    <div class="panel">
+      <div class="table-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Nom sur l’appareil</th>
+              <th>Premier pointage</th>
+              <th>Dernier pointage</th>
+              <th>Fiche RH</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of personnes(); track p.employeNo) {
+              <tr>
+                <td class="ref">{{ p.employeNo }}</td>
+                <td class="strong">{{ p.nom || '—' }}</td>
+                <td class="nowrap">{{ p.premierPointage | date: 'dd/MM/yyyy' }}</td>
+                <td class="nowrap">{{ p.dernierPointage | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  @if (p.rhEmployeId) {
+                    <a class="linkish" [routerLink]="['/rh/employes', p.rhEmployeId]">{{ p.rhMatricule }}</a>
+                  } @else {
+                    <button type="button" class="btn btn--ghost btn--sm" (click)="importer(p)" [disabled]="acting()">Créer la fiche</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="muted">Aucune personne (lancez une synchronisation).</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+@if (modal()) {
+  <div class="overlay" (click)="modal.set(null)">
+    <div class="modal" style="width: min(520px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @switch (modal()) {
+        @case ('synchro') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">{{ statut()?.url }}</p>
+              <h2>Synchroniser la pointeuse</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="synchroniser()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <p style="margin: 0">Récupère les nouveaux passages depuis le dernier enregistré.</p>
+              <label class="field">
+                <span>Reprendre depuis (facultatif)</span>
+                <input type="date" [(ngModel)]="depuis" name="depuis" />
+                <small>Pour recharger un historique : les doublons sont ignorés.</small>
+              </label>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">{{ acting() ? 'Synchronisation…' : 'Synchroniser' }}</button>
+            </footer>
+          </form>
+        }
+        @case ('manuel') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">Correction</p>
+              <h2>Ajouter un pointage</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="ajouterManuel()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field field--wide">
+                  <span>Employé <span class="req">*</span></span>
+                  <select [(ngModel)]="manuel.employeId" name="employeId">
+                    <option [ngValue]="0" disabled>Choisir…</option>
+                    @for (e of employes(); track e.id) {
+                      <option [ngValue]="e.id">{{ e.nomComplet }} (n° {{ e.pointeuseNo }})</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Date</span>
+                  <input type="date" [(ngModel)]="manuel.date" name="date" />
+                </label>
+                <label class="field">
+                  <span>Heure</span>
+                  <input type="time" [(ngModel)]="manuel.heure" name="heure" />
+                </label>
+                <label class="field field--wide">
+                  <span>Motif <span class="req">*</span></span>
+                  <input [(ngModel)]="manuel.motif" name="motif" />
+                </label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Ajouter</button>
+            </footer>
+          </form>
+        }
+        @case ('ignorer') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">{{ cible?.nom }} — {{ cible?.datePointage | date: 'dd/MM HH:mm:ss' }}</p>
+              <h2>{{ cible?.source === 'Manuel' ? 'Supprimer le pointage manuel' : 'Écarter ce pointage' }}</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="ignorer()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <label class="field">
+                <span>Motif <span class="req">*</span></span>
+                <input [(ngModel)]="motifIgnore" name="motif" placeholder="Double badge, erreur de personne…" />
+              </label>
+              @if (cible?.source !== 'Manuel') {
+                <p class="muted small" style="margin: 0">Le pointage reste visible mais n’est plus pris en compte ; il peut être rétabli.</p>
+              }
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--danger" [disabled]="acting()">Confirmer</button>
+            </footer>
+          </form>
+        }
+      }
+    </div>
+  </div>
+}

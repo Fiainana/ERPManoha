@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from './core/guards/auth.guard';
+import { accueilGuard, authGuard, roleGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { DashboardPage } from './features/dashboard/dashboard.page';
@@ -67,7 +67,7 @@ export const routes: Routes = [
     component: LayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: '', component: DashboardPage, pathMatch: 'full' },
+      { path: '', component: DashboardPage, pathMatch: 'full', canActivate: [accueilGuard] },
 
       {
         path: 'articles',
@@ -296,6 +296,12 @@ export const routes: Routes = [
         path: 'parametres',
         component: ParametresPage,
         canActivate: [roleGuard('Admin')],
+      },
+
+      {
+        path: 'rh',
+        canActivate: [roleGuard('Admin', 'HR')],
+        loadChildren: () => import('./features/rh/rh.routes').then((m) => m.RH_ROUTES),
       },
 
       { path: '**', redirectTo: '' },

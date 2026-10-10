@@ -1,0 +1,217 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <strong>Congés & absences</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Congés & absences</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
+      </div>
+      <p class="subtitle">Demandes des employés (avis du responsable puis décision RH) et absences saisies par le RH</p>
+    </div>
+    <div class="rh__actions">
+      <button type="button" class="btn btn--primary" (click)="nouvelle()">Saisir une absence</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <select [(ngModel)]="statut" (ngModelChange)="reload()" aria-label="Statut">
+      @for (s of statuts; track s.value) {
+        <option [value]="s.value">{{ s.label }}</option>
+      }
+    </select>
+    <select [(ngModel)]="type" (ngModelChange)="reload()" aria-label="Type">
+      <option value="">Tous les types</option>
+      @for (t of types; track t.value) {
+        <option [value]="t.value">{{ t.label }}</option>
+      }
+    </select>
+    <select [(ngModel)]="employeId" (ngModelChange)="reload()" aria-label="Employé">
+      <option [ngValue]="null">Tous les employés</option>
+      @for (e of employes(); track e.id) {
+        <option [ngValue]="e.id">{{ e.nomComplet }}</option>
+      }
+    </select>
+    <label class="inline">Du <input type="date" [(ngModel)]="debut" (ngModelChange)="reload()" /></label>
+    <label class="inline">au <input type="date" [(ngModel)]="fin" (ngModelChange)="reload()" /></label>
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucune absence</h2>
+        <p>{{ statut === 'EnAttente' ? 'Aucune demande à traiter.' : 'Aucun résultat pour ces filtres.' }}</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Employé</th>
+              <th>Type</th>
+              <th>Période</th>
+              <th class="num">Jours</th>
+              <th>Origine</th>
+              <th>Avis responsable</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of items(); track a.id) {
+              <tr class="clickable" (click)="ouvrir(a)">
+                <td>
+                  <span class="strong">{{ a.nom }}{{ a.prenom ? ' ' + a.prenom : '' }}</span>
+                  @if (a.departement) {
+                    <span class="muted small"> · {{ a.departement }}</span>
+                  }
+                </td>
+                <td>{{ typeAbsence(a.type) }}</td>
+                <td class="nowrap">{{ periode(a) }}</td>
+                <td class="num">{{ a.nbJours | number: '1.0-1' }}</td>
+                <td>{{ a.origine === 'Employe' ? 'Demande employé' : 'Saisie RH' }}</td>
+                <td>
+                  @if (a.avisResponsable === true) {
+                    <span class="badge" data-tone="ok">Favorable</span>
+                  } @else if (a.avisResponsable === false) {
+                    <span class="badge" data-tone="danger">Défavorable</span>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td><span class="badge" [attr.data-tone]="tonAbsence(a.statut)">{{ libelleStatut(a.statut) }}</span></td>
+                <td class="muted small nowrap">{{ a.nbDocuments ? '📎 ' + a.nbDocuments : '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="panel__footer">
+        @if (totalPages() > 1) {
+          <button type="button" class="linkish" (click)="goTo(page() - 1)" [disabled]="page() <= 1">Précédent</button>
+          Page {{ page() }} / {{ totalPages() }}
+          <button type="button" class="linkish" (click)="goTo(page() + 1)" [disabled]="page() >= totalPages()">Suivant</button>
+        } @else {
+          {{ items().length }} absence(s)
+        }
+      </footer>
+    }
+  </div>
+</div>
+
+@if (formOpen()) {
+  <div class="overlay" (click)="fermer()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">Saisie RH</p>
+          <h2>{{ resultat() ? 'Absence enregistrée' : 'Saisir une absence' }}</h2>
+        </div>
+      </header>
+
+      @if (resultat(); as r) {
+        <div class="modal__body">
+          <div class="alert alert--ok">
+            {{ typeAbsence(r.absence.type) }} de {{ r.absence.nom }} enregistré ({{ r.absence.nbJours | number: '1.0-1' }} j) —
+            {{ libelleStatut(r.absence.statut) }}.
+          </div>
+          @if (r.depasseSolde) {
+            <div class="alert alert--warn">
+              Le congé dépasse le solde : solde après demandes {{ r.solde?.soldeApresDemandes | number: '1.0-1' }} j.
+            </div>
+          }
+          @if (r.alertesEffectif.length) {
+            <div class="alert alert--warn">
+              Trop d’absents dans le département :
+              <ul>
+                @for (al of r.alertesEffectif; track al.date) {
+                  <li>{{ al.date | date: 'EEE dd/MM' }} : {{ al.absents }} absents pour {{ al.maximum }} autorisés ({{ al.noms.join(', ') }})</li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+        <footer class="modal__foot">
+          <a class="btn btn--ghost" [routerLink]="['/rh/absences', r.absence.id]">Voir le détail</a>
+          <button type="button" class="btn btn--primary" (click)="fermer()">Fermer</button>
+        </footer>
+      } @else {
+        <form (ngSubmit)="enregistrer()">
+          <div class="modal__body">
+            @if (formError()) {
+              <div class="alert">{{ formError() }}</div>
+            }
+            <div class="form-grid">
+              <label class="field field--wide">
+                <span>Employé <span class="req">*</span></span>
+                <select [(ngModel)]="f.employeId" name="employeId">
+                  <option [ngValue]="0" disabled>Choisir…</option>
+                  @for (e of employes(); track e.id) {
+                    <option [ngValue]="e.id">{{ e.nomComplet }} ({{ e.matricule }})</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                <span>Type <span class="req">*</span></span>
+                <select [(ngModel)]="f.type" name="type">
+                  @for (t of types; track t.value) {
+                    <option [value]="t.value">{{ t.label }}</option>
+                  }
+                </select>
+              </label>
+              <div class="field">
+                <span>&nbsp;</span>
+                <label class="check">
+                  <input type="checkbox" [(ngModel)]="f.valider" name="valider" />
+                  Valider directement
+                </label>
+              </div>
+              <label class="field">
+                <span>Du <span class="req">*</span></span>
+                <input type="date" [(ngModel)]="f.dateDebut" name="dateDebut" required />
+                <label class="check small">
+                  <input type="checkbox" [(ngModel)]="f.debutApresMidi" name="debutApresMidi" /> à partir de l’après-midi
+                </label>
+              </label>
+              <label class="field">
+                <span>Au <span class="req">*</span></span>
+                <input type="date" [(ngModel)]="f.dateFin" name="dateFin" required />
+                <label class="check small">
+                  <input type="checkbox" [(ngModel)]="f.finMatin" name="finMatin" /> jusqu’à midi
+                </label>
+              </label>
+              <label class="field field--wide">
+                <span>Motif</span>
+                <textarea [(ngModel)]="f.motif" name="motif" rows="2"></textarea>
+              </label>
+            </div>
+            <p class="muted small" style="margin: 0">
+              Le nombre de jours est calculé par le serveur (fériés exclus, jours de repos selon le type).
+              Seuls les congés validés sont décomptés du solde.
+            </p>
+          </div>
+          <footer class="modal__foot">
+            <button type="button" class="btn btn--ghost" (click)="fermer()">Annuler</button>
+            <button type="submit" class="btn btn--primary" [disabled]="saving()">
+              {{ saving() ? 'Enregistrement…' : f.valider ? 'Enregistrer et valider' : 'Enregistrer' }}
+            </button>
+          </footer>
+        </form>
+      }
+    </div>
+  </div>
+}

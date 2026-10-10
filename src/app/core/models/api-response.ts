@@ -43,4 +43,6 @@ export type AppRole =
   | 'Rayon'
   | 'Caisse'
   | 'Depot'
-  | 'Recouvrement';
+  | 'Recouvrement'
+  | 'HR'
+  | 'ResponsableRH';

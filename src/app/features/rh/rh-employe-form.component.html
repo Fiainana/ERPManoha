@@ -1,0 +1,212 @@
+<div class="overlay" (click)="closed.emit()">
+  <div class="modal modal--wide" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="emp-form-title">
+    <header class="modal__head">
+      <div>
+        <p class="eyebrow">{{ employe() ? employe()!.matricule : 'Nouvel employé' }}</p>
+        <h2 id="emp-form-title">{{ employe() ? 'Modifier la fiche' : 'Créer une fiche employé' }}</h2>
+      </div>
+      <button type="button" class="icon-btn" (click)="closed.emit()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+    </header>
+
+    <form (ngSubmit)="submit()">
+      <div class="modal__body">
+        @if (error()) {
+          <div class="alert" role="alert">{{ error() }}</div>
+        }
+
+        <section class="form-section">
+          <h3>Identité</h3>
+          <div class="form-grid form-grid--3">
+            <label class="field">
+              <span>Nom <span class="req">*</span></span>
+              <input [(ngModel)]="f.nom" name="nom" required />
+            </label>
+            <label class="field">
+              <span>Prénom</span>
+              <input [(ngModel)]="f.prenom" name="prenom" />
+            </label>
+            <label class="field">
+              <span>Matricule</span>
+              <input [(ngModel)]="f.matricule" name="matricule" placeholder="Automatique (EMP0001…)" />
+            </label>
+            <label class="field">
+              <span>Sexe</span>
+              <select [(ngModel)]="f.sexe" name="sexe">
+                <option [ngValue]="null">—</option>
+                <option value="M">Homme</option>
+                <option value="F">Femme</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Date de naissance</span>
+              <input type="date" [(ngModel)]="f.dateNaissance" name="dateNaissance" />
+            </label>
+            <label class="field">
+              <span>Lieu de naissance</span>
+              <input [(ngModel)]="f.lieuNaissance" name="lieuNaissance" />
+            </label>
+            <label class="field">
+              <span>CIN</span>
+              <input [(ngModel)]="f.cin" name="cin" />
+            </label>
+            <label class="field">
+              <span>CIN délivrée le</span>
+              <input type="date" [(ngModel)]="f.cinDate" name="cinDate" />
+            </label>
+            <label class="field">
+              <span>CIN délivrée à</span>
+              <input [(ngModel)]="f.cinLieu" name="cinLieu" />
+            </label>
+            <label class="field">
+              <span>N° CNaPS</span>
+              <input [(ngModel)]="f.cnaps" name="cnaps" />
+            </label>
+            <label class="field">
+              <span>Situation familiale</span>
+              <select [(ngModel)]="f.situationFamiliale" name="situationFamiliale">
+                <option [ngValue]="null">—</option>
+                <option value="Celibataire">Célibataire</option>
+                <option value="Marie">Marié(e)</option>
+                <option value="Divorce">Divorcé(e)</option>
+                <option value="Veuf">Veuf / veuve</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Enfants</span>
+              <input type="number" min="0" [(ngModel)]="f.nbEnfants" name="nbEnfants" />
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Contact</h3>
+          <div class="form-grid form-grid--3">
+            <label class="field">
+              <span>Téléphone</span>
+              <input [(ngModel)]="f.telephone" name="telephone" />
+            </label>
+            <label class="field">
+              <span>E-mail</span>
+              <input type="email" [(ngModel)]="f.email" name="email" />
+              <small>Reçoit les décisions sur ses demandes d’absence.</small>
+            </label>
+            <label class="field">
+              <span>Contact d’urgence</span>
+              <input [(ngModel)]="f.contactUrgence" name="contactUrgence" />
+            </label>
+            <label class="field field--wide">
+              <span>Adresse</span>
+              <input [(ngModel)]="f.adresse" name="adresse" />
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Affectation</h3>
+          <div class="form-grid form-grid--3">
+            <label class="field">
+              <span>Date d’embauche <span class="req">*</span></span>
+              <input type="date" [(ngModel)]="f.dateEmbauche" name="dateEmbauche" required />
+            </label>
+            <label class="field">
+              <span>Département</span>
+              <select [(ngModel)]="f.departementId" name="departementId">
+                <option [ngValue]="null">—</option>
+                @for (d of departements(); track d.id) {
+                  <option [ngValue]="d.id">{{ d.nom }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Poste</span>
+              <select [(ngModel)]="f.posteId" name="posteId">
+                <option [ngValue]="null">—</option>
+                @for (p of postesDuDepartement; track p.id) {
+                  <option [ngValue]="p.id">{{ p.intitule }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Horaire</span>
+              <select [(ngModel)]="f.horaireId" name="horaireId">
+                <option [ngValue]="null">Horaire par défaut</option>
+                @for (h of horaires(); track h.id) {
+                  <option [ngValue]="h.id">{{ h.nom }} ({{ h.heureDebut }}–{{ h.heureFin }})</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>N° sur la pointeuse</span>
+              <input [(ngModel)]="f.pointeuseNo" name="pointeuseNo" />
+              <small>Vide = présence non suivie.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Régime de repos</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Mode</span>
+              <select [(ngModel)]="f.modeRepos" name="modeRepos">
+                <option value="Fixe">Fixe : mêmes jours chaque semaine</option>
+                <option value="Rotation">Rotation : jours off planifiés</option>
+              </select>
+            </label>
+            @if (f.modeRepos === 'Rotation') {
+              <label class="field">
+                <span>Jours travaillés par semaine</span>
+                <select [(ngModel)]="f.joursTravailSemaine" name="joursTravailSemaine">
+                  @for (n of [4, 5, 6]; track n) {
+                    <option [ngValue]="n">{{ n }}/7</option>
+                  }
+                </select>
+                <small>Le dimanche (magasin fermé) compte dans les jours de repos.</small>
+              </label>
+            } @else {
+              <div class="field">
+                <span>Jours de repos</span>
+                <div class="days">
+                  @for (j of jours; track j.iso) {
+                    <button type="button" class="day" [class.on]="aJour(j.iso)" (click)="toggleJour(j.iso)">{{ j.court }}</button>
+                  }
+                </div>
+                <small>Aucun jour coché = jours non travaillés de l’horaire (dimanche).</small>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3>Congés</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Solde repris (jours)</span>
+              <input type="number" step="0.5" [(ngModel)]="f.soldeCongesInitial" name="soldeCongesInitial" />
+            </label>
+            <label class="field">
+              <span>Solde repris au</span>
+              <input type="date" [(ngModel)]="f.dateSoldeInitial" name="dateSoldeInitial" />
+              <small>Vide = acquisition depuis la date d’embauche.</small>
+            </label>
+            <label class="field field--wide">
+              <span>Notes</span>
+              <textarea [(ngModel)]="f.notes" name="notes" rows="2"></textarea>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+        <button type="submit" class="btn btn--primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>

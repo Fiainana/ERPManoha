@@ -1,0 +1,191 @@
+.grille {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--me-fs-sm);
+
+  &.loading {
+    opacity: 0.6;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid var(--me-border);
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--me-bg-subtle);
+    z-index: 1;
+  }
+
+  .col-nom {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    min-width: 170px;
+    padding: 0.45rem 0.75rem;
+    background: var(--me-white);
+    border-right: 1px solid var(--me-border);
+    text-align: left;
+    font-weight: 600;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        color: var(--me-red-deeper);
+      }
+    }
+
+    small {
+      display: block;
+      font-size: var(--me-fs-xs);
+      font-weight: 500;
+      color: var(--me-text-muted);
+    }
+  }
+
+  thead .col-nom {
+    background: var(--me-bg-subtle);
+    z-index: 3;
+  }
+
+  .col-jour {
+    min-width: 54px;
+    padding: 0.35rem 0.2rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--me-text-secondary);
+
+    &.today {
+      color: var(--me-red-deeper);
+      box-shadow: inset 0 -2px 0 var(--me-red);
+    }
+
+    &.ferie {
+      background: color-mix(in srgb, #d97706 14%, white);
+    }
+  }
+
+  .jour-nom {
+    display: block;
+    text-transform: capitalize;
+  }
+
+  .jour-date {
+    display: block;
+    font-size: var(--me-fs-xs);
+    font-weight: 500;
+    color: var(--me-text-muted);
+  }
+
+  .jour-bloque {
+    font-size: 0.65rem;
+  }
+
+  .lundi {
+    border-left: 2px solid var(--me-border-strong, #d4d4d8);
+  }
+
+  .case {
+    height: 40px;
+    padding: 0 0.2rem;
+    text-align: center;
+    font-size: var(--me-fs-xs);
+    font-weight: 650;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70px;
+
+    &:hover {
+      outline: 2px solid var(--me-red-border);
+      outline-offset: -2px;
+    }
+
+    &.today {
+      background-image: linear-gradient(var(--me-red-soft), var(--me-red-soft));
+    }
+  }
+
+  tfoot .total {
+    padding: 0.4rem 0.2rem;
+    text-align: center;
+    font-weight: 650;
+    color: var(--me-text-secondary);
+    background: var(--me-bg-subtle);
+  }
+
+  tfoot .col-nom {
+    background: var(--me-bg-subtle);
+  }
+}
+
+// Couleurs des cases (et de la légende).
+[data-statut='Travail'] {
+  background: var(--me-white);
+}
+
+[data-statut='Repos'] {
+  background: #f1f1f3;
+  color: var(--me-text-muted);
+}
+
+[data-statut='JourOff'] {
+  background: color-mix(in srgb, #7c3aed 16%, white);
+  color: #5b21b6;
+
+  &[data-origine='Manuel'] {
+    background: color-mix(in srgb, #7c3aed 30%, white);
+  }
+}
+
+[data-statut='Absence'] {
+  background: color-mix(in srgb, #2563eb 14%, white);
+  color: #1e40af;
+}
+
+[data-statut='Ferie'] {
+  background: color-mix(in srgb, #d97706 16%, white);
+  color: #92400e;
+  cursor: default !important;
+}
+
+[data-statut='HorsContrat'] {
+  background: repeating-linear-gradient(45deg, #f4f4f5, #f4f4f5 4px, #e4e4e7 4px, #e4e4e7 8px);
+  cursor: default !important;
+}
+
+.attente {
+  box-shadow: inset 0 0 0 2px #d97706;
+  color: #b45309;
+}
+
+.legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--me-border);
+  background: var(--me-bg-subtle);
+  font-size: var(--me-fs-xs);
+  color: var(--me-text-secondary);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  i {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--me-border);
+    border-radius: 3px;
+  }
+}

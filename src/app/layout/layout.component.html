@@ -66,6 +66,7 @@
                   <a
                     [routerLink]="item.route"
                     routerLinkActive="is-active"
+                    [routerLinkActiveOptions]="{ exact: !!item.exact }"
                     class="sidebar__sublink"
                   >
                     {{ item.label }}

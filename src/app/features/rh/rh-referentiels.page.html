@@ -1,0 +1,341 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <strong>Référentiels</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Référentiels</h1>
+      </div>
+      <p class="subtitle">Départements et responsables, postes, horaires de travail, jours fériés</p>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'departements'" (click)="setOnglet('departements')">Départements</button>
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'postes'" (click)="setOnglet('postes')">Postes</button>
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'horaires'" (click)="setOnglet('horaires')">Horaires</button>
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'feries'" (click)="setOnglet('feries')">Jours fériés</button>
+  </nav>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @switch (onglet()) {
+    @case ('departements') {
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Départements</h2>
+          <button type="button" class="btn btn--primary btn--sm" (click)="editerDepartement(null)">Nouveau département</button>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Responsable (avis sur les demandes)</th>
+                <th>E-mail de notification</th>
+                <th class="num">Employés</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of departements(); track d.id) {
+                <tr class="clickable" [class.dim]="!d.actif" (click)="editerDepartement(d)">
+                  <td class="strong">{{ d.nom }}</td>
+                  <td>
+                    @if (d.responsable) {
+                      {{ d.responsable }} <span class="muted small">({{ d.responsableLogin }})</span>
+                    } @else {
+                      <span class="muted">Aucun : les demandes vont directement au RH</span>
+                    }
+                  </td>
+                  <td>{{ d.emailNotification || '—' }}</td>
+                  <td class="num">{{ d.nbEmployes }}</td>
+                  <td><span class="badge" [attr.data-tone]="d.actif ? 'ok' : ''">{{ d.actif ? 'Actif' : 'Inactif' }}</span></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="muted">Aucun département.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p class="muted small" style="margin: 0">
+        Le responsable est un compte ERP avec le rôle « Responsable d’équipe » (menu Utilisateurs). Il donne son avis
+        sur les demandes de son département avant la décision du RH.
+      </p>
+    }
+
+    @case ('postes') {
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Postes</h2>
+          <button type="button" class="btn btn--primary btn--sm" (click)="editerPoste(null)">Nouveau poste</button>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Intitulé</th>
+                <th>Département</th>
+                <th class="num">Employés</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of postes(); track p.id) {
+                <tr class="clickable" [class.dim]="!p.actif" (click)="editerPoste(p)">
+                  <td class="strong">{{ p.intitule }}</td>
+                  <td>{{ p.departement || 'Tous' }}</td>
+                  <td class="num">{{ p.nbEmployes }}</td>
+                  <td><span class="badge" [attr.data-tone]="p.actif ? 'ok' : ''">{{ p.actif ? 'Actif' : 'Inactif' }}</span></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="muted">Aucun poste.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @case ('horaires') {
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Horaires de travail</h2>
+          <button type="button" class="btn btn--primary btn--sm" (click)="editerHoraire(null)">Nouvel horaire</button>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Horaires</th>
+                <th class="num">Pause</th>
+                <th class="num">Durée / jour</th>
+                <th>Jours travaillés</th>
+                <th class="num">Tolérance retard</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of horaires(); track h.id) {
+                <tr class="clickable" [class.dim]="!h.actif" (click)="editerHoraire(h)">
+                  <td class="strong">{{ h.nom }}</td>
+                  <td class="nowrap">{{ h.heureDebut }} – {{ h.heureFin }}</td>
+                  <td class="num">{{ h.pauseMinutes }} min</td>
+                  <td class="num">{{ duree(h.dureeJournaliereMinutes) }}</td>
+                  <td>{{ libelleJours(h.joursTravailles) }}</td>
+                  <td class="num">{{ h.toleranceRetardMin }} min</td>
+                  <td>
+                    @if (h.parDefaut) {
+                      <span class="badge" data-tone="info">Par défaut</span>
+                    }
+                    @if (!h.actif) {
+                      <span class="badge">Inactif</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p class="muted small" style="margin: 0">
+        La pause est une durée prise librement selon l’activité du magasin. Les jours non travaillés de l’horaire sont
+        les jours de repos par défaut des employés en régime fixe.
+      </p>
+    }
+
+    @case ('feries') {
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Jours fériés</h2>
+          <div class="rh__actions">
+            <select [(ngModel)]="annee" (ngModelChange)="chargerFeries()" aria-label="Année"
+              style="height: 30px; border: 1px solid var(--me-border); border-radius: var(--me-radius); padding: 0 0.5rem">
+              @for (a of [annee - 1, annee, annee + 1]; track a) {
+                <option [ngValue]="a">{{ a }}</option>
+              }
+            </select>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="initialiserFeries()" [disabled]="acting()">Fériés légaux de Madagascar</button>
+            <button type="button" class="btn btn--primary btn--sm" (click)="editerFerie(null)">Ajouter</button>
+          </div>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <tbody>
+              @for (f of feries(); track f.date) {
+                <tr>
+                  <td class="nowrap">{{ f.date | date: 'dd/MM/yyyy' }}</td>
+                  <td class="muted small">{{ f.jour }}</td>
+                  <td class="strong">{{ f.libelle }}</td>
+                  <td class="nowrap">
+                    <button type="button" class="linkish small" (click)="editerFerie(f)">Renommer</button> ·
+                    <button type="button" class="linkish small" (click)="supprimerFerie(f)">Supprimer</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td class="muted">Aucun jour férié pour {{ annee }}.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>
+
+@if (modal()) {
+  <div class="overlay" (click)="modal.set(null)">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @switch (modal()) {
+        @case ('departement') {
+          <header class="modal__head"><h2>{{ editId ? 'Modifier le département' : 'Nouveau département' }}</h2></header>
+          <form (ngSubmit)="enregistrerDepartement()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>Nom <span class="req">*</span></span>
+                  <input [(ngModel)]="dep.nom" name="nom" />
+                </label>
+                <label class="field">
+                  <span>Responsable</span>
+                  <select [(ngModel)]="dep.responsableUserId" name="responsable">
+                    <option [ngValue]="null">Aucun</option>
+                    @for (r of responsables(); track r.userId) {
+                      <option [ngValue]="r.userId">{{ r.nom || r.login }} ({{ r.login }})</option>
+                    }
+                  </select>
+                  @if (!responsables().length) {
+                    <small>Aucun compte avec le rôle « Responsable d’équipe ».</small>
+                  }
+                </label>
+                <label class="field">
+                  <span>E-mail de notification</span>
+                  <input type="email" [(ngModel)]="dep.emailNotification" name="email" />
+                  <small>Reçoit les nouvelles demandes du département.</small>
+                </label>
+                <label class="check"><input type="checkbox" [(ngModel)]="dep.actif" name="actif" /> Actif</label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+        @case ('poste') {
+          <header class="modal__head"><h2>{{ editId ? 'Modifier le poste' : 'Nouveau poste' }}</h2></header>
+          <form (ngSubmit)="enregistrerPoste()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>Intitulé <span class="req">*</span></span>
+                  <input [(ngModel)]="poste.intitule" name="intitule" placeholder="Vendeur, caissier, magasinier…" />
+                </label>
+                <label class="field">
+                  <span>Département</span>
+                  <select [(ngModel)]="poste.departementId" name="departementId">
+                    <option [ngValue]="null">Tous</option>
+                    @for (d of departements(); track d.id) {
+                      <option [ngValue]="d.id">{{ d.nom }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="check"><input type="checkbox" [(ngModel)]="poste.actif" name="actif" /> Actif</label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+        @case ('horaire') {
+          <header class="modal__head"><h2>{{ editId ? 'Modifier l’horaire' : 'Nouvel horaire' }}</h2></header>
+          <form (ngSubmit)="enregistrerHoraire()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field field--wide">
+                  <span>Nom <span class="req">*</span></span>
+                  <input [(ngModel)]="hor.nom" name="nom" />
+                </label>
+                <label class="field">
+                  <span>Début</span>
+                  <input type="time" [(ngModel)]="hor.heureDebut" name="debut" />
+                </label>
+                <label class="field">
+                  <span>Fin</span>
+                  <input type="time" [(ngModel)]="hor.heureFin" name="fin" />
+                </label>
+                <label class="field">
+                  <span>Pause (minutes)</span>
+                  <input type="number" min="0" [(ngModel)]="hor.pauseMinutes" name="pause" />
+                </label>
+                <label class="field">
+                  <span>Tolérance de retard (minutes)</span>
+                  <input type="number" min="0" [(ngModel)]="hor.toleranceRetardMin" name="tolerance" />
+                </label>
+                <div class="field field--wide">
+                  <span>Jours travaillés</span>
+                  <div class="days">
+                    @for (j of jours; track j.iso) {
+                      <button type="button" class="day" [class.on]="hor.joursTravailles.includes(j.iso)" (click)="toggleJourHoraire(j.iso)">{{ j.court }}</button>
+                    }
+                  </div>
+                </div>
+                <label class="check"><input type="checkbox" [(ngModel)]="hor.parDefaut" name="defaut" /> Horaire par défaut</label>
+                <label class="check"><input type="checkbox" [(ngModel)]="hor.actif" name="actif" /> Actif</label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+        @case ('ferie') {
+          <header class="modal__head"><h2>Jour férié</h2></header>
+          <form (ngSubmit)="enregistrerFerie()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>Date <span class="req">*</span></span>
+                  <input type="date" [(ngModel)]="ferie.date" name="date" />
+                </label>
+                <label class="field">
+                  <span>Libellé <span class="req">*</span></span>
+                  <input [(ngModel)]="ferie.libelle" name="libelle" />
+                </label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,451 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <a routerLink="/rh/employes">Employés</a>
+        <span>›</span>
+        <strong>{{ detail()?.employe?.matricule || '…' }}</strong>
+      </nav>
+      @if (detail(); as d) {
+        <div class="title-row">
+          <h1>{{ d.employe.nomComplet }}</h1>
+          <span class="badge" [attr.data-tone]="d.employe.statut === 'Actif' ? 'ok' : d.employe.statut === 'Suspendu' ? 'warn' : ''">
+            {{ d.employe.statut }}
+          </span>
+        </div>
+        <p class="subtitle">
+          {{ d.employe.matricule }}
+          @if (d.employe.departement) {
+            · {{ d.employe.departement }}
+          }
+          @if (d.employe.poste) {
+            · {{ d.employe.poste }}
+          }
+          · embauché le {{ d.employe.dateEmbauche | date: 'dd/MM/yyyy' }}
+          @if (d.employe.dateSortie) {
+            · sorti le {{ d.employe.dateSortie | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      } @else {
+        <h1>Employé</h1>
+      }
+    </div>
+    @if (detail(); as d) {
+      <div class="rh__actions">
+        <a class="btn btn--ghost" [routerLink]="['/rh/planning']" [queryParams]="{ employeId: d.employe.id }">Planning</a>
+        <a class="btn btn--ghost" [routerLink]="['/rh/presence']" [queryParams]="{ employeId: d.employe.id }">Présence</a>
+        @if (d.employe.statut === 'Actif') {
+          <button type="button" class="btn btn--ghost" (click)="changerStatut('Suspendu')" [disabled]="acting()">Suspendre</button>
+          <button type="button" class="btn btn--danger" (click)="ouvrir('sortie')">Enregistrer la sortie</button>
+        } @else {
+          <button type="button" class="btn btn--ghost" (click)="changerStatut('Actif')" [disabled]="acting()">Réactiver</button>
+        }
+        <button type="button" class="btn btn--primary" (click)="formOpen.set(true)">Modifier la fiche</button>
+      </div>
+    }
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !detail()) {
+    <div class="panel">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  }
+
+  @if (detail(); as d) {
+    <section class="kpis">
+      <div class="kpi" data-tone="ok">
+        <span>Solde de congés</span>
+        <strong>{{ d.soldeConges.solde | number: '1.0-1' }} j</strong>
+        <small>{{ d.soldeConges.soldeApresDemandes | number: '1.0-1' }} j disponibles (congés à venir et demandes déduits)</small>
+      </div>
+      <div class="kpi">
+        <span>Régime de repos</span>
+        <strong style="font-size: var(--me-fs-lg)">{{ libelleRegime(d.employe.modeRepos, d.employe.joursRepos, d.employe.joursTravailSemaine) }}</strong>
+        <small>Horaire : {{ d.employe.horaire || 'par défaut' }}</small>
+      </div>
+      <div class="kpi">
+        <span>Pointeuse</span>
+        <strong style="font-size: var(--me-fs-lg)">{{ d.employe.pointeuseNo ? 'N° ' + d.employe.pointeuseNo : 'Non suivi' }}</strong>
+      </div>
+      <div class="kpi" [attr.data-tone]="d.employe.pinDefini ? 'ok' : ''">
+        <span>Espace employé</span>
+        <strong style="font-size: var(--me-fs-lg)">{{ d.employe.pinDefini ? 'PIN défini' : 'Pas de PIN' }}</strong>
+        @if (d.employe.pinBloqueJusqua) {
+          <small>Bloqué jusqu’à {{ utc(d.employe.pinBloqueJusqua) | date: 'HH:mm' }}</small>
+        }
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Sections de la fiche">
+      <button type="button" class="tab" [class.tab--active]="onglet() === 'fiche'" (click)="setOnglet('fiche')">Fiche</button>
+      <button type="button" class="tab" [class.tab--active]="onglet() === 'contrats'" (click)="setOnglet('contrats')">
+        Contrats ({{ d.contrats.length }})
+      </button>
+      <button type="button" class="tab" [class.tab--active]="onglet() === 'conges'" (click)="setOnglet('conges')">Congés & absences</button>
+      <button type="button" class="tab" [class.tab--active]="onglet() === 'espace'" (click)="setOnglet('espace')">Espace employé</button>
+    </nav>
+
+    @switch (onglet()) {
+      @case ('fiche') {
+        <section class="panel">
+          <div class="panel__body">
+            <dl class="dl">
+              <div><dt>Nom</dt><dd>{{ d.employe.nom }}</dd></div>
+              <div><dt>Prénom</dt><dd>{{ d.employe.prenom || '—' }}</dd></div>
+              <div><dt>Sexe</dt><dd>{{ d.employe.sexe === 'M' ? 'Homme' : d.employe.sexe === 'F' ? 'Femme' : '—' }}</dd></div>
+              <div><dt>Naissance</dt><dd>{{ d.employe.dateNaissance ? (d.employe.dateNaissance | date: 'dd/MM/yyyy') : '—' }} {{ d.employe.lieuNaissance ? 'à ' + d.employe.lieuNaissance : '' }}</dd></div>
+              <div><dt>CIN</dt><dd>{{ d.employe.cin || '—' }}</dd></div>
+              <div><dt>CNaPS</dt><dd>{{ d.employe.cnaps || '—' }}</dd></div>
+              <div><dt>Téléphone</dt><dd>{{ d.employe.telephone || '—' }}</dd></div>
+              <div><dt>E-mail</dt><dd>{{ d.employe.email || '—' }}</dd></div>
+              <div><dt>Adresse</dt><dd>{{ d.employe.adresse || '—' }}</dd></div>
+              <div><dt>Situation</dt><dd>{{ d.employe.situationFamiliale || '—' }}{{ d.employe.nbEnfants != null ? ', ' + d.employe.nbEnfants + ' enfant(s)' : '' }}</dd></div>
+              <div><dt>Contact d’urgence</dt><dd>{{ d.employe.contactUrgence || '—' }}</dd></div>
+              <div><dt>Département</dt><dd>{{ d.employe.departement || '—' }}</dd></div>
+              <div><dt>Poste</dt><dd>{{ d.employe.poste || '—' }}</dd></div>
+              @if (d.employe.motifSortie) {
+                <div><dt>Motif de sortie</dt><dd>{{ d.employe.motifSortie }}</dd></div>
+              }
+            </dl>
+            @if (d.employe.notes) {
+              <p class="muted small" style="margin: 1rem 0 0">{{ d.employe.notes }}</p>
+            }
+          </div>
+        </section>
+      }
+
+      @case ('contrats') {
+        <section class="panel">
+          <header class="panel__head">
+            <h2>Contrats</h2>
+            <button type="button" class="btn btn--primary btn--sm" (click)="nouveauContrat()">Nouveau contrat</button>
+          </header>
+          <div class="table-scroll">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Début</th>
+                  <th>Fin</th>
+                  <th>Poste</th>
+                  <th class="num">Salaire de base</th>
+                  <th></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of d.contrats; track c.id) {
+                  <tr>
+                    <td class="strong">{{ c.type }}</td>
+                    <td class="nowrap">{{ c.dateDebut | date: 'dd/MM/yyyy' }}</td>
+                    <td class="nowrap">{{ c.dateFin ? (c.dateFin | date: 'dd/MM/yyyy') : '—' }}</td>
+                    <td>{{ c.poste || '—' }}</td>
+                    <td class="num">{{ c.salaireBase != null ? (c.salaireBase | number: '1.0-0') + ' Ar' : '—' }}</td>
+                    <td>
+                      @if (c.enCours) {
+                        <span class="badge" data-tone="ok">En cours</span>
+                      }
+                      @if (c.joursRestants != null && c.joursRestants <= 30) {
+                        <span class="badge" data-tone="warn">{{ c.joursRestants }} j restants</span>
+                      }
+                    </td>
+                    <td class="nowrap">
+                      <button type="button" class="linkish small" (click)="modifierContrat(c)">Modifier</button>
+                      ·
+                      <button type="button" class="linkish small" (click)="supprimerContrat(c)">Supprimer</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7" class="muted">Aucun contrat enregistré.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @case ('conges') {
+        <div class="grid-2">
+          <section class="panel">
+            <header class="panel__head">
+              <h2>Solde au {{ d.soldeConges.date | date: 'dd/MM/yyyy' }}</h2>
+            </header>
+            <div class="panel__body">
+              <dl class="dl">
+                <div><dt>Acquis depuis</dt><dd>{{ d.soldeConges.acquisDepuis | date: 'dd/MM/yyyy' }}</dd></div>
+                <div><dt>Mois acquis</dt><dd>{{ d.soldeConges.moisAcquis }} × {{ d.soldeConges.joursParMois | number: '1.0-2' }} j</dd></div>
+                <div><dt>Solde repris</dt><dd>{{ d.soldeConges.soldeInitial | number: '1.0-1' }} j</dd></div>
+                <div><dt>Ajustements</dt><dd>{{ d.soldeConges.ajustements | number: '1.0-1' }} j</dd></div>
+                <div><dt>Acquis</dt><dd>{{ d.soldeConges.acquis | number: '1.0-1' }} j</dd></div>
+                <div><dt>Pris</dt><dd>{{ d.soldeConges.pris | number: '1.0-1' }} j</dd></div>
+                <div><dt>Solde</dt><dd class="strong">{{ d.soldeConges.solde | number: '1.0-1' }} j</dd></div>
+                <div><dt>Validés à venir</dt><dd>{{ d.soldeConges.planifies | number: '1.0-1' }} j</dd></div>
+                <div><dt>En attente</dt><dd>{{ d.soldeConges.enAttente | number: '1.0-1' }} j</dd></div>
+                <div><dt>Disponible</dt><dd class="strong">{{ d.soldeConges.soldeApresDemandes | number: '1.0-1' }} j</dd></div>
+              </dl>
+            </div>
+          </section>
+
+          <section class="panel">
+            <header class="panel__head">
+              <h2>Ajustements du solde</h2>
+              <button type="button" class="btn btn--ghost btn--sm" (click)="nouvelAjustement()">Ajuster</button>
+            </header>
+            <div class="table-scroll">
+              <table class="tbl">
+                <tbody>
+                  @for (a of ajustements(); track a.id) {
+                    <tr>
+                      <td class="nowrap">{{ a.dateEffet | date: 'dd/MM/yyyy' }}</td>
+                      <td class="num strong">{{ a.jours > 0 ? '+' : '' }}{{ a.jours | number: '1.0-1' }} j</td>
+                      <td>{{ a.motif }}</td>
+                      <td><button type="button" class="linkish small" (click)="supprimerAjustement(a)">Supprimer</button></td>
+                    </tr>
+                  } @empty {
+                    <tr><td class="muted">Aucun ajustement (report, régularisation…).</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <header class="panel__head">
+            <h2>Absences et demandes</h2>
+            <a class="btn btn--ghost btn--sm" routerLink="/rh/absences" [queryParams]="{ employeId: d.employe.id, nouvelle: 1 }">Saisir une absence</a>
+          </header>
+          <div class="table-scroll">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Période</th>
+                  <th class="num">Jours</th>
+                  <th>Statut</th>
+                  <th>Motif</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of absences(); track a.id) {
+                  <tr class="clickable" [routerLink]="['/rh/absences', a.id]">
+                    <td class="strong">{{ typeAbsence(a.type) }}</td>
+                    <td class="nowrap">{{ a.dateDebut | date: 'dd/MM/yyyy' }}{{ a.dateFin !== a.dateDebut ? ' → ' + (a.dateFin | date: 'dd/MM/yyyy') : '' }}</td>
+                    <td class="num">{{ a.nbJours | number: '1.0-1' }}</td>
+                    <td><span class="badge" [attr.data-tone]="tonAbsence(a.statut)">{{ libelleStatutAbsence(a.statut) }}</span></td>
+                    <td class="muted small">{{ a.motif }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="muted">Aucune absence.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @case ('espace') {
+        <section class="panel">
+          <header class="panel__head">
+            <h2>Accès à l’espace employé</h2>
+          </header>
+          <div class="panel__body">
+            <p style="margin-top: 0">
+              L’employé se connecte avec son matricule <strong class="ref">{{ d.employe.matricule }}</strong>
+              @if (d.employe.pointeuseNo) {
+                (ou son n° de pointeuse <strong>{{ d.employe.pointeuseNo }}</strong>)
+              }
+              et un PIN de 4 à 6 chiffres. Il y voit son solde, ses demandes, son planning et sa présence.
+            </p>
+            <p class="muted small">
+              Après 5 erreurs, le PIN est bloqué 15 minutes ; le redéfinir le débloque immédiatement.
+            </p>
+            <div class="rh__actions">
+              <button type="button" class="btn btn--primary" (click)="ouvrir('pin')">
+                {{ d.employe.pinDefini ? 'Changer le PIN' : 'Définir un PIN' }}
+              </button>
+              @if (d.employe.pinDefini) {
+                <button type="button" class="btn btn--danger" (click)="supprimerPin()" [disabled]="acting()">Retirer le PIN</button>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    }
+  }
+</div>
+
+@if (formOpen() && detail()) {
+  <app-rh-employe-form [employe]="detail()!.employe" (saved)="onSaved()" (closed)="formOpen.set(false)" />
+}
+
+@if (modal()) {
+  <div class="overlay" (click)="fermer()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @switch (modal()) {
+        @case ('contrat') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">{{ detail()?.employe?.nomComplet }}</p>
+              <h2>{{ contrat.id ? 'Modifier le contrat' : 'Nouveau contrat' }}</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="enregistrerContrat()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>Type <span class="req">*</span></span>
+                  <select [(ngModel)]="contrat.type" name="type">
+                    @for (t of typesContrat; track t) {
+                      <option [value]="t">{{ t }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Poste</span>
+                  <select [(ngModel)]="contrat.posteId" name="posteId">
+                    <option [ngValue]="null">—</option>
+                    @for (p of postes(); track p.id) {
+                      <option [ngValue]="p.id">{{ p.intitule }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Début <span class="req">*</span></span>
+                  <input type="date" [(ngModel)]="contrat.dateDebut" name="dateDebut" required />
+                </label>
+                <label class="field">
+                  <span>Fin {{ contrat.type === 'CDI' || contrat.type === 'Prestataire' ? '' : '*' }}</span>
+                  <input type="date" [(ngModel)]="contrat.dateFin" name="dateFin" />
+                  <small>Obligatoire pour CDD, essai et stage.</small>
+                </label>
+                <label class="field">
+                  <span>Salaire de base (Ar)</span>
+                  <input type="number" min="0" [(ngModel)]="contrat.salaireBase" name="salaireBase" />
+                </label>
+                <label class="field field--wide">
+                  <span>Notes</span>
+                  <textarea [(ngModel)]="contrat.notes" name="notes" rows="2"></textarea>
+                </label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="fermer()">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+        @case ('sortie') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">{{ detail()?.employe?.nomComplet }}</p>
+              <h2>Enregistrer la sortie</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="enregistrerSortie()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>Date de sortie <span class="req">*</span></span>
+                  <input type="date" [(ngModel)]="sortie.dateSortie" name="dateSortie" required />
+                </label>
+                <label class="field">
+                  <span>Motif</span>
+                  <select [(ngModel)]="sortie.motif" name="motif">
+                    <option value="">—</option>
+                    <option value="Démission">Démission</option>
+                    <option value="Fin de contrat">Fin de contrat</option>
+                    <option value="Licenciement">Licenciement</option>
+                    <option value="Rupture d'un commun accord">Rupture d’un commun accord</option>
+                    <option value="Retraite">Retraite</option>
+                    <option value="Abandon de poste">Abandon de poste</option>
+                  </select>
+                </label>
+              </div>
+              <p class="muted small">L’employé ne sera plus suivi après cette date. La sortie peut être annulée en le réactivant.</p>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="fermer()">Annuler</button>
+              <button type="submit" class="btn btn--danger" [disabled]="acting()">Enregistrer la sortie</button>
+            </footer>
+          </form>
+        }
+        @case ('ajustement') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">Solde de congés</p>
+              <h2>Ajuster le solde</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="enregistrerAjustement()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>Jours <span class="req">*</span></span>
+                  <input type="number" step="0.5" [(ngModel)]="ajustement.jours" name="jours" />
+                  <small>Positif = ajout (report), négatif = retrait.</small>
+                </label>
+                <label class="field">
+                  <span>Date d’effet</span>
+                  <input type="date" [(ngModel)]="ajustement.dateEffet" name="dateEffet" />
+                </label>
+                <label class="field field--wide">
+                  <span>Motif <span class="req">*</span></span>
+                  <input [(ngModel)]="ajustement.motif" name="motif" placeholder="Report de l’année précédente, régularisation…" />
+                </label>
+              </div>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="fermer()">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+        @case ('pin') {
+          <header class="modal__head">
+            <div>
+              <p class="eyebrow">{{ detail()?.employe?.nomComplet }}</p>
+              <h2>PIN de l’espace employé</h2>
+            </div>
+          </header>
+          <form (ngSubmit)="definirPin()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <label class="field">
+                <span>Nouveau PIN (4 à 6 chiffres)</span>
+                <input [(ngModel)]="pin" name="pin" inputmode="numeric" maxlength="6" autocomplete="off" />
+                <small>Les suites simples (1234, 0000…) sont refusées.</small>
+              </label>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="fermer()">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+      }
+    </div>
+  </div>
+}

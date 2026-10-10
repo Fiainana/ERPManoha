@@ -1,0 +1,313 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <strong>Présence</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Présence</h1>
+      </div>
+      <p class="subtitle">Calculée à partir de la pointeuse, des horaires, des repos et des absences validées</p>
+    </div>
+    <div class="rh__actions">
+      <button type="button" class="btn btn--ghost" (click)="actualiser()" [disabled]="loading()">
+        {{ loading() ? 'Chargement…' : 'Actualiser' }}
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'jour'" (click)="setOnglet('jour')">Aujourd’hui</button>
+    <button type="button" class="tab" [class.tab--active]="onglet() === 'rapport'" (click)="setOnglet('rapport')">Rapport sur une période</button>
+  </nav>
+
+  <div class="toolbar">
+    <select [(ngModel)]="departementId" (ngModelChange)="actualiser()" aria-label="Département">
+      <option [ngValue]="null">Tous les départements</option>
+      @for (d of departements(); track d.id) {
+        <option [ngValue]="d.id">{{ d.nom }}</option>
+      }
+    </select>
+    @if (onglet() === 'rapport') {
+      <label class="inline">Du <input type="date" [(ngModel)]="debut" /></label>
+      <label class="inline">au <input type="date" [(ngModel)]="fin" /></label>
+      <button type="button" class="btn btn--primary btn--sm" (click)="chargerRapport()" [disabled]="loading()">Afficher</button>
+      @if (employeId) {
+        <button type="button" class="btn btn--ghost btn--sm" (click)="employeId = null; chargerRapport()">Tous les employés ✕</button>
+      }
+    }
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (onglet() === 'jour') {
+    @if (duJour(); as d) {
+      <section class="kpis">
+        <div class="kpi" data-tone="ok"><span>Présents</span><strong>{{ d.presents }}</strong></div>
+        <div class="kpi" data-tone="warn"><span>En retard</span><strong>{{ d.enRetard }}</strong></div>
+        <div class="kpi" data-tone="danger"><span>Absents non justifiés</span><strong>{{ d.absents }}</strong></div>
+        <div class="kpi"><span>Absences justifiées</span><strong>{{ d.enAbsenceJustifiee }}</strong></div>
+        <div class="kpi"><span>Repos</span><strong>{{ d.enRepos }}</strong></div>
+        <div class="kpi"><span>Pas encore arrivés</span><strong>{{ d.pasEncoreArrives }}</strong></div>
+        @if (d.nonSuivis) {
+          <div class="kpi"><span>Non suivis</span><strong>{{ d.nonSuivis }}</strong><small>sans n° pointeuse</small></div>
+        }
+      </section>
+
+      <section class="panel">
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Employé</th>
+                <th>Statut</th>
+                <th>Passages</th>
+                <th class="num">Retard</th>
+                <th class="num">Travaillé</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.lignes; track l.employeId) {
+                <tr>
+                  <td><a class="strong linkish" style="color: inherit" [routerLink]="['/rh/employes', l.employeId]">{{ l.nom }}</a></td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="tonPresence(l.statut)">{{ libellePresence(l.statut) }}</span>
+                    <span class="muted small"> {{ libelleRepos(l.reposType) }} {{ typeAbsence(l.typeAbsence) }}{{ l.jourFerie ? ' ' + l.jourFerie : '' }}</span>
+                  </td>
+                  <td class="small">
+                    {{ l.pointages.join(' · ') || '—' }}
+                    @if (l.nbPointagesManuels) {
+                      <span class="badge">{{ l.nbPointagesManuels }} manuel(s)</span>
+                    }
+                  </td>
+                  <td class="num">{{ l.retardMinutes ? l.retardMinutes + ' min' : '' }}</td>
+                  <td class="num">{{ l.minutesTravaillees ? duree(l.minutesTravaillees) : '' }}</td>
+                  <td class="nowrap">
+                    @if (l.statut === 'Absent' || l.statut === 'AVenir') {
+                      <button type="button" class="linkish small" (click)="ouvrirJustif(l)">Justifier</button>
+                    }
+                    @if (l.statut === 'Present' || l.statut === 'Absent' || l.statut === 'AVenir') {
+                      · <button type="button" class="linkish small" (click)="ouvrirPointage(l)">Ajouter un pointage</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  } @else {
+    @if (rapport(); as r) {
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Synthèse du {{ r.debut | date: 'dd/MM' }} au {{ r.fin | date: 'dd/MM/yyyy' }}</h2>
+          <span class="muted small">Cliquez sur un employé pour le détail jour par jour</span>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Employé</th>
+                <th>Régime</th>
+                <th class="num">Jours ouvrés</th>
+                <th class="num">Présent</th>
+                <th class="num">Abs. justifiées</th>
+                <th class="num">Abs. non justifiées</th>
+                <th class="num">Retards</th>
+                <th class="num">Pause dépassée</th>
+                <th class="num">Travaillé / prévu</th>
+                <th class="num">Taux</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of r.employes; track e.employeId) {
+                <tr class="clickable" [class.dim]="!e.suiviPointeuse" (click)="choisirEmploye(e.employeId)"
+                  [style.background]="employeChoisi() === e.employeId ? 'var(--me-red-soft)' : null">
+                  <td>
+                    <span class="strong">{{ e.nom }}</span>
+                    <span class="muted small"> {{ e.horaire }}</span>
+                  </td>
+                  <td class="small nowrap">{{ e.modeRepos }}</td>
+                  <td class="num">{{ e.joursOuvres }}</td>
+                  <td class="num">{{ e.joursPresent }}{{ e.joursHorsHoraire ? ' +' + e.joursHorsHoraire : '' }}</td>
+                  <td class="num">{{ e.joursAbsenceJustifiee | number: '1.0-1' }}</td>
+                  <td class="num" [style.color]="e.joursAbsenceNonJustifiee ? 'var(--me-red-deeper)' : null">{{ e.joursAbsenceNonJustifiee }}</td>
+                  <td class="num">{{ e.nbRetards }}{{ e.minutesRetard ? ' (' + e.minutesRetard + ' min)' : '' }}</td>
+                  <td class="num">{{ e.minutesPauseDepassee ? e.minutesPauseDepassee + ' min' : '' }}</td>
+                  <td class="num">{{ duree(e.minutesTravaillees) }} / {{ duree(e.minutesPrevues) }}</td>
+                  <td class="num strong">{{ e.tauxPresence != null ? (e.tauxPresence | number: '1.0-0') + ' %' : '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="10" class="muted">Aucun employé.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      @if (synthese(); as s) {
+        <section class="panel">
+          <header class="panel__head">
+            <h2>{{ s.nom }} — jour par jour</h2>
+            <label class="check small">
+              <input type="checkbox" [(ngModel)]="seulementAnomalies" /> seulement les anomalies
+            </label>
+          </header>
+          <div class="table-scroll">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Jour</th>
+                  <th>Statut</th>
+                  <th>Passages</th>
+                  <th class="num">Retard</th>
+                  <th class="num">Départ anticipé</th>
+                  <th class="num">Pause</th>
+                  <th class="num">Travaillé</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of lignesEmploye(); track l.date) {
+                  <tr [class.dim]="l.statut === 'Repos' || l.statut === 'Ferie'">
+                    <td class="nowrap">{{ l.date | date: 'EEE dd/MM' }}</td>
+                    <td>
+                      <span class="badge" [attr.data-tone]="tonPresence(l.statut)">{{ libellePresence(l.statut) }}</span>
+                      <span class="muted small"> {{ libelleRepos(l.reposType) }} {{ typeAbsence(l.typeAbsence) }}{{ l.jourFerie ? ' ' + l.jourFerie : '' }}</span>
+                      @if (l.sortieManquante) {
+                        <span class="badge" data-tone="warn">Sortie manquante</span>
+                      }
+                      @if (l.horsHoraire) {
+                        <span class="badge" data-tone="info">Hors horaire</span>
+                      }
+                    </td>
+                    <td class="small">
+                      {{ l.pointages.join(' · ') }}
+                      @if (l.nbPointagesManuels) {
+                        <span class="badge">{{ l.nbPointagesManuels }} manuel(s)</span>
+                      }
+                    </td>
+                    <td class="num">{{ l.retardMinutes ? l.retardMinutes + ' min' : '' }}</td>
+                    <td class="num">{{ l.departAnticipeMinutes ? l.departAnticipeMinutes + ' min' : '' }}</td>
+                    <td class="num">
+                      {{ l.pauseMinutes != null ? l.pauseMinutes + ' min' : '' }}
+                      @if (l.pauseDepasseeMinutes) {
+                        <span style="color: var(--me-red-deeper)"> (+{{ l.pauseDepasseeMinutes }})</span>
+                      }
+                    </td>
+                    <td class="num">{{ l.minutesTravaillees ? duree(l.minutesTravaillees) : '' }}</td>
+                    <td class="nowrap">
+                      @if (l.statut === 'Absent') {
+                        <button type="button" class="linkish small" (click)="ouvrirJustif(l)">Justifier</button> ·
+                      }
+                      @if (l.statut === 'Present' || l.statut === 'Absent') {
+                        <button type="button" class="linkish small" (click)="ouvrirPointage(l)">+ pointage</button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="8" class="muted">Aucune ligne.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    } @else if (loading()) {
+      <div class="panel">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    }
+  }
+</div>
+
+@if (justif(); as l) {
+  <div class="overlay" (click)="justif.set(null)">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ l.nom }}</p>
+          <h2>Justifier l’absence du {{ l.date | date: 'EEEE dd/MM' }}</h2>
+        </div>
+      </header>
+      <form (ngSubmit)="justifier()">
+        <div class="modal__body">
+          @if (modalError()) {
+            <div class="alert">{{ modalError() }}</div>
+          }
+          <div class="form-grid">
+            <label class="field">
+              <span>Type</span>
+              <select [(ngModel)]="j.type" name="type">
+                @for (t of types; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Jusqu’au (facultatif)</span>
+              <input type="date" [(ngModel)]="j.dateFin" name="dateFin" [min]="l.date" />
+            </label>
+            <label class="check"><input type="checkbox" [(ngModel)]="j.debutApresMidi" name="am" /> seulement l’après-midi</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="j.finMatin" name="fm" /> seulement le matin (dernier jour)</label>
+            <label class="field field--wide">
+              <span>Motif</span>
+              <textarea [(ngModel)]="j.motif" name="motif" rows="2"></textarea>
+            </label>
+          </div>
+          <p class="muted small" style="margin: 0">Crée une absence validée. Un congé est décompté du solde.</p>
+        </div>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="justif.set(null)">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="acting()">Justifier</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
+
+@if (pointage(); as l) {
+  <div class="overlay" (click)="pointage.set(null)">
+    <div class="modal" style="width: min(480px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ l.nom }} — {{ l.date | date: 'EEEE dd/MM' }}</p>
+          <h2>Ajouter un pointage</h2>
+        </div>
+      </header>
+      <form (ngSubmit)="ajouterPointage()">
+        <div class="modal__body">
+          @if (modalError()) {
+            <div class="alert">{{ modalError() }}</div>
+          }
+          <p class="muted small" style="margin: 0">Passages enregistrés : {{ l.pointages.join(' · ') || 'aucun' }}</p>
+          <div class="form-grid">
+            <label class="field">
+              <span>Heure</span>
+              <input type="time" [(ngModel)]="p.heure" name="heure" required />
+            </label>
+            <label class="field">
+              <span>Motif <span class="req">*</span></span>
+              <input [(ngModel)]="p.motif" name="motif" />
+            </label>
+          </div>
+        </div>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="pointage.set(null)">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="acting()">Ajouter</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
