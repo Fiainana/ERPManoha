@@ -13,6 +13,7 @@ import {
   DepotRefOption,
   FamilleOption,
   GenererBcPayload,
+  GenererBcResult,
   ReferentielArticleCreation,
   UniteOption,
 } from '../models/demande-achat.model';
@@ -23,9 +24,26 @@ export class DemandesAchatService {
   private readonly base = `${environment.apiUrl}/b2b/demandes-achat`;
   private readonly adminArticles = `${environment.apiUrl}/admin/articles`;
 
+  /** Statuts dont le code API diffère du code utilisé dans l'application. */
+  private static readonly STATUTS_API: Record<string, string> = {
+    CommandeCreee: 'CommandeSageCreee',
+  };
+
+  /** Libellés affichés, définis côté front (indépendants des textes renvoyés par l'API). */
+  private static readonly LIBELLES_STATUT: Record<string, string> = {
+    Envoyee: 'Envoyée',
+    EnAttenteArticle: 'En attente article (Achats)',
+    ArticlePret: 'Article prêt — BC à générer',
+    CommandeCreee: 'BC créé',
+    Receptionnee: 'Réceptionnée',
+    Facturable: 'Facturable (vente client possible)',
+    Cloturee: 'Clôturée',
+    Annulee: 'Annulée',
+  };
+
   listMes(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
     let params = new HttpParams();
-    if (opts.statut) params = params.set('statut', opts.statut);
+    if (opts.statut) params = params.set('statut', this.toApiStatut(opts.statut));
     if (opts.page) params = params.set('page', String(opts.page));
     if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
 
@@ -37,7 +55,7 @@ export class DemandesAchatService {
 
   listAll(opts: { statut?: string; page?: number; pageSize?: number } = {}) {
     let params = new HttpParams();
-    if (opts.statut) params = params.set('statut', opts.statut);
+    if (opts.statut) params = params.set('statut', this.toApiStatut(opts.statut));
     if (opts.page) params = params.set('page', String(opts.page));
     if (opts.pageSize) params = params.set('pageSize', String(opts.pageSize));
 
@@ -70,7 +88,7 @@ export class DemandesAchatService {
 
   genererBonCommande(id: number, body: GenererBcPayload) {
     return this.http.post<ApiResponse<unknown>>(`${this.base}/${id}/generer-sage`, body).pipe(
-      map((res) => this.unwrap(res)),
+      map((res) => this.normalizeGenererBc(this.unwrap(res))),
       catchError((err) => throwError(() => new Error(this.readError(err))))
     );
   }
@@ -175,14 +193,15 @@ export class DemandesAchatService {
 
   private normalizeListItem(row: Record<string, unknown>): DemandeAchatListItem {
     const dem = (row['demandeur'] || row['Demandeur'] || {}) as Record<string, unknown>;
+    const statut = this.fromApiStatut(row['statut'] ?? row['Statut']);
     return {
       id: Number(row['id'] ?? row['Id'] ?? 0),
-      statut: String(row['statut'] ?? row['Statut'] ?? ''),
-      statutLibelle: (row['statutLibelle'] ?? row['StatutLibelle']) as string | null,
+      statut,
+      statutLibelle: this.libelleStatut(statut),
       fournisseurCode: (row['fournisseurCode'] ?? row['FournisseurCode']) as string | null,
       depotNo: this.num(row['depotNo'] ?? row['DepotNo']),
       depotIntitule: (row['depotIntitule'] ?? row['DepotIntitule']) as string | null,
-      pieceSage: (row['pieceSage'] ?? row['PieceSage']) as string | null,
+      numeroBc: (row['pieceSage'] ?? row['PieceSage']) as string | null,
       note: (row['note'] ?? row['Note']) as string | null,
       dateCreation: (row['dateCreation'] ?? row['DateCreation']) as string | null,
       dateMaj: (row['dateMaj'] ?? row['DateMaj']) as string | null,
@@ -197,14 +216,15 @@ export class DemandesAchatService {
     const lignesRaw = (bag['lignes'] || bag['Lignes'] || []) as Record<string, unknown>[];
     const dem = (entete['demandeur'] || entete['Demandeur'] || {}) as Record<string, unknown>;
 
+    const statut = this.fromApiStatut(entete['statut'] ?? entete['Statut']);
     return {
       id: Number(entete['id'] ?? entete['Id'] ?? 0),
-      statut: String(entete['statut'] ?? entete['Statut'] ?? ''),
-      statutLibelle: (entete['statutLibelle'] ?? entete['StatutLibelle']) as string | null,
+      statut,
+      statutLibelle: this.libelleStatut(statut),
       fournisseurCode: (entete['fournisseurCode'] ?? entete['FournisseurCode']) as string | null,
       depotNo: this.num(entete['depotNo'] ?? entete['DepotNo']),
       depotIntitule: (entete['depotIntitule'] ?? entete['DepotIntitule']) as string | null,
-      pieceSage: (entete['pieceSage'] ?? entete['PieceSage']) as string | null,
+      numeroBc: (entete['pieceSage'] ?? entete['PieceSage']) as string | null,
       note: (entete['note'] ?? entete['Note']) as string | null,
       dateCreation: (entete['dateCreation'] ?? entete['DateCreation']) as string | null,
       dateMaj: (entete['dateMaj'] ?? entete['DateMaj']) as string | null,
@@ -225,7 +245,6 @@ export class DemandesAchatService {
       refFournisseur: (row['refFournisseur'] ?? row['RefFournisseur']) as string | null,
       designation: (row['designation'] ?? row['Designation']) as string | null,
       quantite: qty,
-      articleSage: article,
       articleReference: article,
       qteRecue: this.num(row['qteRecue'] ?? row['QteRecue']),
       estNouvelArticle:
@@ -233,6 +252,26 @@ export class DemandesAchatService {
       quantiteConfirmee: qty,
       prixUnitaire: null,
     };
+  }
+
+  private normalizeGenererBc(raw: unknown): GenererBcResult {
+    const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const n = o['numeroPiece'] ?? o['NumeroPiece'] ?? o['pieceSage'] ?? o['PieceSage'];
+    return { numeroBc: n == null || n === '' ? null : String(n) };
+  }
+
+  private toApiStatut(statut: string): string {
+    return DemandesAchatService.STATUTS_API[statut] ?? statut;
+  }
+
+  private libelleStatut(statut: string): string | null {
+    return DemandesAchatService.LIBELLES_STATUT[statut] ?? (statut || null);
+  }
+
+  private fromApiStatut(raw: unknown): string {
+    const s = String(raw ?? '');
+    const entry = Object.entries(DemandesAchatService.STATUTS_API).find(([, api]) => api === s);
+    return entry ? entry[0] : s;
   }
 
   private num(v: unknown): number | null {

@@ -53,7 +53,7 @@ export class DemandeAchatDetailPage implements OnInit {
     return ![
       'Annulee',
       'Cloturee',
-      'CommandeSageCreee',
+      'CommandeCreee',
       'Receptionnee',
       'Facturable',
     ].includes(s);

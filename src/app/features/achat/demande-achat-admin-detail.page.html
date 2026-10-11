@@ -65,8 +65,8 @@
         <div>
           <dt>Pièce</dt>
           <dd class="mono">
-            @if (d.pieceSage) {
-              <a [routerLink]="['/achat/bc-achat', d.pieceSage]">{{ d.pieceSage }}</a>
+            @if (d.numeroBc) {
+              <a [routerLink]="['/achat/bc-achat', d.numeroBc]">{{ d.numeroBc }}</a>
             } @else {
               — pas encore
             }

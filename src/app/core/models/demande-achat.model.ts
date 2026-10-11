@@ -4,7 +4,7 @@ export type DemandeAchatStatut =
   | 'Envoyee'
   | 'EnAttenteArticle'
   | 'ArticlePret'
-  | 'CommandeSageCreee'
+  | 'CommandeCreee'
   | 'Receptionnee'
   | 'Facturable'
   | 'Cloturee'
@@ -18,7 +18,7 @@ export interface DemandeAchatListItem {
   fournisseurCode: string | null;
   depotNo: number | null;
   depotIntitule: string | null;
-  pieceSage: string | null;
+  numeroBc: string | null;
   note: string | null;
   dateCreation: string | null;
   dateMaj: string | null;
@@ -32,7 +32,6 @@ export interface DemandeAchatLigne {
   refFournisseur: string | null;
   designation: string | null;
   quantite: number;
-  articleSage: string | null;
   articleReference: string | null;
   qteRecue: number | null;
   estNouvelArticle: boolean;
@@ -47,7 +46,7 @@ export interface DemandeAchatDetail {
   fournisseurCode: string | null;
   depotNo: number | null;
   depotIntitule: string | null;
-  pieceSage: string | null;
+  numeroBc: string | null;
   note: string | null;
   dateCreation: string | null;
   dateMaj: string | null;
@@ -78,6 +77,10 @@ export interface GenererBcLigne {
   ligneId: number;
   quantite?: number | null;
   prixUnitaire?: number | null;
+}
+
+export interface GenererBcResult {
+  numeroBc: string | null;
 }
 
 export interface GenererBcPayload {

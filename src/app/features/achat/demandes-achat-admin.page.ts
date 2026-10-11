@@ -41,7 +41,7 @@ export class DemandesAchatAdminPage implements OnInit {
     { value: '', label: 'Tous les statuts' },
     { value: 'EnAttenteArticle', label: 'En attente article' },
     { value: 'ArticlePret', label: 'Article prêt → BC' },
-    { value: 'CommandeSageCreee', label: 'BC créé' },
+    { value: 'CommandeCreee', label: 'BC créé' },
     { value: 'Receptionnee', label: 'Réceptionnée' },
     { value: 'Annulee', label: 'Annulée' },
   ];

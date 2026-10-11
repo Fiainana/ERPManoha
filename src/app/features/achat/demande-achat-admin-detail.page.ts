@@ -223,10 +223,7 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     this.api.genererBonCommande(this.id, body).subscribe({
       next: (res) => {
         this.acting.set(false);
-        const o = (res || {}) as Record<string, unknown>;
-        const piece = String(
-          o['numeroPiece'] ?? o['NumeroPiece'] ?? o['pieceSage'] ?? o['PieceSage'] ?? ''
-        );
+        const piece = res.numeroBc;
         this.toast.set(piece ? `BC créé : ${piece}` : 'BC créé');
         this.load();
         if (piece) {
