@@ -54,7 +54,8 @@ export class RhReferentielsPage implements OnInit {
     heureFin: '17:00',
     pauseMinutes: 60,
     joursTravailles: [1, 2, 3, 4, 5, 6],
-    toleranceRetardMin: 10,
+    toleranceRetardMin: 3,
+    arriveeFlexibleFin: '',
     parDefaut: false,
     actif: true,
   };
@@ -140,6 +141,7 @@ export class RhReferentielsPage implements OnInit {
           pauseMinutes: h.pauseMinutes,
           joursTravailles: [...h.joursTravailles],
           toleranceRetardMin: h.toleranceRetardMin,
+          arriveeFlexibleFin: h.arriveeFlexibleFin ?? '',
           parDefaut: h.parDefaut,
           actif: h.actif,
         }
@@ -149,7 +151,8 @@ export class RhReferentielsPage implements OnInit {
           heureFin: '17:00',
           pauseMinutes: 60,
           joursTravailles: [1, 2, 3, 4, 5, 6],
-          toleranceRetardMin: 10,
+          toleranceRetardMin: 3,
+          arriveeFlexibleFin: '',
           parDefaut: false,
           actif: true,
         };
@@ -171,6 +174,7 @@ export class RhReferentielsPage implements OnInit {
         nom: this.hor.nom.trim(),
         pauseMinutes: Number(this.hor.pauseMinutes) || 0,
         toleranceRetardMin: Number(this.hor.toleranceRetardMin) || 0,
+        arriveeFlexibleFin: this.hor.arriveeFlexibleFin || null,
       }),
       'Horaire enregistré.'
     );

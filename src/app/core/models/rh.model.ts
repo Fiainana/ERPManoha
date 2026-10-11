@@ -261,6 +261,8 @@ export interface RhHoraire {
   pauseMinutes: number;
   joursTravailles: number[];
   toleranceRetardMin: number;
+  /** Fin de la plage d'arrivée « HH:mm » (horaire flexible), null = arrivée fixe. */
+  arriveeFlexibleFin: string | null;
   dureeJournaliereMinutes: number;
   parDefaut: boolean;
   actif: boolean;

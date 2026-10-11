@@ -129,7 +129,12 @@
               @for (h of horaires(); track h.id) {
                 <tr class="clickable" [class.dim]="!h.actif" (click)="editerHoraire(h)">
                   <td class="strong">{{ h.nom }}</td>
-                  <td class="nowrap">{{ h.heureDebut }} – {{ h.heureFin }}</td>
+                  <td class="nowrap">
+                    {{ h.heureDebut }} – {{ h.heureFin }}
+                    @if (h.arriveeFlexibleFin) {
+                      <small class="muted"><br />arrivée jusqu'à {{ h.arriveeFlexibleFin }}</small>
+                    }
+                  </td>
                   <td class="num">{{ h.pauseMinutes }} min</td>
                   <td class="num">{{ duree(h.dureeJournaliereMinutes) }}</td>
                   <td>{{ libelleJours(h.joursTravailles) }}</td>
@@ -292,6 +297,16 @@
                 <label class="field">
                   <span>Tolérance de retard (minutes)</span>
                   <input type="number" min="0" [(ngModel)]="hor.toleranceRetardMin" name="tolerance" />
+                  <small class="muted">Au-delà de cette durée, le retard est compté en entier (tolérance 3 min : arrivée à +5 min = 5 min de retard).</small>
+                </label>
+                <label class="field field--wide">
+                  <span>Arrivée flexible jusqu'à (facultatif)</span>
+                  <input type="time" [(ngModel)]="hor.arriveeFlexibleFin" name="flex" />
+                  <small class="muted">
+                    Exemple : début 08:00 et plage jusqu'à 08:30. L'arrivée dans la plage n'est pas un retard ; le temps d'arrivée
+                    après le début est retiré de la pause. Après la plage, le retard est compté depuis cette heure et n'est pas
+                    retiré de la pause. Laisser vide pour une arrivée à heure fixe.
+                  </small>
                 </label>
                 <div class="field field--wide">
                   <span>Jours travaillés</span>
