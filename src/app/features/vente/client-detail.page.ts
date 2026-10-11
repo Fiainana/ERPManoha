@@ -4,6 +4,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ClientsService } from '../../core/services/clients.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   Client,
   ClientStats,
@@ -21,6 +22,7 @@ export class ClientDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly clientsApi = inject(ClientsService);
+  readonly canWrite = inject(AuthService).hasRole('Admin', 'Commercial');
 
   readonly loading = signal(true);
   readonly loadingDocs = signal(false);

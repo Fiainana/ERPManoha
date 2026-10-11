@@ -7,6 +7,7 @@ import { ArticlesPage } from './features/articles/articles.page';
 import { ArticleDetailPage } from './features/articles/article-detail.page';
 import { ClientsPage } from './features/vente/clients.page';
 import { ClientDetailPage } from './features/vente/client-detail.page';
+import { ClientFormPage } from './features/vente/client-form.page';
 import { DevisPage } from './features/vente/devis.page';
 import { DevisDetailPage } from './features/vente/devis-detail.page';
 import { DevisFormPage } from './features/vente/devis-form.page';
@@ -53,6 +54,8 @@ const ARTICLES_ROLES = [
 ] as const;
 
 const CLIENTS_ROLES = ['Admin', 'Commercial', 'Recouvrement'] as const;
+/** Création / modification de client : mêmes rôles que l'API (POST / PUT b2b/clients). */
+const CLIENTS_ECRITURE_ROLES = ['Admin', 'Commercial'] as const;
 
 const DEVIS_ROLES = ['Admin', 'Commercial'] as const;
 
@@ -84,6 +87,17 @@ export const routes: Routes = [
         path: 'vente/clients',
         component: ClientsPage,
         canActivate: [roleGuard(...CLIENTS_ROLES)],
+      },
+      {
+        // Avant « :numero », sinon « nouveau » serait lu comme un numéro de client.
+        path: 'vente/clients/nouveau',
+        component: ClientFormPage,
+        canActivate: [roleGuard(...CLIENTS_ECRITURE_ROLES)],
+      },
+      {
+        path: 'vente/clients/:numero/modifier',
+        component: ClientFormPage,
+        canActivate: [roleGuard(...CLIENTS_ECRITURE_ROLES)],
       },
       {
         path: 'vente/clients/:numero',
