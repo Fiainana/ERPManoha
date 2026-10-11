@@ -456,20 +456,63 @@
                 {{ u.hasRfid ? 'Attribué' : 'Aucun' }}
               </span>
             </div>
+            <div class="rfid-reader" [attr.data-etat]="rfid.etat()">
+              @switch (rfid.etat()) {
+                @case ('indisponible') {
+                  <span class="rfid-reader__dot"></span>
+                  <span class="rfid-reader__text">
+                    Lecture du badge impossible dans ce navigateur : ouvrez l'ERP dans Chrome ou Edge sur ordinateur.
+                  </span>
+                }
+                @case ('connexion') {
+                  <span class="rfid-reader__dot"></span>
+                  <span class="rfid-reader__text">Connexion au lecteur…</span>
+                }
+                @case ('connecte') {
+                  <span class="rfid-reader__dot"></span>
+                  <span class="rfid-reader__text">
+                    {{ rfid.lecteurReconnu() ? 'Lecteur connecté' : 'Port ouvert' }} : passez le badge sur le lecteur.
+                  </span>
+                  <button type="button" class="btn-link" (click)="connecterLecteur()">Changer de port</button>
+                }
+                @default {
+                  <span class="rfid-reader__dot"></span>
+                  <span class="rfid-reader__text">Lecteur non connecté.</span>
+                  <button type="button" class="btn btn--ghost btn--sm" (click)="connecterLecteur()">
+                    Connecter le lecteur
+                  </button>
+                }
+              }
+            </div>
+            @if (rfid.erreur(); as err) {
+              <p class="rfid-reader__error">{{ err }}</p>
+            }
             <div class="access__row">
               <input
-                type="password"
-                [(ngModel)]="nouveauRfid"
-                placeholder="Scanner ou saisir le badge"
-                autocomplete="off"
-                aria-label="Badge RFID"
-                (keydown.enter)="saveSecret('rfid')"
+                type="text"
+                class="rfid-uid"
+                [value]="nouveauRfid"
+                readonly
+                tabindex="-1"
+                [placeholder]="rfid.etat() === 'connecte' ? 'En attente du badge…' : 'Badge lu par le lecteur'"
+                aria-label="Identifiant du badge lu"
               />
+              @if (nouveauRfid) {
+                <button
+                  type="button"
+                  class="btn btn--ghost"
+                  (click)="effacerBadgeLu()"
+                  [disabled]="secretSaving() !== null"
+                  title="Effacer le badge lu"
+                >
+                  Effacer
+                </button>
+              }
               <button
                 type="button"
                 class="btn btn--ghost"
                 (click)="saveSecret('rfid')"
-                [disabled]="secretSaving() !== null"
+                [disabled]="secretSaving() !== null || !nouveauRfid"
               >
                 {{ secretSaving() === 'rfid' ? '…' : u.hasRfid ? 'Remplacer' : 'Attribuer' }}
               </button>

@@ -1,6 +1,8 @@
-import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../core/services/users.service';
+import { RfidSerialService } from '../../core/services/rfid-serial.service';
 import { APP_ROLE_OPTIONS, Collaborateur, UserApp } from '../../core/models/user-app.model';
 
 type Secret = 'password' | 'rfid' | 'pin';
@@ -11,8 +13,11 @@ type Secret = 'password' | 'rfid' | 'pin';
   templateUrl: './utilisateurs.page.html',
   styleUrl: './utilisateurs.page.scss',
 })
-export class UtilisateursPage implements OnInit {
+export class UtilisateursPage implements OnInit, OnDestroy {
   private readonly api = inject(UsersService);
+  private readonly destroyRef = inject(DestroyRef);
+  /** Lecteur de badge USB (port COM) lu via Web Serial. */
+  readonly rfid = inject(RfidSerialService);
 
   readonly roleOptions = APP_ROLE_OPTIONS;
 
@@ -73,6 +78,26 @@ export class UtilisateursPage implements OnInit {
 
   ngOnInit(): void {
     this.reload();
+    // Badge passé sur le lecteur : renseigne la fiche ouverte (aucune saisie manuelle).
+    this.rfid.uid$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((uid) => {
+      if (!this.editUser() || this.secretSaving()) return;
+      this.nouveauRfid = uid;
+      this.editError.set(null);
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Libère le port COM pour les autres programmes (caisse, borne…).
+    void this.rfid.deconnecter();
+  }
+
+  /** Choix du port du lecteur (fenêtre du navigateur, une seule fois par poste). */
+  async connecterLecteur(): Promise<void> {
+    await this.rfid.choisirEtConnecter();
+  }
+
+  effacerBadgeLu(): void {
+    this.nouveauRfid = '';
   }
 
   @HostListener('document:keydown.escape')
@@ -152,6 +177,8 @@ export class UtilisateursPage implements OnInit {
     this.nouveauRfid = '';
     this.nouveauPin = '';
     this.chargerCollaborateurs();
+    // Reprend le lecteur déjà autorisé sur ce poste, sans fenêtre de choix.
+    void this.rfid.connecterAutomatiquement();
   }
 
   closeEdit(): void {
@@ -215,7 +242,11 @@ export class UtilisateursPage implements OnInit {
     } else if (type === 'rfid') {
       const code = this.nouveauRfid.trim();
       if (!retirer && !code) {
-        this.editError.set('Scanner ou saisir le badge RFID.');
+        this.editError.set(
+          this.rfid.etat() === 'connecte'
+            ? 'Passez le badge sur le lecteur.'
+            : 'Connectez le lecteur de badge puis passez le badge.',
+        );
         return;
       }
       if (retirer && !confirm(`Retirer le badge RFID de ${this.displayName(u)} ?`)) return;
