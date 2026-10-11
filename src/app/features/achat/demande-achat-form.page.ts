@@ -66,7 +66,7 @@ export class DemandeAchatFormPage {
     this.articleHits.set([]);
   }
 
-  addLineSage(): void {
+  addLineArticle(): void {
     this.lines = [
       { articleReference: '', designation: '', quantite: 1, isNew: false },
       ...this.lines,
@@ -82,7 +82,7 @@ export class DemandeAchatFormPage {
 
   removeLine(i: number): void {
     this.lines = this.lines.filter((_, idx) => idx !== i);
-    if (this.lines.length === 0) this.addLineSage();
+    if (this.lines.length === 0) this.addLineArticle();
   }
 
   submit(): void {
@@ -109,7 +109,7 @@ export class DemandeAchatFormPage {
 
     if (lignes.length === 0) {
       this.error.set(
-        'Ajoute au moins une ligne : article Sage existant ou nouvelle désignation.'
+        'Ajoute au moins une ligne : article existant ou nouvelle désignation.'
       );
       return;
     }

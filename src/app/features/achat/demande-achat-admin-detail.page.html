@@ -63,7 +63,7 @@
           </dd>
         </div>
         <div>
-          <dt>Pièce Sage</dt>
+          <dt>Pièce</dt>
           <dd class="mono">
             @if (d.pieceSage) {
               <a [routerLink]="['/achat/bc-achat', d.pieceSage]">{{ d.pieceSage }}</a>
@@ -84,7 +84,7 @@
       <div class="card__head">
         <h2>Lignes ({{ lignesEdit.length }})</h2>
         @if (lignesSansArticle() > 0) {
-          <span class="tag tag--warn">{{ lignesSansArticle() }} sans article Sage</span>
+          <span class="tag tag--warn">{{ lignesSansArticle() }} sans article</span>
         }
       </div>
       @if (lignesEdit.length === 0) {
@@ -94,7 +94,7 @@
           <table class="lines">
             <thead>
               <tr>
-                <th>Article Sage</th>
+                <th>Article</th>
                 <th>Désignation / réf. fourn.</th>
                 <th class="num">Qté</th>
                 <th class="num">Qté conf.</th>
@@ -209,7 +209,7 @@
             (click)="genererBc()"
             [disabled]="acting() || depots().length === 0"
           >
-            {{ acting() ? 'Création Sage…' : 'Créer le BC achat' }}
+            {{ acting() ? 'Création…' : 'Créer le BC achat' }}
           </button>
         </div>
       </section>
@@ -222,7 +222,7 @@
     <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="modal-art-title">
       <header class="modal__head">
         <div>
-          <h2 id="modal-art-title">Créer article Sage</h2>
+          <h2 id="modal-art-title">Créer un article</h2>
           <p class="modal__sub">Ligne : {{ articleLigneLabel }} · FactoryArticle (OM)</p>
         </div>
         <button type="button" class="btn-icon" (click)="closeArticleModal()" aria-label="Fermer">

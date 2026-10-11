@@ -42,7 +42,7 @@ export class FactureRetourDetailPage implements OnInit {
     });
   }
 
-  /** Les montants et quantités d'une facture de retour sont négatifs dans Sage. */
+  /** Les montants et quantités d'une facture de retour sont négatifs. */
   abs(n: number | null | undefined): number | null {
     return n == null ? null : Math.abs(n);
   }

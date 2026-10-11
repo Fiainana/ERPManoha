@@ -56,7 +56,7 @@ export class MouvementsStockService {
     if (body?.message) return body.message;
     if (body?.detail) return body.detail;
     if (http?.status === 403) return 'Accès refusé.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API mouvements de stock';
   }
 

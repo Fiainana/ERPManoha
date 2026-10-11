@@ -53,7 +53,7 @@ export class BcReceptionDetailPage implements OnInit {
     return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' Ar';
   }
 
-  /** BC entièrement réceptionné : Sage le retire des BC (le GET renvoie alors introuvable). */
+  /** BC entièrement réceptionné : il est retiré des BC (le GET renvoie alors introuvable). */
   readonly termine = signal(false);
 
   get completementLivre(): boolean {
@@ -66,7 +66,7 @@ export class BcReceptionDetailPage implements OnInit {
     );
   }
 
-  /** Réception totale du reste (Sage gère) */
+  /** Réception totale du reste */
   receptionnerTotal(): void {
     if (this.acting() || this.completementLivre) return;
     if (!confirm(`Réceptionner entièrement le BC ${this.piece} (reste à livrer) ?`)) return;

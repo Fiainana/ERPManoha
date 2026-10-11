@@ -167,7 +167,7 @@ export class FacturesService {
     if (body?.detail) return body.detail;
     if (http?.status === 403) return 'Accès refusé (badge RFID invalide ou non autorisé).';
     if (http?.status === 404) return 'Facture introuvable.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API factures';
   }
 

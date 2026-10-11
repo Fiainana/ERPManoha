@@ -30,7 +30,7 @@ export interface CreateUserAppRequest {
   nom: string;
   prenom?: string;
   matricule?: string;
-  /** Collaborateur Sage existant à lier ; vide = création d'un nouveau collaborateur */
+  /** Collaborateur existant à lier ; vide = création d'un nouveau collaborateur */
   sageMatricule?: string;
   fonction?: string;
   service?: string;
@@ -54,12 +54,12 @@ export interface UpdateUserAppRequest {
   isAdmin?: boolean;
   actif?: boolean;
   roles?: string[];
-  /** Absent = inchangé, '' = délier, sinon matricule du collaborateur Sage */
+  /** Absent = inchangé, '' = délier, sinon matricule du collaborateur */
   sageMatricule?: string;
 }
 
-/** Collaborateur Sage (GET /api/admin/users/collaborateurs-sage) */
-export interface CollaborateurSage {
+/** Collaborateur (GET /api/admin/users/collaborateurs-sage) */
+export interface Collaborateur {
   no: number;
   matricule: string | null;
   nom: string;

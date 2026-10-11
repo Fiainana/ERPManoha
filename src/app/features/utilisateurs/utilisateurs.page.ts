@@ -1,7 +1,7 @@
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../core/services/users.service';
-import { APP_ROLE_OPTIONS, CollaborateurSage, UserApp } from '../../core/models/user-app.model';
+import { APP_ROLE_OPTIONS, Collaborateur, UserApp } from '../../core/models/user-app.model';
 
 type Secret = 'password' | 'rfid' | 'pin';
 
@@ -25,12 +25,12 @@ export class UtilisateursPage implements OnInit {
   readonly items = signal<UserApp[]>([]);
   readonly modalOpen = signal(false);
 
-  /** Collaborateurs Sage (chargés à l'ouverture d'un formulaire). */
-  readonly collaborateurs = signal<CollaborateurSage[]>([]);
+  /** Collaborateurs (chargés à l'ouverture d'un formulaire). */
+  readonly collaborateurs = signal<Collaborateur[]>([]);
   readonly collabError = signal<string | null>(null);
 
-  /** Création : nouveau collaborateur Sage ou lien vers un existant. */
-  lienSage: 'nouveau' | 'existant' = 'nouveau';
+  /** Création : nouveau collaborateur ou lien vers un existant. */
+  lienCollab: 'nouveau' | 'existant' = 'nouveau';
   sageMatricule = '';
 
   // ── Fiche de modification ──
@@ -41,7 +41,7 @@ export class UtilisateursPage implements OnInit {
   eNom = '';
   ePrenom = '';
   eActif = true;
-  eSageMatricule = '';
+  eMatricule = '';
   eRoles: Record<string, boolean> = {};
   nouveauPassword = '';
   nouveauRfid = '';
@@ -117,7 +117,7 @@ export class UtilisateursPage implements OnInit {
   }
 
   /** Libellé d'un collaborateur dans les listes de choix. */
-  libelleCollab(c: CollaborateurSage, pourLogin?: string | null): string {
+  libelleCollab(c: Collaborateur, pourLogin?: string | null): string {
     const nom = [c.prenom, c.nom].filter(Boolean).join(' ');
     const fonctions = [c.vendeur && 'vendeur', c.caissier && 'caissier', c.acheteur && 'acheteur']
       .filter(Boolean)
@@ -131,8 +131,8 @@ export class UtilisateursPage implements OnInit {
     );
   }
 
-  /** Un collaborateur sans matricule ne peut pas être lié (matricule à attribuer dans Sage). */
-  collabLiable(c: CollaborateurSage): boolean {
+  /** Un collaborateur sans matricule ne peut pas être lié (matricule à attribuer). */
+  collabLiable(c: Collaborateur): boolean {
     return !!c.matricule && !c.sommeil;
   }
 
@@ -145,7 +145,7 @@ export class UtilisateursPage implements OnInit {
     this.eNom = u.nom || '';
     this.ePrenom = u.prenom || '';
     this.eActif = u.actif !== false;
-    this.eSageMatricule = u.sageMatricule || '';
+    this.eMatricule = u.sageMatricule || '';
     const roles = this.rolesOf(u);
     this.eRoles = Object.fromEntries(this.roleOptions.map((o) => [o.value, roles.includes(o.value)]));
     this.nouveauPassword = '';
@@ -184,7 +184,7 @@ export class UtilisateursPage implements OnInit {
         actif: this.eActif,
         roles,
         isAdmin: roles.includes('Admin'),
-        sageMatricule: this.eSageMatricule.trim(),
+        sageMatricule: this.eMatricule.trim(),
       })
       .subscribe({
         next: (maj) => {
@@ -256,9 +256,9 @@ export class UtilisateursPage implements OnInit {
 
   private chargerCollaborateurs(): void {
     this.collabError.set(null);
-    this.api.collaborateursSage().subscribe({
+    this.api.listeCollaborateurs().subscribe({
       next: (list) => this.collaborateurs.set(list),
-      error: (err) => this.collabError.set(err?.message || 'Collaborateurs Sage indisponibles'),
+      error: (err) => this.collabError.set(err?.message || 'Collaborateurs indisponibles'),
     });
   }
 
@@ -325,8 +325,8 @@ export class UtilisateursPage implements OnInit {
 
     const isAdmin = roles.includes('Admin');
 
-    if (this.lienSage === 'existant' && !this.sageMatricule) {
-      this.formError.set('Choisissez le collaborateur Sage à lier.');
+    if (this.lienCollab === 'existant' && !this.sageMatricule) {
+      this.formError.set('Choisissez le collaborateur à lier.');
       return;
     }
 
@@ -338,7 +338,7 @@ export class UtilisateursPage implements OnInit {
         password: this.password,
         nom: this.nom,
         prenom: this.prenom,
-        sageMatricule: this.lienSage === 'existant' ? this.sageMatricule : undefined,
+        sageMatricule: this.lienCollab === 'existant' ? this.sageMatricule : undefined,
         fonction: this.fonction,
         service: this.service,
         vendeur: this.vendeur || roles.includes('Vendeur') || roles.includes('Commercial'),
@@ -377,7 +377,7 @@ export class UtilisateursPage implements OnInit {
     this.prenom = '';
     this.fonction = '';
     this.service = '';
-    this.lienSage = 'nouveau';
+    this.lienCollab = 'nouveau';
     this.sageMatricule = '';
     this.selectedRoles = {
       Commercial: true,

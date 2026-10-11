@@ -30,7 +30,7 @@ export class FacturesAchatPage implements OnInit {
   private readonly search$ = new Subject<string>();
 
   readonly title = 'Factures achat';
-  readonly subtitle = 'Factures fournisseurs Sage';
+  readonly subtitle = 'Factures fournisseurs';
   readonly breadcrumb = 'Factures achat';
   readonly detailBase = '/achat/factures-achat';
   readonly emptyTitle = 'Aucune facture';

@@ -89,7 +89,7 @@ export class FacturesRetourPage implements OnInit {
     this.load(this.page() + 1, true);
   }
 
-  /** Montants négatifs dans Sage pour une facture de retour. */
+  /** Montants négatifs pour une facture de retour. */
   abs(n: number | null | undefined): number | null {
     return n == null ? null : Math.abs(n);
   }

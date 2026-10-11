@@ -9,7 +9,7 @@ import {
   InventaireValidationResult,
 } from '../models/inventaire.model';
 
-/** Inventaire partiel : comptage dépôt → soumission → validation admin (ajustement Sage). */
+/** Inventaire partiel : comptage dépôt → soumission → validation admin (ajustement de stock). */
 @Injectable({ providedIn: 'root' })
 export class InventairesService {
   private readonly http = inject(HttpClient);
@@ -60,7 +60,7 @@ export class InventairesService {
     return this.action<InventaireDetail>(`${id}/renvoyer`, { note });
   }
 
-  /** Admin : validation + ajustement Sage. Les lignes ignorées ne sont pas ajustées. */
+  /** Admin : validation + ajustement du stock. Les lignes ignorées ne sont pas ajustées. */
   valider(id: number, lignesIgnorees: number[]) {
     return this.action<InventaireValidationResult>(`${id}/valider`, { lignesIgnorees });
   }
@@ -91,7 +91,7 @@ export class InventairesService {
     if (body?.detail) return body.detail;
     if (http?.status === 403) return 'Accès refusé.';
     if (http?.status === 404) return 'Inventaire introuvable.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API inventaire';
   }
 }

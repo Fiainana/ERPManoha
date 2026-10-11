@@ -182,8 +182,8 @@ export class InventaireDetailPage implements OnInit {
 
     const msg =
       nbAjustes === 0
-        ? 'Valider l’inventaire ? Aucun ajustement de stock ne sera fait dans Sage.'
-        : `Valider l’inventaire et ajuster ${nbAjustes} article(s) dans Sage ?` +
+        ? 'Valider l’inventaire ? Aucun ajustement de stock ne sera fait.'
+        : `Valider l’inventaire et ajuster ${nbAjustes} article(s) en stock ?` +
           (ignorees.length ? `\n${ignorees.length} ligne(s) écartée(s) ne seront pas ajustées.` : '');
     if (!confirm(msg)) return;
 

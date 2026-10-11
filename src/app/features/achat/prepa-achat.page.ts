@@ -30,7 +30,7 @@ export class PrepaAchatPage implements OnInit {
   private readonly search$ = new Subject<string>();
 
   readonly title = "Préparations d'achat";
-  readonly subtitle = "Anciennes préparations Sage — les nouvelles demandes créent un BC directement";
+  readonly subtitle = "Anciennes préparations — les nouvelles demandes créent un BC directement";
   readonly breadcrumb = "Préparations";
   readonly detailBase = '/achat/prepa-achat';
   readonly emptyTitle = 'Aucune préparation';

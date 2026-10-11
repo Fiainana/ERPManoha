@@ -89,7 +89,7 @@ export class DocAchatDetailPage implements OnInit {
         const o = (res || {}) as Record<string, unknown>;
         const fa = String(o['numeroPieceFacture'] ?? o['NumeroPieceFacture'] ?? '');
         this.toast.set(fa ? `Facture créée : ${fa}` : 'Facture fournisseur créée');
-        // Le BL facturé quitte le type BL dans Sage : ouvrir la facture.
+        // Le BL facturé quitte le type BL : ouvrir la facture.
         if (fa) void this.router.navigate(['/achat/factures-achat', fa]);
       },
       error: (err) => {

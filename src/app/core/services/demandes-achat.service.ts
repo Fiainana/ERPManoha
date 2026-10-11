@@ -12,7 +12,7 @@ import {
   DemandeAchatLigne,
   DepotRefOption,
   FamilleOption,
-  GenererSagePayload,
+  GenererBcPayload,
   ReferentielArticleCreation,
   UniteOption,
 } from '../models/demande-achat.model';
@@ -68,7 +68,7 @@ export class DemandesAchatService {
     );
   }
 
-  genererSage(id: number, body: GenererSagePayload) {
+  genererBonCommande(id: number, body: GenererBcPayload) {
     return this.http.post<ApiResponse<unknown>>(`${this.base}/${id}/generer-sage`, body).pipe(
       map((res) => this.unwrap(res)),
       catchError((err) => throwError(() => new Error(this.readError(err))))

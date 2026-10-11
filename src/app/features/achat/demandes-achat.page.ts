@@ -42,7 +42,7 @@ export class DemandesAchatPage implements OnInit {
     { value: '', label: 'Tous les statuts' },
     { value: 'EnAttenteArticle', label: 'En attente article' },
     { value: 'ArticlePret', label: 'Article prêt' },
-    { value: 'CommandeSageCreee', label: 'BC Sage créé' },
+    { value: 'CommandeSageCreee', label: 'BC créé' },
     { value: 'Receptionnee', label: 'Réceptionnée' },
     { value: 'Annulee', label: 'Annulée' },
   ];

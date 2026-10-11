@@ -1,4 +1,4 @@
-/** Demandes d'achat métier (hors Sage tant que non transformées en BC) */
+/** Demandes d'achat métier (tant que non transformées en BC) */
 
 export type DemandeAchatStatut =
   | 'Envoyee'
@@ -74,17 +74,17 @@ export interface CreateDemandeAchatPayload {
   lignes: CreateDemandeAchatLigne[];
 }
 
-export interface GenererSageLigne {
+export interface GenererBcLigne {
   ligneId: number;
   quantite?: number | null;
   prixUnitaire?: number | null;
 }
 
-export interface GenererSagePayload {
+export interface GenererBcPayload {
   depotNo: number;
   fournisseurCode?: string | null;
   reference?: string | null;
-  lignes?: GenererSageLigne[];
+  lignes?: GenererBcLigne[];
 }
 
 export interface CreerArticleDemandePayload {

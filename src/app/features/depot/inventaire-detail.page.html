@@ -46,7 +46,7 @@
           Renvoyer au dépôt
         </button>
         <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting() || loading()">
-          {{ acting() ? 'Ajustement Sage…' : 'Valider l’ajustement' }}
+          {{ acting() ? 'Ajustement…' : 'Valider l’ajustement' }}
         </button>
       }
     </div>
@@ -79,13 +79,13 @@
     } @else if (aValider()) {
       <div class="banner banner--wait">
         {{ d.nbEcarts ?? 0 }} écart(s) sur {{ d.lignes.length }} article(s). Cocher « Ne pas ajuster » pour écarter
-        une ligne (aucun mouvement Sage).
+        une ligne (aucun mouvement de stock).
       </div>
     } @else if (d.entete.statut === 'Valide') {
       <div class="banner banner--ok">
         Inventaire validé.
         @if (d.entete.pieceSageEntree || d.entete.pieceSageSortie) {
-          Ajustement Sage : entrée {{ d.entete.pieceSageEntree || '—' }} · sortie {{ d.entete.pieceSageSortie || '—' }}.
+          Ajustement de stock : entrée {{ d.entete.pieceSageEntree || '—' }} · sortie {{ d.entete.pieceSageSortie || '—' }}.
         } @else {
           Aucun ajustement de stock.
         }

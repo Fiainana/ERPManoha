@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
-  DepotSage,
+  DepotStock,
   GroupeParametres,
   Parametre,
   ParametresApp,
@@ -47,7 +47,7 @@ export class ParametresPage implements OnInit {
   readonly erreursChamps = signal<Record<string, string>>({});
 
   readonly groupes = computed<GroupeParametres[]>(() => this.donnees()?.groupes ?? []);
-  readonly depots = computed<DepotSage[]>(() => this.donnees()?.depots ?? []);
+  readonly depots = computed<DepotStock[]>(() => this.donnees()?.depots ?? []);
   readonly onglet = computed(
     () => this.groupes().find((g) => g.id === this.ongletId()) ?? this.groupes()[0] ?? null
   );

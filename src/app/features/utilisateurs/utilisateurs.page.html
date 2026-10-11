@@ -18,7 +18,7 @@
           }
         </span>
       </div>
-      <p class="usr__subtitle">Comptes applicatifs & collaborateurs Sage</p>
+      <p class="usr__subtitle">Comptes applicatifs & collaborateurs</p>
     </div>
     <button type="button" class="btn btn--primary" (click)="openModal()">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -116,9 +116,9 @@
                 <span class="chip" [class.chip--admin]="r === 'Admin'">{{ r }}</span>
               }
               @if (u.sageMatricule) {
-                <span class="chip chip--muted">Sage {{ u.sageMatricule }}</span>
+                <span class="chip chip--muted">Matricule {{ u.sageMatricule }}</span>
               } @else {
-                <span class="chip chip--warn">Sans collaborateur Sage</span>
+                <span class="chip chip--warn">Sans collaborateur</span>
               }
               <span class="chip chip--access" [class.is-on]="u.hasPassword" title="Mot de passe">Mot de passe</span>
               <span class="chip chip--access" [class.is-on]="u.hasRfid" title="Badge RFID">Badge</span>
@@ -186,25 +186,25 @@
         </section>
 
         <section class="form-section">
-          <h3>Collaborateur Sage</h3>
+          <h3>Collaborateur</h3>
           <div class="roles roles--compact">
-            <label class="choice" [class.on]="lienSage === 'nouveau'">
-              <input type="radio" [(ngModel)]="lienSage" name="lienSage" value="nouveau" />
+            <label class="choice" [class.on]="lienCollab === 'nouveau'">
+              <input type="radio" [(ngModel)]="lienCollab" name="lienCollab" value="nouveau" />
               <span>
                 <strong>Nouveau collaborateur</strong>
-                <small>Créé dans Sage avec un matricule automatique</small>
+                <small>Créé avec un matricule automatique</small>
               </span>
             </label>
-            <label class="choice" [class.on]="lienSage === 'existant'">
-              <input type="radio" [(ngModel)]="lienSage" name="lienSage" value="existant" />
+            <label class="choice" [class.on]="lienCollab === 'existant'">
+              <input type="radio" [(ngModel)]="lienCollab" name="lienCollab" value="existant" />
               <span>
                 <strong>Collaborateur existant</strong>
-                <small>Déjà présent dans Sage (évite les doublons)</small>
+                <small>Déjà existant (évite les doublons)</small>
               </span>
             </label>
           </div>
 
-          @if (lienSage === 'existant') {
+          @if (lienCollab === 'existant') {
             <label class="field field--wide collab-select">
               <span>Collaborateur <span class="req">*</span></span>
               <select [(ngModel)]="sageMatricule" name="sageMatricule">
@@ -214,7 +214,7 @@
                 }
               </select>
               <small class="hint">
-                Un collaborateur « sans matricule » doit d’abord recevoir un matricule dans Sage.
+                Un collaborateur « sans matricule » doit d’abord recevoir un matricule.
               </small>
             </label>
             @if (collabError()) {
@@ -280,9 +280,9 @@
           </div>
         </section>
 
-        @if (lienSage === 'nouveau') {
+        @if (lienCollab === 'nouveau') {
         <section class="form-section">
-          <h3>Profil collaborateur Sage</h3>
+          <h3>Profil collaborateur</h3>
           <div class="roles roles--compact">
             <label class="choice" [class.on]="vendeur">
               <input type="checkbox" [(ngModel)]="vendeur" name="vendeur" />
@@ -371,13 +371,13 @@
               <input [(ngModel)]="ePrenom" name="ePrenom" />
             </label>
             <label class="field">
-              <span>Collaborateur Sage</span>
-              <select [(ngModel)]="eSageMatricule" name="eSageMatricule">
+              <span>Collaborateur</span>
+              <select [(ngModel)]="eMatricule" name="eMatricule">
                 <option value="">— Aucun —</option>
                 @for (c of collaborateurs(); track c.no) {
                   <option
                     [value]="c.matricule ?? ''"
-                    [disabled]="!collabLiable(c) && c.matricule !== eSageMatricule"
+                    [disabled]="!collabLiable(c) && c.matricule !== eMatricule"
                   >
                     {{ libelleCollab(c, u.login) }}
                   </option>
@@ -386,7 +386,7 @@
             </label>
           </div>
           <small class="hint">
-            Vendeurs et commerciaux doivent être liés à un collaborateur Sage vendeur (bons de commande, devis).
+            Vendeurs et commerciaux doivent être liés à un collaborateur vendeur (bons de commande, devis).
           </small>
 
           <div class="roles">

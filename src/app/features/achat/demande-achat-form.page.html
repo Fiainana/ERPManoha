@@ -9,7 +9,7 @@
         <strong>Nouvelle</strong>
       </nav>
       <h1>Nouvelle demande d'achat</h1>
-      <p class="daf__subtitle">Article existant ou nouvelle désignation — l'admin créera le BC Sage</p>
+      <p class="daf__subtitle">Article existant ou nouvelle désignation — l'admin créera le BC</p>
     </div>
     <div class="daf__actions">
       <a routerLink="/achat/demandes-achat" class="btn btn--ghost">Annuler</a>
@@ -37,8 +37,8 @@
     <div class="card__head">
       <h2>Lignes</h2>
       <div class="card__tools">
-        <button type="button" class="btn btn--ghost btn--sm" (click)="addLineSage()">
-          + Article Sage
+        <button type="button" class="btn btn--ghost btn--sm" (click)="addLineArticle()">
+          + Article existant
         </button>
         <button type="button" class="btn btn--ghost btn--sm" (click)="addLineNew()">
           + Nouvelle désignation
@@ -51,7 +51,7 @@
         type="search"
         [(ngModel)]="articleQuery"
         (ngModelChange)="onArticleType()"
-        placeholder="Rechercher un article Sage…"
+        placeholder="Rechercher un article…"
         autocomplete="off"
       />
       @if (articleHits().length) {
@@ -71,7 +71,7 @@
     <div class="lines">
       @for (l of lines; track $index; let i = $index) {
         <div class="line" [class.line--new]="l.isNew">
-          <span class="line__type">{{ l.isNew ? 'Nouveau' : 'Sage' }}</span>
+          <span class="line__type">{{ l.isNew ? 'Nouveau' : 'Existant' }}</span>
 
           @if (l.isNew) {
             <input

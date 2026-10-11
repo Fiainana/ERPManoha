@@ -400,7 +400,7 @@ export class DashboardApiService {
     const body = http?.error as ApiResponse | undefined;
     if (body?.message) return body.message;
     if (http?.status === 403) return 'Accès KPI refusé pour ce profil.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur KPI';
   }
 }

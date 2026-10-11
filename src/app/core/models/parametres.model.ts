@@ -41,12 +41,12 @@ export interface GroupeParametres {
   parametres: Parametre[];
 }
 
-export interface DepotSage {
+export interface DepotStock {
   numero: number;
   intitule?: string | null;
 }
 
 export interface ParametresApp {
   groupes: GroupeParametres[];
-  depots: DepotSage[];
+  depots: DepotStock[];
 }

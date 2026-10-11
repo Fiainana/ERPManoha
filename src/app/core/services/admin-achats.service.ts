@@ -103,7 +103,7 @@ export class AdminAchatsService {
     if (body?.detail) return body.detail;
     if (http?.status === 403) return 'Accès réservé aux administrateurs.';
     if (http?.status === 404) return 'Document introuvable.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API admin achats';
   }
 

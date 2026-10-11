@@ -77,7 +77,7 @@ export class FournisseursService {
     if (http?.status === 403) return 'Accès réservé aux administrateurs.';
     if (http?.status === 404) return 'Fournisseur introuvable.';
     if (http?.status === 409) return 'Ce numéro fournisseur existe déjà.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API fournisseurs';
   }
 

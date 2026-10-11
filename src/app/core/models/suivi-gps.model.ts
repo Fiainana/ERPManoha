@@ -51,7 +51,7 @@ export interface DevisGeolocalise {
   clientNumero: string | null;
   clientIntitule: string | null;
   totalTTC: number | null;
-  /** Facture issue du devis (le devis n'existe alors plus dans Sage). */
+  /** Facture issue du devis (le devis n'existe alors plus). */
   pieceTransformee: string | null;
 }
 

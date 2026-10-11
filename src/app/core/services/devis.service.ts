@@ -171,7 +171,7 @@ export class DevisService {
     if (body?.detail) return body.detail;
     if (http?.status === 403) return 'Accès refusé sur ce devis.';
     if (http?.status === 404) return 'Devis introuvable.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API devis';
   }
 
@@ -180,7 +180,7 @@ export class DevisService {
     if (http?.error instanceof Blob) {
       if (http.status === 404) return 'Devis introuvable pour le PDF';
       if (http.status === 403) return 'Accès PDF refusé';
-      if (http.status === 503) return 'Service Sage indisponible';
+      if (http.status === 503) return 'Service indisponible';
       return `Erreur PDF (${http.status})`;
     }
     return this.readError(err);

@@ -1,4 +1,4 @@
-/** Réponse standard renvoyée par Sage100Api / ManohaEnergieAPI */
+/** Réponse standard renvoyée par ManohaEnergieAPI */
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string | null;

@@ -99,7 +99,7 @@ export class BonsRetourService {
     if (body?.detail) return body.detail;
     if (http?.status === 403) return 'Accès refusé.';
     if (http?.status === 404) return 'Bon de retour introuvable.';
-    if (http?.status === 503) return 'Service Sage indisponible.';
+    if (http?.status === 503) return 'Service indisponible.';
     return http?.message || 'Erreur API bons de retour';
   }
 

@@ -30,7 +30,7 @@ export class BcAchatPage implements OnInit {
   private readonly search$ = new Subject<string>();
 
   readonly title = 'BC Achat';
-  readonly subtitle = 'Bons de commande fournisseurs Sage';
+  readonly subtitle = 'Bons de commande fournisseurs';
   readonly breadcrumb = 'BC Achat';
   readonly detailBase = '/achat/bc-achat';
   readonly emptyTitle = 'Aucun BC';

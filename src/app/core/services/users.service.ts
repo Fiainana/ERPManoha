@@ -7,7 +7,7 @@ import {
   CreateUserAppRequest,
   UpdateUserAppRequest,
   UserApp,
-  CollaborateurSage,
+  Collaborateur,
 } from '../models/user-app.model';
 
 @Injectable({ providedIn: 'root' })
@@ -64,13 +64,13 @@ export class UsersService {
     );
   }
 
-  /** Collaborateurs Sage pour le lien utilisateur. */
-  collaborateursSage() {
+  /** Collaborateurs pour le lien utilisateur. */
+  listeCollaborateurs() {
     return this.http
-      .get<ApiResponse<CollaborateurSage[]>>(`${this.base}/collaborateurs-sage`)
+      .get<ApiResponse<Collaborateur[]>>(`${this.base}/collaborateurs-sage`)
       .pipe(
         map((res) => {
-          if (!res.success) throw new Error(res.message || 'Collaborateurs Sage indisponibles');
+          if (!res.success) throw new Error(res.message || 'Collaborateurs indisponibles');
           return res.data ?? [];
         }),
         catchError((err) => throwError(() => new Error(this.readError(err))))

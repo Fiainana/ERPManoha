@@ -1,4 +1,4 @@
-/** Fournisseurs Sage (CT_Type = 1) — API /api/admin/fournisseurs */
+/** Fournisseurs (CT_Type = 1) — API /api/admin/fournisseurs */
 
 export interface Fournisseur {
   numero: string;

@@ -10,7 +10,7 @@ import {
   DemandeAchatDetail,
   DemandeAchatLigne,
   FamilleOption,
-  GenererSagePayload,
+  GenererBcPayload,
   UniteOption,
 } from '../../core/models/demande-achat.model';
 import { DepotOption } from '../../core/models/mouvement-stock.model';
@@ -198,12 +198,12 @@ export class DemandeAchatAdminDetailPage implements OnInit {
     }
     if (this.lignesSansArticle() > 0) {
       this.error.set(
-        `${this.lignesSansArticle()} ligne(s) sans article Sage — crée ou rattache les articles d’abord.`
+        `${this.lignesSansArticle()} ligne(s) sans article — crée ou rattache les articles d’abord.`
       );
       return;
     }
 
-    const body: GenererSagePayload = {
+    const body: GenererBcPayload = {
       depotNo: this.depotNo,
       fournisseurCode: this.fournisseurCode.trim() || null,
       reference: this.reference.trim() || null,
@@ -216,18 +216,18 @@ export class DemandeAchatAdminDetailPage implements OnInit {
         })),
     };
 
-    if (!confirm('Créer le bon de commande fournisseur dans Sage ?')) return;
+    if (!confirm('Créer le bon de commande fournisseur ?')) return;
 
     this.acting.set(true);
     this.error.set(null);
-    this.api.genererSage(this.id, body).subscribe({
+    this.api.genererBonCommande(this.id, body).subscribe({
       next: (res) => {
         this.acting.set(false);
         const o = (res || {}) as Record<string, unknown>;
         const piece = String(
           o['numeroPiece'] ?? o['NumeroPiece'] ?? o['pieceSage'] ?? o['PieceSage'] ?? ''
         );
-        this.toast.set(piece ? `BC Sage créé : ${piece}` : 'BC Sage créé');
+        this.toast.set(piece ? `BC créé : ${piece}` : 'BC créé');
         this.load();
         if (piece) {
           void this.router.navigate(['/achat/bc-achat', piece]);
