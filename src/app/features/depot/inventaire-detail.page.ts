@@ -35,6 +35,24 @@ export class InventaireDetailPage implements OnInit {
   readonly enComptage = computed(() => this.statut() === 'Brouillon');
   readonly aValider = computed(() => this.statut() === 'Soumis');
   readonly aveugle = computed(() => this.detail()?.comptageAveugle ?? true);
+  readonly exportEnCours = signal(false);
+
+  /** Télécharge la feuille de comptage (feuille = true) ou le rapport PDF. */
+  exporterPdf(feuille: boolean): void {
+    if (!this.id || this.exportEnCours()) return;
+    this.exportEnCours.set(true);
+    this.error.set(null);
+    this.api.telechargerPdf(this.id, feuille).subscribe({
+      next: () => {
+        this.exportEnCours.set(false);
+        this.showToast(feuille ? 'Feuille de comptage téléchargée' : 'PDF téléchargé');
+      },
+      error: (err: Error) => {
+        this.exportEnCours.set(false);
+        this.error.set(err.message || 'Export PDF impossible');
+      },
+    });
+  }
 
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));

@@ -70,6 +70,47 @@ export class InventairesService {
     return this.action<unknown>('generer-hebdo', {});
   }
 
+  /**
+   * Télécharge le PDF de l'inventaire. `feuille` = feuille de comptage à remplir à la main,
+   * sinon rapport. L'API applique le comptage à l'aveugle (pas de théorique pour le dépôt).
+   */
+  telechargerPdf(id: number, feuille: boolean) {
+    const params = new HttpParams().set('feuille', String(feuille));
+    return this.http
+      .get(`${this.base}/${id}/pdf`, { params, responseType: 'blob', observe: 'response' })
+      .pipe(
+        map((resp) => {
+          const blob = resp.body;
+          if (!blob || blob.size === 0) throw new Error('PDF vide');
+          const cd = resp.headers.get('content-disposition') || '';
+          const match = /filename\*?=(?:UTF-8''|"?)([^";]+)/i.exec(cd);
+          const nom = match
+            ? decodeURIComponent(match[1].replace(/"/g, ''))
+            : `${feuille ? 'Feuille-comptage' : 'Inventaire'}-${id}.pdf`;
+          const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = nom;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 30_000);
+          return nom;
+        }),
+        catchError((err) =>
+          throwError(() =>
+            new Error(
+              err instanceof HttpErrorResponse && err.error instanceof Blob
+                ? err.status === 404
+                  ? 'Inventaire introuvable.'
+                  : `Erreur génération PDF (${err.status})`
+                : this.readError(err)
+            )
+          )
+        )
+      );
+  }
+
   private action<T>(path: string, body: unknown) {
     return this.http.post<ApiResponse<T>>(`${this.base}/${path}`, body).pipe(
       map((res) => this.unwrap(res)),

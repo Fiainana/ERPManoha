@@ -30,6 +30,19 @@
 
     <div class="invd__actions">
       <a routerLink="/depot/inventaire" class="btn btn--ghost">Retour</a>
+      @if (detail()) {
+        <!-- Feuille à imprimer pour compter à la main ; rapport une fois le comptage saisi. -->
+        @if (enComptage()) {
+          <button type="button" class="btn btn--ghost" (click)="exporterPdf(true)" [disabled]="exportEnCours() || loading()">
+            {{ exportEnCours() ? 'PDF…' : 'Feuille de comptage (PDF)' }}
+          </button>
+        }
+        @if (statut() !== 'Annule') {
+          <button type="button" class="btn btn--ghost" (click)="exporterPdf(false)" [disabled]="exportEnCours() || loading()">
+            {{ exportEnCours() ? 'PDF…' : 'Exporter en PDF' }}
+          </button>
+        }
+      }
       @if (enComptage()) {
         <button type="button" class="btn btn--ghost" (click)="annuler()" [disabled]="acting() || loading()">
           Annuler l’inventaire
