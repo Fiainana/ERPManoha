@@ -127,6 +127,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Congés & absences', route: '/rh/absences', roles: RH },
       { label: 'Présence', route: '/rh/presence', roles: RH },
       { label: 'Pointeuse', route: '/rh/pointeuse', roles: RH },
+      { label: 'Paie', route: '/rh/paie', roles: ADMIN, exact: true },
+      { label: 'Paramètres de paie', route: '/rh/paie/parametres', roles: ADMIN },
       { label: 'Référentiels', route: '/rh/referentiels', roles: RH },
     ],
   },

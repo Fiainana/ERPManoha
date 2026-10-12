@@ -128,3 +128,25 @@ textarea {
     background-clip: content-box;
   }
 }
+
+// Impression du bulletin de paie : seul le bulletin est imprimé (menus, barre du haut et boutons masqués).
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #bulletin-imprimable,
+  #bulletin-imprimable * {
+    visibility: visible;
+  }
+
+  #bulletin-imprimable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    border: none;
+    padding: 0;
+  }
+}

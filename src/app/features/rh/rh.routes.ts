@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/auth.guard';
 
 /** Back-office RH (chargé à la demande, rôles HR et Admin : garde posée sur /rh). */
 export const RH_ROUTES: Routes = [
@@ -34,6 +35,22 @@ export const RH_ROUTES: Routes = [
   {
     path: 'pointeuse',
     loadComponent: () => import('./rh-pointeuse.page').then((m) => m.RhPointeusePage),
+  },
+  // Paie : salaires, réservée au rôle Admin (comme l'API).
+  {
+    path: 'paie',
+    canActivate: [roleGuard('Admin')],
+    loadComponent: () => import('./rh-paie.page').then((m) => m.RhPaiePage),
+  },
+  {
+    path: 'paie/parametres',
+    canActivate: [roleGuard('Admin')],
+    loadComponent: () => import('./rh-paie-parametres.page').then((m) => m.RhPaieParametresPage),
+  },
+  {
+    path: 'paie/bulletins/:id',
+    canActivate: [roleGuard('Admin')],
+    loadComponent: () => import('./rh-paie-bulletin.page').then((m) => m.RhPaieBulletinPage),
   },
   {
     path: 'referentiels',

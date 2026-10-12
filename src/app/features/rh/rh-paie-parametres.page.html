@@ -1,0 +1,188 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <a routerLink="/rh/paie">Paie</a>
+        <span>›</span>
+        <strong>Paramètres</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Paramètres de paie</h1>
+      </div>
+      <p class="subtitle">
+        Taux, plafond et barème IRSA. Une nouvelle valeur s’applique à partir du mois choisi et l’ancienne reste dans l’historique.
+      </p>
+    </div>
+    <div class="rh__actions">
+      <a routerLink="/rh/paie" class="btn btn--ghost">Retour à la paie</a>
+    </div>
+  </header>
+
+  <div class="alert" role="note">
+    Les valeurs de départ viennent de sources publiques (taux au 1er janvier 2026, SME de 300 000 Ar depuis mars 2026). Faites-les
+    confirmer par votre comptable avant de valider une paie, et mettez-les à jour à chaque changement de loi ou de SME.
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+  @if (loading() && !donnees()) {
+    <div class="skeleton__row"></div>
+  }
+
+  @if (donnees(); as d) {
+    <section class="panel">
+      <header class="panel__head">
+        <h2>Taux, plafonds et règles</h2>
+      </header>
+      <div class="table-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Paramètre</th>
+              <th class="num">Valeur actuelle</th>
+              <th>En vigueur depuis</th>
+              <th>Historique</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of d.parametres; track p.cle) {
+              <tr>
+                <td class="strong">{{ p.libelle }}</td>
+                <td class="num strong">{{ affiche(p, p.valeur) }}</td>
+                <td class="nowrap">{{ p.dateEffet ? libelleDate(p.dateEffet) : '—' }}</td>
+                <td class="small muted">
+                  @for (h of p.historique; track h.dateEffet) {
+                    <div>{{ libelleDate(h.dateEffet) }} : {{ affiche(p, h.valeur) }}</div>
+                  }
+                </td>
+                <td class="num">
+                  <button type="button" class="btn btn--ghost btn--sm" (click)="modifier(p)">Modifier</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header class="panel__head">
+        <h2>Barème IRSA</h2>
+        <button type="button" class="btn btn--primary btn--sm" (click)="modifierBareme(null)">Nouveau barème</button>
+      </header>
+      <div class="panel__body">
+        @for (b of d.irsa; track b.dateEffet; let premier = $first) {
+          <div class="bareme">
+            <div class="bareme__tete">
+              <strong>Depuis {{ libelleDate(b.dateEffet) }}</strong>
+              @if (premier) {
+                <span class="badge" data-tone="info">Plus récent</span>
+              }
+              <button type="button" class="btn btn--ghost btn--sm" (click)="modifierBareme(b)">Modifier</button>
+            </div>
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Part du revenu mensuel imposable</th>
+                  <th class="num">Taux</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of b.tranches; track t.seuil; let i = $index) {
+                  <tr>
+                    <td>
+                      @if (i + 1 < b.tranches.length) {
+                        De {{ t.seuil | number: '1.0-0' }} à {{ b.tranches[i + 1].seuil | number: '1.0-0' }} Ar
+                      } @else {
+                        Au-delà de {{ t.seuil | number: '1.0-0' }} Ar
+                      }
+                    </td>
+                    <td class="num">{{ t.taux | number: '1.0-2' }} %</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (modal()) {
+  <div class="overlay" (click)="modal.set(null)">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @switch (modal()) {
+        @case ('parametre') {
+          <header class="modal__head"><h2>{{ param.libelle }}</h2></header>
+          <form (ngSubmit)="enregistrerParametre()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field">
+                  <span>S’applique à partir de <span class="req">*</span></span>
+                  <input type="month" [(ngModel)]="param.mois" name="mois" />
+                </label>
+                <label class="field">
+                  <span>Nouvelle valeur ({{ param.unite === '0/1' ? '1 = oui, 0 = non' : param.unite }}) <span class="req">*</span></span>
+                  <input type="number" step="any" min="0" [(ngModel)]="param.valeur" name="valeur" />
+                </label>
+              </div>
+              <p class="muted small">Les bulletins déjà validés ne changent pas. Les brouillons des mois concernés prennent la nouvelle valeur au prochain calcul.</p>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+        @case ('bareme') {
+          <header class="modal__head"><h2>Barème IRSA</h2></header>
+          <form (ngSubmit)="enregistrerBareme()">
+            <div class="modal__body">
+              @if (modalError()) {
+                <div class="alert">{{ modalError() }}</div>
+              }
+              <div class="form-grid">
+                <label class="field field--wide">
+                  <span>S’applique à partir de <span class="req">*</span></span>
+                  <input type="month" [(ngModel)]="bareme.mois" name="moisBareme" />
+                </label>
+              </div>
+              <p class="muted small">
+                Chaque ligne : le taux s’applique à la part du revenu au-dessus du seuil, jusqu’au seuil suivant. La première ligne commence à 0.
+              </p>
+              @for (t of bareme.tranches; track $index; let i = $index) {
+                <div class="tranche">
+                  <label class="field">
+                    <span>À partir de (Ar)</span>
+                    <input type="number" min="0" [(ngModel)]="t.seuil" [name]="'seuil' + i" />
+                  </label>
+                  <label class="field">
+                    <span>Taux (%)</span>
+                    <input type="number" min="0" max="100" step="any" [(ngModel)]="t.taux" [name]="'taux' + i" />
+                  </label>
+                  <button type="button" class="btn btn--ghost btn--sm" (click)="retirerTranche(i)" [disabled]="bareme.tranches.length === 1" aria-label="Retirer la tranche">✕</button>
+                </div>
+              }
+              <button type="button" class="btn btn--ghost btn--sm" (click)="ajouterTranche()">+ Ajouter une tranche</button>
+            </div>
+            <footer class="modal__foot">
+              <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+              <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+            </footer>
+          </form>
+        }
+      }
+    </div>
+  </div>
+}

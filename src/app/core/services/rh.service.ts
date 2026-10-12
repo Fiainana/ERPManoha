@@ -31,6 +31,11 @@ import {
   RhSoldeConges,
   RhStatutPointeuse,
   RhTableauBord,
+  PaieBareme,
+  PaieBulletin,
+  PaiePeriode,
+  PaieParametres,
+  PaieTranche,
 } from '../models/rh.model';
 
 type Query = Record<string, string | number | boolean | null | undefined>;
@@ -277,6 +282,44 @@ export class RhService {
   }
 
   // —— Plomberie ——
+
+  // —— Paie (rôle Admin) ——
+
+  paieParametres() {
+    return this.get<PaieParametres>('paie/parametres');
+  }
+
+  paieEnregistrerParametre(req: { cle: string; dateEffet: string; valeur: number }) {
+    return this.send<PaieParametres>('PUT', 'paie/parametres', req);
+  }
+
+  paieEnregistrerBareme(req: { dateEffet: string; tranches: PaieTranche[] }) {
+    return this.send<PaieParametres>('PUT', 'paie/bareme-irsa', req);
+  }
+
+  paiePeriode(mois: string) {
+    return this.get<PaiePeriode>(`paie/periodes/${mois}`);
+  }
+
+  paieCalculer(mois: string) {
+    return this.send<PaiePeriode>('POST', `paie/periodes/${mois}/calculer`, {});
+  }
+
+  paieValiderPeriode(mois: string) {
+    return this.send<PaiePeriode>('POST', `paie/periodes/${mois}/valider`);
+  }
+
+  paieBulletin(id: number) {
+    return this.get<PaieBulletin>(`paie/bulletins/${id}`);
+  }
+
+  paieValiderBulletin(id: number, mois: string) {
+    return this.send<PaiePeriode>('POST', `paie/bulletins/${id}/valider?mois=${mois}`);
+  }
+
+  paieRouvrirBulletin(id: number) {
+    return this.send<PaiePeriode>('POST', `paie/bulletins/${id}/rouvrir`);
+  }
 
   private get<T>(path: string, query?: Query) {
     let params = new HttpParams();

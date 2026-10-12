@@ -620,3 +620,138 @@ export function rhJourIso(iso: string): number {
   const j = new Date(y, m - 1, d).getDay();
   return j === 0 ? 7 : j;
 }
+
+// —— Paie ——
+
+export type PaieStatut = 'Brouillon' | 'Valide';
+
+export interface PaieBulletinLigne {
+  id: number;
+  employeId: number;
+  matricule: string;
+  nom: string;
+  departement: string | null;
+  statut: PaieStatut;
+  salaireBase: number;
+  retenues: number;
+  brut: number;
+  cnapsSalarie: number;
+  ostieSalarie: number;
+  irsa: number;
+  net: number;
+  cnapsEmployeur: number;
+  ostieEmployeur: number;
+  fmfpEmployeur: number;
+  coutEmployeur: number;
+  avertissements: string | null;
+}
+
+export interface PaieSansBulletin {
+  employeId: number;
+  matricule: string;
+  nom: string;
+  motif: string;
+}
+
+export interface PaieTotaux {
+  nbBulletins: number;
+  salaireBase: number;
+  retenues: number;
+  brut: number;
+  cnapsSalarie: number;
+  ostieSalarie: number;
+  irsa: number;
+  net: number;
+  cnapsEmployeur: number;
+  ostieEmployeur: number;
+  fmfpEmployeur: number;
+  coutEmployeur: number;
+  cnapsADeclarer: number;
+  ostieADeclarer: number;
+}
+
+export interface PaiePeriode {
+  mois: string;
+  statut: 'Vide' | 'Brouillon' | 'Valide' | 'Mixte';
+  bulletins: PaieBulletinLigne[];
+  sansBulletin: PaieSansBulletin[];
+  totaux: PaieTotaux;
+}
+
+/** Paramètres utilisés au calcul (copie conservée avec le bulletin). */
+export interface PaieParametresUtilises {
+  HeuresMensuelles: number;
+  CnapsSalarie: number;
+  CnapsEmployeur: number;
+  OstieSalarie: number;
+  OstieEmployeur: number;
+  FmfpEmployeur: number;
+  PlafondCotisations: number;
+}
+
+export interface PaieBulletin {
+  id: number;
+  mois: string;
+  statut: PaieStatut;
+  salaireContrat: number;
+  prorata: number;
+  salaireBase: number;
+  tauxHoraire: number;
+  minutes: { retard: number; pauseDepassee: number; departAnticipe: number; absence: number };
+  retenues: { retard: number; pauseDepassee: number; departAnticipe: number; absence: number; total: number };
+  brut: number;
+  cnapsSalarie: number;
+  ostieSalarie: number;
+  baseIrsa: number;
+  irsaBrut: number;
+  reductionCharge: number;
+  irsa: number;
+  net: number;
+  cnapsEmployeur: number;
+  ostieEmployeur: number;
+  fmfpEmployeur: number;
+  coutEmployeur: number;
+  nbEnfants: number;
+  parametres: PaieParametresUtilises | null;
+  avertissements: string | null;
+  calculeLe: string;
+  calculePar: string | null;
+  valideLe: string | null;
+  validePar: string | null;
+  employe: {
+    id: number;
+    matricule: string;
+    nom: string;
+    cin: string | null;
+    cnaps: string | null;
+    situationFamiliale: string | null;
+    dateEmbauche: string;
+    poste: string | null;
+    departement: string | null;
+  };
+  societe: { nom: string; adresse: string; legal: string };
+}
+
+export interface PaieParametre {
+  cle: string;
+  libelle: string;
+  unite: string;
+  valeur: number | null;
+  dateEffet: string | null;
+  historique: { dateEffet: string; valeur: number }[];
+}
+
+export interface PaieTranche {
+  seuil: number;
+  taux: number;
+}
+
+export interface PaieBareme {
+  dateEffet: string;
+  tranches: PaieTranche[];
+}
+
+export interface PaieParametres {
+  parametres: PaieParametre[];
+  irsa: PaieBareme[];
+}

@@ -1,0 +1,210 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <strong>Paie</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Paie de {{ libelleMois(mois) }}</h1>
+        @if (periode(); as p) {
+          @if (p.statut !== 'Vide') {
+            <span class="badge" [attr.data-tone]="p.statut === 'Valide' ? 'ok' : 'warn'">
+              {{ p.statut === 'Mixte' ? 'Partiellement validée' : p.statut === 'Valide' ? 'Validée' : 'Brouillon' }}
+            </span>
+          }
+        }
+      </div>
+      <p class="subtitle">
+        Salaire du contrat, retenues de présence au taux horaire, CNaPS, OSTIE et IRSA. Les bulletins validés ne sont plus recalculés.
+      </p>
+    </div>
+    <div class="rh__actions">
+      <a routerLink="/rh/paie/parametres" class="btn btn--ghost">Paramètres de paie</a>
+      <button type="button" class="btn btn--ghost" (click)="exporter()" [disabled]="!periode()?.bulletins?.length">
+        Journal (CSV)
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="calculer()" [disabled]="acting() || loading()">
+        {{ acting() ? 'Calcul…' : periode()?.bulletins?.length ? 'Recalculer' : 'Calculer la paie' }}
+      </button>
+      <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting() || brouillons() === 0">
+        Valider le mois{{ brouillons() ? ' (' + brouillons() + ')' : '' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" class="btn btn--ghost btn--sm" (click)="decaler(-1)" aria-label="Mois précédent">‹</button>
+    <input type="month" [(ngModel)]="mois" (ngModelChange)="charger()" aria-label="Mois de paie" />
+    <button type="button" class="btn btn--ghost btn--sm" (click)="decaler(1)" aria-label="Mois suivant">›</button>
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !periode()) {
+    <div class="skeleton__row"></div>
+  }
+
+  @if (periode(); as p) {
+    @if (p.bulletins.length > 0) {
+      <section class="kpis">
+        <div class="kpi"><span>Bulletins</span><strong>{{ p.totaux.nbBulletins }}</strong></div>
+        <div class="kpi"><span>Salaires bruts</span><strong>{{ p.totaux.brut | number: '1.0-0' }} Ar</strong></div>
+        <div class="kpi" data-tone="warn"><span>Retenues de présence</span><strong>{{ p.totaux.retenues | number: '1.0-0' }} Ar</strong></div>
+        <div class="kpi" data-tone="ok"><span>Net à payer</span><strong>{{ p.totaux.net | number: '1.0-0' }} Ar</strong></div>
+        <div class="kpi"><span>Coût employeur</span><strong>{{ p.totaux.coutEmployeur | number: '1.0-0' }} Ar</strong></div>
+      </section>
+
+      @if (avecAvertissement() > 0) {
+        <div class="alert" role="status">
+          {{ avecAvertissement() }} bulletin(s) à vérifier : survolez l’icône ⚠ de la ligne pour voir pourquoi.
+        </div>
+      }
+
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Journal de paie</h2>
+          <span class="muted small">Cliquez sur un employé pour ouvrir son bulletin</span>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Employé</th>
+                <th class="num">Salaire de base</th>
+                <th class="num">Retenues</th>
+                <th class="num">Brut</th>
+                <th class="num">CNaPS + OSTIE</th>
+                <th class="num">IRSA</th>
+                <th class="num">Net à payer</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of p.bulletins; track b.id) {
+                <tr class="clickable" (click)="ouvrir(b)">
+                  <td>
+                    <span class="strong">{{ b.nom }}</span>
+                    <span class="muted small"> {{ b.matricule }}{{ b.departement ? ' · ' + b.departement : '' }}</span>
+                    @if (b.avertissements) {
+                      <span [title]="b.avertissements" aria-label="À vérifier"> ⚠</span>
+                    }
+                  </td>
+                  <td class="num">{{ b.salaireBase | number: '1.0-0' }}</td>
+                  <td class="num" [style.color]="b.retenues ? 'var(--me-red-deeper)' : null">
+                    {{ b.retenues ? '−' + (b.retenues | number: '1.0-0') : '' }}
+                  </td>
+                  <td class="num">{{ b.brut | number: '1.0-0' }}</td>
+                  <td class="num">{{ b.cnapsSalarie + b.ostieSalarie | number: '1.0-0' }}</td>
+                  <td class="num">{{ b.irsa | number: '1.0-0' }}</td>
+                  <td class="num strong">{{ b.net | number: '1.0-0' }}</td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="b.statut === 'Valide' ? 'ok' : 'warn'">
+                      {{ b.statut === 'Valide' ? 'Validé' : 'Brouillon' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="strong">Total</td>
+                <td class="num strong">{{ p.totaux.salaireBase | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.retenues ? '−' + (p.totaux.retenues | number: '1.0-0') : '' }}</td>
+                <td class="num strong">{{ p.totaux.brut | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.cnapsSalarie + p.totaux.ostieSalarie | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.irsa | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.net | number: '1.0-0' }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="panel__head">
+          <h2>À déclarer et à verser</h2>
+          <span class="muted small">Cotisations du salarié et de l’employeur, et IRSA retenu sur les salaires</span>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Organisme</th>
+                <th class="num">Part salarié</th>
+                <th class="num">Part employeur</th>
+                <th class="num">Total à verser</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="strong">CNaPS</td>
+                <td class="num">{{ p.totaux.cnapsSalarie | number: '1.0-0' }}</td>
+                <td class="num">{{ p.totaux.cnapsEmployeur | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.cnapsADeclarer | number: '1.0-0' }}</td>
+              </tr>
+              <tr>
+                <td class="strong">OSTIE (santé)</td>
+                <td class="num">{{ p.totaux.ostieSalarie | number: '1.0-0' }}</td>
+                <td class="num">{{ p.totaux.ostieEmployeur | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.ostieADeclarer | number: '1.0-0' }}</td>
+              </tr>
+              <tr>
+                <td class="strong">FMFP (formation)</td>
+                <td class="num">—</td>
+                <td class="num">{{ p.totaux.fmfpEmployeur | number: '1.0-0' }}</td>
+                <td class="num strong">{{ p.totaux.fmfpEmployeur | number: '1.0-0' }}</td>
+              </tr>
+              <tr>
+                <td class="strong">IRSA (impôt)</td>
+                <td class="num">{{ p.totaux.irsa | number: '1.0-0' }}</td>
+                <td class="num">—</td>
+                <td class="num strong">{{ p.totaux.irsa | number: '1.0-0' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else if (!loading()) {
+      <section class="panel">
+        <div class="panel__body">
+          <p class="muted">
+            Aucun bulletin pour {{ libelleMois(mois) }}. Cliquez sur « Calculer la paie » : l’ERP prend le salaire du contrat de
+            chaque employé et y applique les retards, pauses dépassées et absences du mois.
+          </p>
+        </div>
+      </section>
+    }
+
+    @if (p.sansBulletin.length > 0) {
+      <section class="panel">
+        <header class="panel__head">
+          <h2>Employés sans bulletin</h2>
+          <span class="count-pill">{{ p.sansBulletin.length }}</span>
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <tbody>
+              @for (s of p.sansBulletin; track s.employeId) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/rh/employes', s.employeId]" class="strong">{{ s.nom }}</a>
+                    <span class="muted small"> {{ s.matricule }}</span>
+                  </td>
+                  <td class="muted">{{ s.motif }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>

@@ -1,0 +1,187 @@
+<div class="rh">
+  <header class="rh__header no-print">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/rh">Ressources humaines</a>
+        <span>›</span>
+        <a routerLink="/rh/paie">Paie</a>
+        <span>›</span>
+        <strong>Bulletin</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Bulletin de paie</h1>
+        @if (bulletin(); as b) {
+          <span class="badge" [attr.data-tone]="b.statut === 'Valide' ? 'ok' : 'warn'">
+            {{ b.statut === 'Valide' ? 'Validé' : 'Brouillon' }}
+          </span>
+        }
+      </div>
+    </div>
+    <div class="rh__actions">
+      <a routerLink="/rh/paie" class="btn btn--ghost">Retour à la paie</a>
+      @if (bulletin(); as b) {
+        <button type="button" class="btn btn--ghost" (click)="imprimer()">Imprimer</button>
+        @if (b.statut === 'Brouillon') {
+          <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting()">Valider</button>
+        } @else {
+          <button type="button" class="btn btn--ghost" (click)="rouvrir()" [disabled]="acting()">Rouvrir</button>
+        }
+      }
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok no-print" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert no-print" role="alert">{{ error() }}</div>
+  }
+  @if (loading() && !bulletin()) {
+    <div class="skeleton__row"></div>
+  }
+
+  @if (bulletin(); as b) {
+    @if (b.avertissements) {
+      <div class="alert no-print" role="status">{{ b.avertissements }}</div>
+    }
+
+    <article class="bulletin" id="bulletin-imprimable">
+      <header class="bulletin__entete">
+        <div>
+          <strong class="bulletin__societe">{{ b.societe.nom }}</strong>
+          <div class="small">{{ b.societe.adresse }}</div>
+          <div class="small">{{ b.societe.legal }}</div>
+        </div>
+        <div class="bulletin__titre">
+          <strong>BULLETIN DE PAIE</strong>
+          <div>{{ libelleMois(b.mois) }}</div>
+        </div>
+      </header>
+
+      <section class="bulletin__employe">
+        <dl>
+          <div><dt>Nom</dt><dd>{{ b.employe.nom }}</dd></div>
+          <div><dt>Matricule</dt><dd>{{ b.employe.matricule }}</dd></div>
+          <div><dt>Poste</dt><dd>{{ b.employe.poste || '—' }}</dd></div>
+          <div><dt>Département</dt><dd>{{ b.employe.departement || '—' }}</dd></div>
+        </dl>
+        <dl>
+          <div><dt>N° CIN</dt><dd>{{ b.employe.cin || '—' }}</dd></div>
+          <div><dt>N° CNaPS</dt><dd>{{ b.employe.cnaps || '—' }}</dd></div>
+          <div><dt>Date d’embauche</dt><dd>{{ b.employe.dateEmbauche | date: 'dd/MM/yyyy' }}</dd></div>
+          <div>
+            <dt>Situation</dt>
+            <dd>{{ b.employe.situationFamiliale || '—' }}, {{ b.nbEnfants }} enfant(s) à charge</dd>
+          </div>
+        </dl>
+      </section>
+
+      <table class="bulletin__table">
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th class="num">Base</th>
+            <th class="num">Gains</th>
+            <th class="num">Retenues</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              Salaire de base
+              @if (b.prorata < 1) {
+                <span class="muted small"> (au prorata : {{ b.prorata * 100 | number: '1.0-1' }} % du mois)</span>
+              }
+            </td>
+            <td class="num">{{ b.salaireContrat | number: '1.0-0' }}</td>
+            <td class="num">{{ b.salaireBase | number: '1.0-0' }}</td>
+            <td class="num"></td>
+          </tr>
+          @if (b.retenues.retard) {
+            <tr>
+              <td>Retards <span class="muted small">({{ duree(b.minutes.retard) }})</span></td>
+              <td class="num small">{{ b.tauxHoraire | number: '1.0-0' }} /h</td>
+              <td class="num"></td>
+              <td class="num">{{ b.retenues.retard | number: '1.0-0' }}</td>
+            </tr>
+          }
+          @if (b.retenues.pauseDepassee) {
+            <tr>
+              <td>Pause déjeuner dépassée <span class="muted small">({{ duree(b.minutes.pauseDepassee) }})</span></td>
+              <td class="num small">{{ b.tauxHoraire | number: '1.0-0' }} /h</td>
+              <td class="num"></td>
+              <td class="num">{{ b.retenues.pauseDepassee | number: '1.0-0' }}</td>
+            </tr>
+          }
+          @if (b.retenues.departAnticipe) {
+            <tr>
+              <td>Départs anticipés <span class="muted small">({{ duree(b.minutes.departAnticipe) }})</span></td>
+              <td class="num small">{{ b.tauxHoraire | number: '1.0-0' }} /h</td>
+              <td class="num"></td>
+              <td class="num">{{ b.retenues.departAnticipe | number: '1.0-0' }}</td>
+            </tr>
+          }
+          @if (b.retenues.absence) {
+            <tr>
+              <td>Absences non payées <span class="muted small">({{ duree(b.minutes.absence) }})</span></td>
+              <td class="num small">{{ b.tauxHoraire | number: '1.0-0' }} /h</td>
+              <td class="num"></td>
+              <td class="num">{{ b.retenues.absence | number: '1.0-0' }}</td>
+            </tr>
+          }
+          <tr class="bulletin__sous-total">
+            <td>Salaire brut</td>
+            <td class="num"></td>
+            <td class="num">{{ b.brut | number: '1.0-0' }}</td>
+            <td class="num"></td>
+          </tr>
+          <tr>
+            <td>CNaPS <span class="muted small">(part salarié{{ b.parametres ? ', ' + b.parametres.CnapsSalarie + ' %' : '' }})</span></td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num">{{ b.cnapsSalarie | number: '1.0-0' }}</td>
+          </tr>
+          <tr>
+            <td>OSTIE – santé <span class="muted small">(part salarié{{ b.parametres ? ', ' + b.parametres.OstieSalarie + ' %' : '' }})</span></td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num">{{ b.ostieSalarie | number: '1.0-0' }}</td>
+          </tr>
+          <tr>
+            <td>
+              IRSA
+              <span class="muted small">
+                (base {{ b.baseIrsa | number: '1.0-0' }}{{ b.reductionCharge ? ', réduction charges de famille ' + (b.reductionCharge | number: '1.0-0') : '' }})
+              </span>
+            </td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num">{{ b.irsa | number: '1.0-0' }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="bulletin__net">
+            <td colspan="3">NET À PAYER</td>
+            <td class="num">{{ b.net | number: '1.0-0' }} Ar</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <section class="bulletin__employeur">
+        <strong>Charges patronales</strong>
+        <span>CNaPS {{ b.cnapsEmployeur | number: '1.0-0' }}</span>
+        <span>OSTIE {{ b.ostieEmployeur | number: '1.0-0' }}</span>
+        <span>FMFP {{ b.fmfpEmployeur | number: '1.0-0' }}</span>
+        <span class="strong">Coût total employeur : {{ b.coutEmployeur | number: '1.0-0' }} Ar</span>
+      </section>
+
+      <footer class="bulletin__pied small muted">
+        Calculé le {{ b.calculeLe | date: 'dd/MM/yyyy HH:mm' }}{{ b.calculePar ? ' par ' + b.calculePar : '' }}.
+        @if (b.valideLe) {
+          Validé le {{ b.valideLe | date: 'dd/MM/yyyy HH:mm' }}{{ b.validePar ? ' par ' + b.validePar : '' }}.
+        }
+        À conserver sans limitation de durée.
+      </footer>
+    </article>
+  }
+</div>
