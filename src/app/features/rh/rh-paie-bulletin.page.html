@@ -20,7 +20,7 @@
     <div class="rh__actions">
       <a routerLink="/rh/paie" class="btn btn--ghost">Retour à la paie</a>
       @if (bulletin(); as b) {
-        <button type="button" class="btn btn--ghost" (click)="imprimer()">Imprimer</button>
+        <button type="button" class="btn btn--ghost" (click)="imprimer()">Imprimer (A5 ×2)</button>
         @if (b.statut === 'Brouillon') {
           <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting()">Valider</button>
         } @else {
@@ -45,7 +45,7 @@
       <div class="alert no-print" role="status">{{ b.avertissements }}</div>
     }
 
-    <article class="bulletin" id="bulletin-imprimable">
+    <article class="bulletin">
       <header class="bulletin__entete">
         <div>
           <strong class="bulletin__societe">{{ b.societe.nom }}</strong>

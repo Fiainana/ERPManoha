@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RhService } from '../../core/services/rh.service';
 import { PaieBulletin } from '../../core/models/rh.model';
 import { rhDuree } from '../../core/models/rh.model';
+import { htmlBulletins, imprimerHtml } from './rh-paie-impression';
 
 /** Bulletin de paie d'un employé : lecture, impression, validation. */
 @Component({
@@ -43,8 +44,10 @@ export class RhPaieBulletinPage implements OnInit {
     });
   }
 
+  /** Bulletin A5 en deux exemplaires (salarié / société) sur une feuille A4 paysage. */
   imprimer(): void {
-    window.print();
+    const b = this.bulletin();
+    if (b) imprimerHtml(htmlBulletins([b]));
   }
 
   valider(): void {

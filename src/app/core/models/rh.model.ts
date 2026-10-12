@@ -646,6 +646,7 @@ export interface PaieBulletinLigne {
   avertissements: string | null;
   /** IRSA payé par la société : calculé et à verser, mais pas retiré du net. */
   irsaPrisEnCharge: boolean;
+  numeroCnaps: string | null;
 }
 
 export interface PaieSansBulletin {

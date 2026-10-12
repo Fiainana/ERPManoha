@@ -25,6 +25,15 @@
       <button type="button" class="btn btn--ghost" (click)="exporter()" [disabled]="!periode()?.bulletins?.length">
         Journal (CSV)
       </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerEtatSalaire()" [disabled]="!periode()?.bulletins?.length">
+        État de salaire
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerDeclarations()" [disabled]="!periode()?.bulletins?.length">
+        Déclarations
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerBulletins()" [disabled]="acting() || !periode()?.bulletins?.length">
+        Bulletins (A5 ×2)
+      </button>
       <button type="button" class="btn btn--ghost" (click)="calculer()" [disabled]="acting() || loading()">
         {{ acting() ? 'Calcul…' : periode()?.bulletins?.length ? 'Recalculer' : 'Calculer la paie' }}
       </button>

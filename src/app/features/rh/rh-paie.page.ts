@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RhService } from '../../core/services/rh.service';
 import { PaieBulletinLigne, PaiePeriode } from '../../core/models/rh.model';
+import { htmlBulletins, htmlDeclarations, htmlEtatSalaire, imprimerHtml } from './rh-paie-impression';
 
 /** Paie du mois : calcul des bulletins, validation, journal de paie et montants à déclarer. */
 @Component({
@@ -76,6 +77,34 @@ export class RhPaiePage implements OnInit {
 
   ouvrir(b: PaieBulletinLigne): void {
     void this.router.navigate(['/rh/paie/bulletins', b.id]);
+  }
+
+  imprimerEtatSalaire(): void {
+    const p = this.periode();
+    if (p && p.bulletins.length > 0) imprimerHtml(htmlEtatSalaire(p));
+  }
+
+  imprimerDeclarations(): void {
+    const p = this.periode();
+    if (p && p.bulletins.length > 0) imprimerHtml(htmlDeclarations(p));
+  }
+
+  /** Tous les bulletins du mois : une feuille A4 (2 × A5) par employé. */
+  imprimerBulletins(): void {
+    const p = this.periode();
+    if (!p || p.bulletins.length === 0 || this.acting()) return;
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.paieBulletinsDuMois(p.mois).subscribe({
+      next: (liste) => {
+        this.acting.set(false);
+        imprimerHtml(htmlBulletins(liste));
+      },
+      error: (err: Error) => {
+        this.acting.set(false);
+        this.error.set(err.message);
+      },
+    });
   }
 
   /** Journal de paie en CSV (séparateur « ; », ouvert directement par Excel). */

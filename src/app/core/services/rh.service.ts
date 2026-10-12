@@ -309,6 +309,10 @@ export class RhService {
     return this.send<PaiePeriode>('POST', `paie/periodes/${mois}/valider`);
   }
 
+  paieBulletinsDuMois(mois: string) {
+    return this.get<PaieBulletin[]>(`paie/periodes/${mois}/bulletins`);
+  }
+
   paieBulletin(id: number) {
     return this.get<PaieBulletin>(`paie/bulletins/${id}`);
   }
