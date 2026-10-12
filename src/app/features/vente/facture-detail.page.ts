@@ -1,21 +1,26 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FacturesService, FormatImpressionFacture } from '../../core/services/factures.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RfidSerialService } from '../../core/services/rfid-serial.service';
 import { FactureDetail } from '../../core/models/facture.model';
+import { RfidLecteurComponent } from '../../shared/components/rfid-lecteur/rfid-lecteur.component';
 
 @Component({
   selector: 'app-facture-detail-page',
-  imports: [RouterLink, DatePipe, DecimalPipe, FormsModule],
+  imports: [RouterLink, DatePipe, DecimalPipe, FormsModule, RfidLecteurComponent],
   templateUrl: './facture-detail.page.html',
   styleUrl: './facture-detail.page.scss',
 })
-export class FactureDetailPage implements OnInit {
+export class FactureDetailPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(FacturesService);
+  private readonly lecteur = inject(RfidSerialService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
@@ -36,6 +41,19 @@ export class FactureDetailPage implements OnInit {
       return;
     }
     this.load();
+
+    // Badge passé sur le lecteur USB pendant que la fenêtre du bon de retour est ouverte :
+    // il remplit le champ et valide, comme dans les applications Caisse et Commercial.
+    this.lecteur.uid$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((uid) => {
+      if (!this.retourOpen() || this.acting()) return;
+      this.rfid = uid;
+      this.confirmerRetour();
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Libère le port COM pour les autres programmes du poste (caisse, borne…).
+    void this.lecteur.deconnecter();
   }
 
   load(): void {
@@ -91,12 +109,16 @@ export class FactureDetailPage implements OnInit {
 
   openRetour(): void {
     this.rfid = '';
+    this.error.set(null);
     this.retourOpen.set(true);
+    // Reprend sans fenêtre de choix un lecteur déjà autorisé dans ce navigateur.
+    void this.lecteur.connecterAutomatiquement();
   }
 
   closeRetour(): void {
     if (this.acting()) return;
     this.retourOpen.set(false);
+    void this.lecteur.deconnecter();
   }
 
   confirmerRetour(): void {
@@ -112,6 +134,7 @@ export class FactureDetailPage implements OnInit {
       next: (br) => {
         this.acting.set(false);
         this.retourOpen.set(false);
+        void this.lecteur.deconnecter();
         if (br) {
           void this.router.navigate(['/depot/bons-retour', br]);
         } else {
@@ -121,6 +144,8 @@ export class FactureDetailPage implements OnInit {
       },
       error: (err) => {
         this.acting.set(false);
+        // Badge refusé : on vide le champ pour qu'un autre badge puisse être passé.
+        this.rfid = '';
         this.error.set(err?.message || 'Transformation impossible');
       },
     });

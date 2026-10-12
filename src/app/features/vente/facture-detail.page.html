@@ -198,8 +198,11 @@
       <h2 id="retour-title">Transformer en bon de retour</h2>
       <p class="modal__hint">
         Facture <strong>{{ detail()?.entete?.numeroPiece }}</strong> — badge RFID d’un responsable
-        Admin requis.
+        Admin requis. Passer le badge sur le lecteur valide directement.
       </p>
+      <div class="modal__lecteur">
+        <app-rfid-lecteur />
+      </div>
       <label class="field">
         <span>Badge RFID</span>
         <input
@@ -207,10 +210,13 @@
           [(ngModel)]="rfid"
           name="rfid"
           autocomplete="off"
-          placeholder="Scanner ou saisir le badge…"
+          placeholder="Passer le badge, ou le saisir…"
           (keydown.enter)="confirmerRetour()"
         />
       </label>
+      @if (error()) {
+        <p class="modal__error" role="alert">{{ error() }}</p>
+      }
       <div class="modal__actions">
         <button type="button" class="btn btn--ghost" (click)="closeRetour()" [disabled]="acting()">
           Annuler
