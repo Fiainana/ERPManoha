@@ -26,6 +26,9 @@ export class RhPaiePage implements OnInit {
   mois = moisIso(new Date());
 
   readonly brouillons = computed(() => this.periode()?.bulletins.filter((b) => b.statut === 'Brouillon').length ?? 0);
+  /** IRSA retenu sur les salariés / payé par la société (selon le réglage de chaque bulletin). */
+  readonly irsaSalarie = computed(() => this.somme((b) => !b.irsaPrisEnCharge));
+  readonly irsaSociete = computed(() => this.somme((b) => b.irsaPrisEnCharge));
   readonly avecAvertissement = computed(() => this.periode()?.bulletins.filter((b) => b.avertissements).length ?? 0);
 
   ngOnInit(): void {
@@ -82,17 +85,18 @@ export class RhPaiePage implements OnInit {
     const entetes = [
       'Matricule', 'Nom', 'Département', 'Salaire de base', 'Retenues', 'Brut',
       'CNaPS salarié', 'OSTIE salarié', 'IRSA', 'Net à payer',
-      'CNaPS employeur', 'OSTIE employeur', 'FMFP employeur', 'Coût employeur', 'Statut',
+      'CNaPS employeur', 'OSTIE employeur', 'FMFP employeur', 'Coût employeur', 'IRSA payé par', 'Statut',
     ];
     const lignes = p.bulletins.map((b) => [
       b.matricule, b.nom, b.departement ?? '', b.salaireBase, b.retenues, b.brut,
       b.cnapsSalarie, b.ostieSalarie, b.irsa, b.net,
-      b.cnapsEmployeur, b.ostieEmployeur, b.fmfpEmployeur, b.coutEmployeur, b.statut,
+      b.cnapsEmployeur, b.ostieEmployeur, b.fmfpEmployeur, b.coutEmployeur,
+      b.irsaPrisEnCharge ? 'Société' : 'Salarié', b.statut,
     ]);
     const t = p.totaux;
     lignes.push([
       '', 'TOTAL', '', t.salaireBase, t.retenues, t.brut, t.cnapsSalarie, t.ostieSalarie, t.irsa, t.net,
-      t.cnapsEmployeur, t.ostieEmployeur, t.fmfpEmployeur, t.coutEmployeur, '',
+      t.cnapsEmployeur, t.ostieEmployeur, t.fmfpEmployeur, t.coutEmployeur, '', '',
     ]);
     const cellule = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
     const csv = '﻿' + [entetes, ...lignes].map((l) => l.map(cellule).join(';')).join('\r\n');
@@ -108,6 +112,10 @@ export class RhPaiePage implements OnInit {
     const [y, m] = mois.split('-').map(Number);
     const texte = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     return texte.charAt(0).toUpperCase() + texte.slice(1);
+  }
+
+  private somme(filtre: (b: PaieBulletinLigne) => boolean): number {
+    return this.periode()?.bulletins.filter(filtre).reduce((total, b) => total + b.irsa, 0) ?? 0;
   }
 
   private agir(obs: ReturnType<RhService['paieCalculer']>, ok: string): void {

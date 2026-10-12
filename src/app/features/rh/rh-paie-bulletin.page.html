@@ -150,13 +150,16 @@
           <tr>
             <td>
               IRSA
+              @if (b.irsaPrisEnCharge) {
+                <strong>pris en charge par la société</strong>
+              }
               <span class="muted small">
                 (base {{ b.baseIrsa | number: '1.0-0' }}{{ b.reductionCharge ? ', réduction charges de famille ' + (b.reductionCharge | number: '1.0-0') : '' }})
               </span>
             </td>
+            <td class="num small muted">{{ b.irsaPrisEnCharge ? (b.irsa | number: '1.0-0') : '' }}</td>
             <td class="num"></td>
-            <td class="num"></td>
-            <td class="num">{{ b.irsa | number: '1.0-0' }}</td>
+            <td class="num">{{ b.irsaPrisEnCharge ? '0' : (b.irsa | number: '1.0-0') }}</td>
           </tr>
         </tbody>
         <tfoot>
@@ -172,6 +175,9 @@
         <span>CNaPS {{ b.cnapsEmployeur | number: '1.0-0' }}</span>
         <span>OSTIE {{ b.ostieEmployeur | number: '1.0-0' }}</span>
         <span>FMFP {{ b.fmfpEmployeur | number: '1.0-0' }}</span>
+        @if (b.irsaPrisEnCharge) {
+          <span>IRSA pris en charge {{ b.irsa | number: '1.0-0' }}</span>
+        }
         <span class="strong">Coût total employeur : {{ b.coutEmployeur | number: '1.0-0' }} Ar</span>
       </section>
 

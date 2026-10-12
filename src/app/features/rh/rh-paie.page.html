@@ -102,7 +102,12 @@
                   </td>
                   <td class="num">{{ b.brut | number: '1.0-0' }}</td>
                   <td class="num">{{ b.cnapsSalarie + b.ostieSalarie | number: '1.0-0' }}</td>
-                  <td class="num">{{ b.irsa | number: '1.0-0' }}</td>
+                  <td class="num">
+                    {{ b.irsa | number: '1.0-0' }}
+                    @if (b.irsaPrisEnCharge) {
+                      <span class="muted small" title="IRSA payé par la société, non retiré du net"> société</span>
+                    }
+                  </td>
                   <td class="num strong">{{ b.net | number: '1.0-0' }}</td>
                   <td>
                     <span class="badge" [attr.data-tone]="b.statut === 'Valide' ? 'ok' : 'warn'">
@@ -163,9 +168,14 @@
                 <td class="num strong">{{ p.totaux.fmfpEmployeur | number: '1.0-0' }}</td>
               </tr>
               <tr>
-                <td class="strong">IRSA (impôt)</td>
-                <td class="num">{{ p.totaux.irsa | number: '1.0-0' }}</td>
-                <td class="num">—</td>
+                <td class="strong">
+                  IRSA (impôt)
+                  @if (irsaSociete() > 0) {
+                    <span class="muted small"> : la part « employeur » est l’IRSA payé par la société à la place des salariés</span>
+                  }
+                </td>
+                <td class="num">{{ irsaSalarie() | number: '1.0-0' }}</td>
+                <td class="num">{{ irsaSociete() | number: '1.0-0' }}</td>
                 <td class="num strong">{{ p.totaux.irsa | number: '1.0-0' }}</td>
               </tr>
             </tbody>

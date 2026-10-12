@@ -644,6 +644,8 @@ export interface PaieBulletinLigne {
   fmfpEmployeur: number;
   coutEmployeur: number;
   avertissements: string | null;
+  /** IRSA payé par la société : calculé et à verser, mais pas retiré du net. */
+  irsaPrisEnCharge: boolean;
 }
 
 export interface PaieSansBulletin {
@@ -718,6 +720,7 @@ export interface PaieBulletin {
   calculePar: string | null;
   valideLe: string | null;
   validePar: string | null;
+  irsaPrisEnCharge: boolean;
   employe: {
     id: number;
     matricule: string;
