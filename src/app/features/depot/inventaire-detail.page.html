@@ -37,6 +37,12 @@
             {{ exportEnCours() ? 'PDF…' : 'Feuille de comptage (PDF)' }}
           </button>
         }
+        <!-- Admin : feuille des seuls articles en écart, à remettre au dépôt (sans quantités). -->
+        @if ((aValider() || enComptage()) && nbARecompter() > 0) {
+          <button type="button" class="btn btn--ghost" (click)="exporterPdf(true, true)" [disabled]="exportEnCours() || loading()">
+            {{ exportEnCours() ? 'PDF…' : 'Feuille de recomptage (' + nbARecompter() + ')' }}
+          </button>
+        }
         @if (statut() !== 'Annule') {
           <button type="button" class="btn btn--ghost" (click)="exporterPdf(false)" [disabled]="exportEnCours() || loading()">
             {{ exportEnCours() ? 'PDF…' : 'Exporter en PDF' }}

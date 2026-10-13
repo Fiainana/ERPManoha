@@ -37,15 +37,32 @@ export class InventaireDetailPage implements OnInit {
   readonly aveugle = computed(() => this.detail()?.comptageAveugle ?? true);
   readonly exportEnCours = signal(false);
 
-  /** Télécharge la feuille de comptage (feuille = true) ou le rapport PDF. */
-  exporterPdf(feuille: boolean): void {
+  /** Admin : articles dont le comptage diffère du théorique (lignes non écartées). */
+  readonly nbARecompter = computed(() =>
+    this.aveugle()
+      ? 0
+      : (this.detail()?.lignes ?? []).filter((l) => !l.ignoree && l.ecart != null && Math.abs(l.ecart) > 0.0001)
+          .length
+  );
+
+  /**
+   * Télécharge la feuille de comptage (feuille = true), le rapport PDF, ou (recomptage, admin)
+   * la feuille des seuls articles en écart à faire recompter par le dépôt.
+   */
+  exporterPdf(feuille: boolean, recomptage = false): void {
     if (!this.id || this.exportEnCours()) return;
     this.exportEnCours.set(true);
     this.error.set(null);
-    this.api.telechargerPdf(this.id, feuille).subscribe({
+    this.api.telechargerPdf(this.id, feuille, recomptage).subscribe({
       next: () => {
         this.exportEnCours.set(false);
-        this.showToast(feuille ? 'Feuille de comptage téléchargée' : 'PDF téléchargé');
+        this.showToast(
+          recomptage
+            ? 'Feuille de recomptage téléchargée'
+            : feuille
+              ? 'Feuille de comptage téléchargée'
+              : 'PDF téléchargé'
+        );
       },
       error: (err: Error) => {
         this.exportEnCours.set(false);

@@ -73,9 +73,11 @@ export class InventairesService {
   /**
    * Télécharge le PDF de l'inventaire. `feuille` = feuille de comptage à remplir à la main,
    * sinon rapport. L'API applique le comptage à l'aveugle (pas de théorique pour le dépôt).
+   * `recomptage` (admin) : feuille limitée aux articles en écart.
    */
-  telechargerPdf(id: number, feuille: boolean) {
-    const params = new HttpParams().set('feuille', String(feuille));
+  telechargerPdf(id: number, feuille: boolean, recomptage = false) {
+    let params = new HttpParams().set('feuille', String(feuille));
+    if (recomptage) params = params.set('recomptage', 'true');
     return this.http
       .get(`${this.base}/${id}/pdf`, { params, responseType: 'blob', observe: 'response' })
       .pipe(
@@ -86,7 +88,7 @@ export class InventairesService {
           const match = /filename\*?=(?:UTF-8''|"?)([^";]+)/i.exec(cd);
           const nom = match
             ? decodeURIComponent(match[1].replace(/"/g, ''))
-            : `${feuille ? 'Feuille-comptage' : 'Inventaire'}-${id}.pdf`;
+            : `${recomptage ? 'Feuille-recomptage' : feuille ? 'Feuille-comptage' : 'Inventaire'}-${id}.pdf`;
           const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
           const a = document.createElement('a');
           a.href = url;
@@ -103,7 +105,11 @@ export class InventairesService {
               err instanceof HttpErrorResponse && err.error instanceof Blob
                 ? err.status === 404
                   ? 'Inventaire introuvable.'
-                  : `Erreur génération PDF (${err.status})`
+                  : err.status === 400 && recomptage
+                    ? 'Aucun article en écart à recompter.'
+                    : err.status === 403
+                      ? 'Accès refusé.'
+                      : `Erreur génération PDF (${err.status})`
                 : this.readError(err)
             )
           )
