@@ -115,6 +115,12 @@ export const routes: Routes = [
         canActivate: [roleGuard(...DEVIS_ROLES)],
       },
       {
+        // Même formulaire que la création, prérempli avec le devis.
+        path: 'vente/devis/:numeroPiece/modifier',
+        component: DevisFormPage,
+        canActivate: [roleGuard(...DEVIS_ROLES)],
+      },
+      {
         path: 'vente/devis/:numeroPiece',
         component: DevisDetailPage,
         canActivate: [roleGuard(...DEVIS_ROLES)],

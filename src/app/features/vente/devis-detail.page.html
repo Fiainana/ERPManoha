@@ -29,6 +29,9 @@
       <button type="button" class="btn btn--ghost" (click)="openEmail()" [disabled]="acting() || loading()">
         Email
       </button>
+      @if (detail()) {
+        <a [routerLink]="['/vente/devis', detail()!.entete.numeroPiece, 'modifier']" class="btn btn--ghost">Modifier</a>
+      }
       <button type="button" class="btn btn--primary" (click)="facturer()" [disabled]="acting() || loading()">
         Facturer
       </button>

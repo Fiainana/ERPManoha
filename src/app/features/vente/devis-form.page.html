@@ -6,21 +6,29 @@
         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
           <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
         </svg>
-        <strong>Nouveau</strong>
+        <strong>{{ editPiece() || 'Nouveau' }}</strong>
       </nav>
-      <h1>Nouveau devis</h1>
-      <p class="df__subtitle">Création d’un devis commercial</p>
+      @if (editPiece()) {
+        <h1>Modifier le devis {{ editPiece() }}</h1>
+        <p class="df__subtitle">Les lignes enregistrées remplacent celles du devis</p>
+      } @else {
+        <h1>Nouveau devis</h1>
+        <p class="df__subtitle">Création d’un devis commercial</p>
+      }
     </div>
     <div class="df__actions">
-      <a routerLink="/vente/devis" class="btn btn--ghost">Annuler</a>
-      <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving()">
-        {{ saving() ? 'Création…' : 'Créer le devis' }}
+      <a [routerLink]="editPiece() ? ['/vente/devis', editPiece()] : '/vente/devis'" class="btn btn--ghost">Annuler</a>
+      <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving() || loading()">
+        {{ boutonLibelle() }}
       </button>
     </div>
   </header>
 
   @if (error()) {
     <div class="alert" role="alert">{{ error() }}</div>
+  }
+  @if (loading()) {
+    <div class="alert alert--info" role="status">Chargement du devis…</div>
   }
 
   <section class="card">
@@ -34,7 +42,10 @@
               <strong>{{ clientLabel }}</strong>
               <span class="mono">{{ clientNumero }}</span>
             </div>
-            <button type="button" class="btn btn--ghost btn--sm" (click)="clearClient()">Changer</button>
+            <!-- Le client d'un devis existant ne se change pas : créer un nouveau devis. -->
+            @if (!editPiece()) {
+              <button type="button" class="btn btn--ghost btn--sm" (click)="clearClient()">Changer</button>
+            }
           </div>
         } @else {
           <input
@@ -82,11 +93,16 @@
         type="search"
         [(ngModel)]="articleQuery"
         (ngModelChange)="onArticleType()"
-        placeholder="Référence ou désignation…"
+        placeholder="Référence ou désignation (plusieurs mots possibles : toiture bleu 3m)…"
         autocomplete="off"
       />
       @if (articleHits().length) {
         <ul class="hits hits--articles">
+          @if (articleTotal() > articleHits().length) {
+            <li class="hits__more">
+              {{ articleHits().length }} sur {{ articleTotal() }} articles — ajoutez un mot pour préciser
+            </li>
+          }
           @for (a of articleHits(); track a.reference) {
             <li>
               <button type="button" (click)="pickArticle(a)">
@@ -155,7 +171,7 @@
               </td>
               <td class="num">
                 <select [(ngModel)]="l.remise" [name]="'r' + $index" class="remise-select">
-                  @for (r of remiseOptions; track r) {
+                  @for (r of remisesPour(l); track r) {
                     <option [ngValue]="r">{{ r === 0 ? '0 %' : r + ' %' }}</option>
                   }
                 </select>
@@ -185,9 +201,9 @@
   </section>
 
   <footer class="df__foot">
-    <a routerLink="/vente/devis" class="btn btn--ghost">Annuler</a>
-    <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving()">
-      {{ saving() ? 'Création…' : 'Créer le devis' }}
+    <a [routerLink]="editPiece() ? ['/vente/devis', editPiece()] : '/vente/devis'" class="btn btn--ghost">Annuler</a>
+    <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving() || loading()">
+      {{ boutonLibelle() }}
     </button>
   </footer>
 </div>

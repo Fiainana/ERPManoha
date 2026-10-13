@@ -113,6 +113,20 @@
   font-size: var(--me-fs-md);
 }
 
+.alert--info {
+  background: var(--me-bg-elevated);
+  border-color: var(--me-border);
+  color: var(--me-text-secondary);
+}
+
+/* Plus de résultats que ceux affichés : invite à préciser la recherche. */
+.hits__more {
+  padding: 0.35rem 0.5rem;
+  font-size: var(--me-fs-sm);
+  color: var(--me-text-secondary);
+  border-bottom: 1px solid var(--me-border);
+}
+
 .card {
   background: var(--me-bg-elevated, var(--me-white));
   border: 1px solid var(--me-border);

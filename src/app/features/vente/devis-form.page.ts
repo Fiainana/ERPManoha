@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -28,6 +28,7 @@ interface LineDraft {
   styleUrl: './devis-form.page.scss',
 })
 export class DevisFormPage implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly devisApi = inject(DevisService);
   private readonly clientsApi = inject(ClientsService);
@@ -40,10 +41,18 @@ export class DevisFormPage implements OnInit {
   /** Remises proposées à la saisie (%) */
   readonly remiseOptions = [0, 1, 2, 5, 10, 15] as const;
 
+  /** Nombre d'articles affichés dans la recherche (au-delà : affiner la saisie). */
+  private readonly articlesParRecherche = 30;
+
   readonly saving = signal(false);
+  readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly clientHits = signal<Client[]>([]);
   readonly articleHits = signal<Article[]>([]);
+  /** Nombre total d'articles correspondant à la recherche (peut dépasser ceux affichés). */
+  readonly articleTotal = signal(0);
+  /** N° du devis modifié ; vide = création. */
+  readonly editPiece = signal('');
 
   clientNumero = '';
   clientLabel = '';
@@ -63,7 +72,54 @@ export class DevisFormPage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.addLine();
+    const piece = this.route.snapshot.paramMap.get('numeroPiece') || '';
+    if (!piece) {
+      this.addLine();
+      return;
+    }
+    this.editPiece.set(piece);
+    this.chargerDevis(piece);
+  }
+
+  /** Modification : reprend l'en-tête et les lignes du devis existant. */
+  private chargerDevis(piece: string): void {
+    this.loading.set(true);
+    this.devisApi.get(piece).subscribe({
+      next: (d) => {
+        const e = d.entete;
+        this.clientNumero = e.clientNumero ?? '';
+        this.clientLabel = e.clientIntitule || e.clientNumero || '';
+        this.reference = e.reference ?? '';
+        if (e.dateDocument) this.date = String(e.dateDocument).slice(0, 10);
+        this.lines = d.lignes
+          .filter((l) => l.articleReference)
+          .map((l) => ({
+            articleReference: l.articleReference,
+            designation: l.designation || l.articleReference,
+            quantite: Number(l.quantite) || 1,
+            prixUnitaire: l.prixUnitaire ?? null,
+            remise: Number(l.remisePourcent) || 0,
+            stockDisponible: null,
+          }));
+        if (this.lines.length === 0) this.addLine();
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.message || 'Devis introuvable');
+      },
+    });
+  }
+
+  boutonLibelle(): string {
+    if (this.editPiece()) return this.saving() ? 'Enregistrement…' : 'Enregistrer les modifications';
+    return this.saving() ? 'Création…' : 'Créer le devis';
+  }
+
+  /** Remises proposées, plus la remise déjà saisie sur la ligne si elle n'est pas dans la liste. */
+  remisesPour(l: LineDraft): number[] {
+    const base: number[] = [...this.remiseOptions];
+    return base.includes(l.remise) ? base : [...base, l.remise].sort((a, b) => a - b);
   }
 
   onClientType(): void {
@@ -106,6 +162,7 @@ export class DevisFormPage implements OnInit {
     }
     this.articleQuery = '';
     this.articleHits.set([]);
+    this.articleTotal.set(0);
   }
 
   /** Nouvelle ligne vide en tête de tableau */
@@ -192,6 +249,23 @@ export class DevisFormPage implements OnInit {
     this.saving.set(true);
     this.error.set(null);
 
+    const piece = this.editPiece();
+    if (piece) {
+      this.devisApi
+        .update(piece, { reference: this.reference.trim(), date: this.date || null, lignes })
+        .subscribe({
+          next: () => {
+            this.saving.set(false);
+            void this.router.navigate(['/vente/devis', piece]);
+          },
+          error: (err) => {
+            this.saving.set(false);
+            this.error.set(err?.message || 'Modification impossible');
+          },
+        });
+      return;
+    }
+
     this.devisApi
       .create({
         clientNumero: this.clientNumero.trim(),
@@ -226,11 +300,19 @@ export class DevisFormPage implements OnInit {
   private searchArticles(q: string): void {
     if (q.length < 2) {
       this.articleHits.set([]);
+      this.articleTotal.set(0);
       return;
     }
-    this.articlesApi.list({ search: q, page: 1, pageSize: 10 }).subscribe({
-      next: (data) => this.articleHits.set(data.items ?? []),
-      error: () => this.articleHits.set([]),
+    // Plusieurs mots possibles (« toiture bleu 3m ») : l'API exige chacun d'eux.
+    this.articlesApi.list({ search: q, page: 1, pageSize: this.articlesParRecherche }).subscribe({
+      next: (data) => {
+        this.articleHits.set(data.items ?? []);
+        this.articleTotal.set(data.total ?? data.items?.length ?? 0);
+      },
+      error: () => {
+        this.articleHits.set([]);
+        this.articleTotal.set(0);
+      },
     });
   }
 }
