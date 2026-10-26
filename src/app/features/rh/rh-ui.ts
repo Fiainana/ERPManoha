@@ -67,6 +67,8 @@ export function libelleRepos(type: string | null): string {
       return 'jour off';
     case 'Auto':
       return 'repos (rotation)';
+    case 'Fermeture':
+      return 'fermeture';
     default:
       return '';
   }
