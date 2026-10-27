@@ -1,0 +1,167 @@
+<div class="immo" style="--cols: minmax(110px, 1fr) minmax(170px, 2fr) minmax(130px, 1.2fr) minmax(100px, 0.9fr) minmax(95px, 0.8fr) minmax(100px, 0.9fr) minmax(95px, 0.8fr); --min: 820px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Comptabilité</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Immobilisations</strong>
+      </nav>
+      <div class="immo__title-row">
+        <h1>Immobilisations</h1>
+        <span class="count-pill">{{ loading() && fiches().length === 0 ? '…' : fiches().length }}</span>
+      </div>
+      <p class="immo__subtitle">
+        Fiches des biens, amortissement linéaire et écritures vers la comptabilité Sage
+      </p>
+    </div>
+    <div class="immo__actions">
+      <button type="button" class="btn btn--ghost" (click)="basculerSync()" [disabled]="acting()">
+        Synchroniser les achats Sage
+      </button>
+      <a routerLink="/immo/fiches/nouvelle" class="btn btn--primary">Nouvelle immobilisation</a>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  @if (syncOuvert()) {
+    <section class="card">
+      <h2>Achats Sage à immobiliser</h2>
+      <p>
+        Lecture des factures d’achat comptabilisées dont l’article appartient à une famille d’immobilisation.
+        Un achat déjà importé n’est jamais recréé ; sous le seuil de capitalisation, c’est une charge.
+      </p>
+      <div class="card__form">
+        <label class="field field--sm">
+          <span>À partir du</span>
+          <input type="date" [(ngModel)]="depuis" />
+        </label>
+        <button type="button" class="btn btn--ghost" (click)="lancerSync(true)" [disabled]="acting()">
+          {{ acting() ? '…' : 'Aperçu' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="lancerSync(false)"
+          [disabled]="acting() || !sync() || sync()!.lignes.length === 0"
+        >
+          Importer
+        </button>
+      </div>
+
+      @if (sync(); as s) {
+        <div class="stats" style="margin-top: 1rem">
+          <div class="stat"><span>Lignes lues</span><strong>{{ s.lignesLues }}</strong></div>
+          <div class="stat"><span>Fiches à créer</span><strong>{{ s.fichesCreees || aCreer(s) }}</strong></div>
+          <div class="stat"><span>Sous le seuil</span><strong>{{ s.lignesSousSeuil }}</strong></div>
+          <div class="stat"><span>Sans catégorie</span><strong>{{ s.fichesSansCategorie }}</strong></div>
+        </div>
+        @if (s.lignes.length > 0) {
+          <div class="table-scroll" style="margin-top: 1rem; --cols: 1fr 2fr 1fr 0.7fr 1fr 0.6fr 1.2fr; --min: 760px">
+            <div class="thead">
+              <span>Facture</span>
+              <span>Désignation</span>
+              <span>Catégorie</span>
+              <span class="num">Qté</span>
+              <span class="num">Montant HT</span>
+              <span class="num">Fiches</span>
+              <span>Résultat</span>
+            </div>
+            <ul class="tbody">
+              @for (l of s.lignes; track $index) {
+                <li class="trow">
+                  <span class="ref">{{ l.piece }}</span>
+                  <span class="name">{{ l.designation }}</span>
+                  <span>{{ l.categorie || '—' }}</span>
+                  <span class="num">{{ l.quantite | number: '1.0-3' }}</span>
+                  <span class="num">{{ l.montantHt | number: '1.0-0' }}</span>
+                  <span class="num">{{ l.nbFiches }}</span>
+                  <span>{{ libelleResultat(l.resultat) }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <p style="margin-top: 1rem">Aucun achat à immobiliser depuis cette date.</p>
+        }
+      }
+    </section>
+  }
+
+  <div class="toolbar">
+    <label class="field field--sm">
+      <span>Statut</span>
+      <select [(ngModel)]="statut" (ngModelChange)="reload()" aria-label="Statut">
+        @for (s of statuts; track s.value) {
+          <option [value]="s.value">{{ s.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Recherche</span>
+      <input
+        type="text"
+        [(ngModel)]="search"
+        (ngModelChange)="rechercher()"
+        placeholder="N° d’inventaire, désignation, site…"
+      />
+    </label>
+    @if (aValider() > 0) {
+      <span class="badge" data-statut="A_VALIDER">{{ aValider() }} à valider</span>
+    }
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && fiches().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (filtrees().length === 0) {
+      <div class="empty">
+        <h2>Aucune immobilisation</h2>
+        <p>Synchronisez les achats Sage ou créez une immobilisation manuellement.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>N° inventaire</span>
+          <span>Désignation</span>
+          <span>Catégorie</span>
+          <span class="num">Valeur brute</span>
+          <span>Acquisition</span>
+          <span>Mise en service</span>
+          <span>Statut</span>
+        </div>
+        <ul class="tbody">
+          @for (f of filtrees(); track f.id) {
+            <li>
+              <a [routerLink]="['/immo/fiches', f.id]" class="trow">
+                <span class="ref">{{ f.numeroInventaire }}</span>
+                <span class="name">{{ f.designation }}</span>
+                <span>{{ f.categorieLibelle || '—' }}</span>
+                <span class="num">{{ f.valeurBrute | number: '1.0-0' }}</span>
+                <span>{{ f.dateAcquisition ? (f.dateAcquisition | date: 'dd/MM/yyyy') : '—' }}</span>
+                <span>{{ f.dateMiseEnService ? (f.dateMiseEnService | date: 'dd/MM/yyyy') : '—' }}</span>
+                <span><span class="badge" [attr.data-statut]="f.statut">{{ libelleStatut(f.statut) }}</span></span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        {{ filtrees().length }} immobilisation(s) · valeur brute {{ totalValeur() | number: '1.0-0' }} Ar
+      </footer>
+    }
+  </div>
+</div>

@@ -319,6 +319,12 @@ export const routes: Routes = [
       },
 
       {
+        path: 'immo',
+        canActivate: [roleGuard('Admin')],
+        loadChildren: () => import('./features/immo/immo.routes').then((m) => m.IMMO_ROUTES),
+      },
+
+      {
         path: 'rh',
         canActivate: [roleGuard('Admin', 'HR')],
         loadChildren: () => import('./features/rh/rh.routes').then((m) => m.RH_ROUTES),

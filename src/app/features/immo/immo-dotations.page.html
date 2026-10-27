@@ -1,0 +1,109 @@
+<div class="immo" style="--cols: 1.1fr 2fr 1.2fr 1fr 1fr; --min: 640px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Dotations</strong>
+      </nav>
+      <h1>Dotations aux amortissements</h1>
+      <p class="immo__subtitle">
+        Calcul mensuel des biens en service. Un mois déjà généré n’est jamais recalculé.
+      </p>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  <section class="card">
+    <div class="card__form">
+      <label class="field field--sm">
+        <span>Année</span>
+        <input type="number" min="2000" [max]="aujourdhui.getFullYear()" [(ngModel)]="annee" />
+      </label>
+      <label class="field field--sm">
+        <span>Mois</span>
+        <select [(ngModel)]="mois">
+          <option [ngValue]="null">Tous les mois écoulés</option>
+          @for (m of moisListe; track $index) {
+            <option [ngValue]="$index + 1">{{ m }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="btn btn--ghost" (click)="apercu()" [disabled]="acting()">
+        {{ acting() ? '…' : 'Aperçu' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        (click)="generer()"
+        [disabled]="acting() || !resultat() || resultat()!.nbLignes === 0 || !resultat()!.apercu"
+      >
+        Générer les dotations
+      </button>
+    </div>
+    <p style="margin: 0.75rem 0 0">Lancez d’abord l’aperçu : la génération n’est possible qu’après avoir vérifié les montants.</p>
+  </section>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">
+      {{ toast() }}
+      <a routerLink="/immo/ecritures">Voir les écritures Sage</a>
+    </div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (resultat(); as r) {
+    @if (r.fichesSansCompte.length > 0) {
+      <div class="alert alert--warn" role="alert">
+        Ignorées faute de comptes d’amortissement et de dotation sur leur catégorie :
+        {{ r.fichesSansCompte.join(', ') }}.
+        <a routerLink="/immo/categories">Compléter les catégories</a>
+      </div>
+    }
+
+    <div class="stats">
+      <div class="stat"><span>{{ r.apercu ? 'Aperçu' : 'Généré' }}</span><strong>{{ r.mois ? libelleMois(r.mois) + ' ' : '' }}{{ r.annee }}</strong></div>
+      <div class="stat"><span>Fiches</span><strong>{{ r.nbFiches }}</strong></div>
+      <div class="stat"><span>Lignes</span><strong>{{ r.nbLignes }}</strong></div>
+      <div class="stat"><span>Total des dotations</span><strong>{{ r.total | number: '1.0-0' }} Ar</strong></div>
+    </div>
+
+    <div class="panel">
+      @if (r.lignes.length === 0) {
+        <div class="empty">
+          <h2>Aucune dotation à générer</h2>
+          <p>Tous les mois de la période sont déjà passés, ou aucun bien n’est en service.</p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <div class="thead">
+            <span>N° inventaire</span>
+            <span>Désignation</span>
+            <span>Catégorie</span>
+            <span>Période</span>
+            <span class="num">Dotation</span>
+          </div>
+          <ul class="tbody">
+            @for (l of r.lignes; track $index) {
+              <li>
+                <a [routerLink]="['/immo/fiches', l.ficheId]" class="trow">
+                  <span class="ref">{{ l.numeroInventaire }}</span>
+                  <span class="name">{{ l.designation }}</span>
+                  <span>{{ l.categorie }}</span>
+                  <span>{{ libelleMois(l.mois) }} {{ l.annee }}</span>
+                  <span class="num">{{ l.montant | number: '1.0-0' }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+        <footer class="panel__footer">{{ r.nbLignes }} ligne(s) · {{ r.total | number: '1.0-0' }} Ar</footer>
+      }
+    </div>
+  }
+</div>

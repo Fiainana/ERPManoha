@@ -22,7 +22,13 @@ export interface NavGroup {
   route?: string;
 }
 
-export type NavSection = 'Pilotage' | 'Commercial' | 'Stock & dépôt' | 'Ressources humaines' | 'Administration';
+export type NavSection =
+  | 'Pilotage'
+  | 'Commercial'
+  | 'Stock & dépôt'
+  | 'Comptabilité'
+  | 'Ressources humaines'
+  | 'Administration';
 
 const ADMIN: AppRole[] = ['Admin'];
 const DEPOT: AppRole[] = ['Admin', 'Depot'];
@@ -110,6 +116,23 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Factures de retour', route: '/depot/factures-retour', roles: DEPOT },
       { label: 'Inventaire', route: '/depot/inventaire', roles: DEPOT },
       { label: 'Mouvements de stock', route: '/depot/mouvements-stock', roles: DEPOT },
+    ],
+  },
+
+  // —— Comptabilité ——
+  {
+    id: 'immo',
+    label: 'Immobilisations',
+    icon: 'immo',
+    section: 'Comptabilité',
+    roles: ADMIN,
+    items: [
+      { label: 'Fiches', route: '/immo', roles: ADMIN, exact: true },
+      { label: 'Dotations', route: '/immo/dotations', roles: ADMIN },
+      { label: 'Écritures Sage', route: '/immo/ecritures', roles: ADMIN },
+      { label: 'État annuel', route: '/immo/etat', roles: ADMIN },
+      { label: 'Contrôles', route: '/immo/controles', roles: ADMIN },
+      { label: 'Catégories', route: '/immo/categories', roles: ADMIN },
     ],
   },
 

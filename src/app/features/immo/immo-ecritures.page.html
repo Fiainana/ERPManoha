@@ -1,0 +1,124 @@
+<div class="immo" style="--cols: 1.2fr 1.2fr 0.9fr 0.6fr 2fr 1fr 1fr; --min: 860px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Écritures Sage</strong>
+      </nav>
+      <div class="immo__title-row">
+        <h1>Écritures comptables</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : items().length }}</span>
+      </div>
+      <p class="immo__subtitle">
+        Dotations, mises en service, cessions et rebuts, envoyés dans le journal d’OD de Sage
+      </p>
+    </div>
+    <div class="immo__actions">
+      <button type="button" class="btn btn--ghost" (click)="reload()" [disabled]="loading()">Actualiser</button>
+      <button type="button" class="btn btn--primary" (click)="exporter()" [disabled]="acting() || nbAExporter() === 0">
+        {{ acting() ? 'Envoi…' : 'Exporter vers Sage (' + nbAExporter() + ')' }}
+      </button>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  <div class="toolbar">
+    <label class="field field--sm">
+      <span>Statut</span>
+      <select [(ngModel)]="statut" (ngModelChange)="reload()" aria-label="Statut">
+        @for (s of statuts; track s.value) {
+          <option [value]="s.value">{{ s.label }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucune écriture</h2>
+        <p>Les écritures apparaissent après une dotation, une mise en service, une cession ou une mise au rebut.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Pièce</span>
+          <span>Type</span>
+          <span>Date</span>
+          <span>Jrnl</span>
+          <span>Libellé</span>
+          <span class="num">Montant</span>
+          <span>Statut</span>
+        </div>
+        <ul class="tbody">
+          @for (e of items(); track e.id) {
+            <li>
+              <button type="button" class="trow" style="width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit" (click)="basculer(e.id)">
+                <span class="ref">{{ e.numeroPiece }}</span>
+                <span>{{ libelleType(e.type) }}</span>
+                <span>{{ e.dateEcriture | date: 'dd/MM/yyyy' }}</span>
+                <span>{{ e.journal }}</span>
+                <span class="name">{{ e.libelle }}</span>
+                <span class="num">{{ e.totalDebit | number: '1.0-0' }}</span>
+                <span><span class="badge" [attr.data-statut]="e.statut">{{ libelleStatut(e.statut) }}</span></span>
+              </button>
+              @if (ouverte() === e.id) {
+                <div style="padding: 0.9rem 1.1rem; background: var(--me-bg-subtle); border-bottom: 1px solid var(--me-border)">
+                  @if (e.messageErreur) {
+                    <div class="alert" style="margin-bottom: 0.75rem">{{ e.messageErreur }}</div>
+                  }
+                  <div class="table-scroll" style="--cols: 1fr 3fr 1fr 1fr; --min: 560px">
+                    <div class="thead">
+                      <span>Compte</span>
+                      <span>Libellé</span>
+                      <span class="num">Débit</span>
+                      <span class="num">Crédit</span>
+                    </div>
+                    <ul class="tbody">
+                      @for (l of e.lignes; track $index) {
+                        <li class="trow">
+                          <span class="ref">{{ l.compte }}</span>
+                          <span class="name">{{ l.libelle }}</span>
+                          <span class="num">{{ l.debit ? (l.debit | number: '1.0-0') : '' }}</span>
+                          <span class="num">{{ l.credit ? (l.credit | number: '1.0-0') : '' }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                  <div class="immo__actions" style="margin-top: 0.75rem">
+                    @if (e.ficheId) {
+                      <a [routerLink]="['/immo/fiches', e.ficheId]" class="btn btn--ghost">Voir la fiche</a>
+                    }
+                    @if (e.statut === 'A_EXPORTER' || e.statut === 'ERREUR') {
+                      <button type="button" class="btn btn--primary" (click)="exporter(e.id)" [disabled]="acting()">
+                        Exporter cette écriture
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">{{ items().length }} écriture(s)</footer>
+    }
+  </div>
+</div>

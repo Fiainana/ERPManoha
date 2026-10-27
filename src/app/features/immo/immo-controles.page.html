@@ -1,0 +1,124 @@
+<div class="immo" style="--cols: 1.1fr 1.1fr 1.6fr 1fr 1fr 1fr; --min: 760px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Contrôles</strong>
+      </nav>
+      <div class="immo__title-row">
+        <h1>Contrôles et rapprochement</h1>
+        @if (data(); as d) {
+          <span class="count-pill">{{ d.nbErreurs + d.nbAvertissements }}</span>
+        }
+      </div>
+      <p class="immo__subtitle">Alertes de cohérence et comparaison avec les soldes de la comptabilité Sage</p>
+    </div>
+    <div class="immo__actions">
+      <button type="button" class="btn btn--ghost" (click)="load()" [disabled]="loading()">Actualiser</button>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  <div class="toolbar">
+    <label class="field field--sm">
+      <span>Exercice</span>
+      <select [(ngModel)]="annee" (ngModelChange)="load()" aria-label="Exercice">
+        @for (a of annees; track a) {
+          <option [ngValue]="a">{{ a }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <div class="panel">
+      <div class="skeleton">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    </div>
+  } @else if (data(); as d) {
+    <section class="card">
+      <h2>Alertes</h2>
+      @if (d.alertes.length === 0) {
+        <div class="alert alert--ok" role="status">Aucune alerte : tout est cohérent.</div>
+      } @else {
+        <div style="display: flex; flex-direction: column; gap: 0.5rem">
+          @for (a of d.alertes; track a.code) {
+            <div
+              class="alert"
+              [class.alert--warn]="a.niveau === 'AVERTISSEMENT'"
+              [class.alert--ok]="a.niveau === 'INFO'"
+              style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem"
+            >
+              <span class="badge" [attr.data-statut]="a.niveau === 'ERREUR' ? 'ERREUR' : a.niveau === 'INFO' ? 'EXPORTEE' : 'A_VALIDER'">
+                {{ libelleNiveau(a.niveau) }}
+              </span>
+              <strong>{{ a.nombre }}</strong>
+              <span style="flex: 1; min-width: 220px">{{ a.message }}</span>
+              @if (a.lien) {
+                <a [routerLink]="a.lien" class="btn btn--ghost">Traiter</a>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <div class="panel">
+      <div class="card" style="border: 0; border-radius: 0; padding-bottom: 0">
+        <h2>Rapprochement avec Sage au 31/12/{{ d.annee }}</h2>
+        <p>
+          Solde de l’application (valeur brute et amortissements cumulés) comparé au solde du compte dans la comptabilité
+          Sage. Un écart est normal tant que des écritures n’ont pas été envoyées.
+        </p>
+      </div>
+      @if (d.rapprochements.length === 0) {
+        <div class="empty">
+          <h2>Rien à rapprocher</h2>
+          <p>Aucun bien en service pour cet exercice.</p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <div class="thead">
+            <span>Compte</span>
+            <span>Nature</span>
+            <span>Catégories</span>
+            <span class="num">Application</span>
+            <span class="num">Sage</span>
+            <span class="num">Écart</span>
+          </div>
+          <ul class="tbody">
+            @for (r of d.rapprochements; track r.compte + r.nature) {
+              <li class="trow">
+                <span class="ref">{{ r.compte }}</span>
+                <span>{{ r.nature }}</span>
+                <span class="name">{{ r.categories }}</span>
+                <span class="num">{{ r.soldeApplication | number: '1.0-0' }}</span>
+                <span class="num">
+                  @if (r.compteExiste) {
+                    {{ r.soldeSage | number: '1.0-0' }}
+                  } @else {
+                    <span class="neg">compte absent</span>
+                  }
+                </span>
+                <span class="num" [class.neg]="r.compteExiste && ecart(r.ecart)">
+                  {{ r.compteExiste ? (r.ecart | number: '1.0-0') : '—' }}
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+</div>

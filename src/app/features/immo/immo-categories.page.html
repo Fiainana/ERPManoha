@@ -1,0 +1,135 @@
+<div class="immo" style="--cols: 1.2fr 2fr 1fr 1fr 1fr 0.7fr 1.4fr; --min: 900px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Catégories</strong>
+      </nav>
+      <div class="immo__title-row">
+        <h1>Catégories d’immobilisation</h1>
+        <span class="count-pill">{{ loading() && categories().length === 0 ? '…' : categories().length }}</span>
+      </div>
+      <p class="immo__subtitle">
+        Comptes comptables, durée par défaut et familles d’articles Sage rattachées à chaque catégorie
+      </p>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  <div class="alert alert--warn" role="note">
+    Les comptes proposés par défaut sont indicatifs (PCG 2005) : ils doivent exister dans le plan comptable Sage et être
+    validés par le comptable avant le premier export.
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && categories().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Code</span>
+          <span>Libellé</span>
+          <span>Immo</span>
+          <span>Amort.</span>
+          <span>Dotation</span>
+          <span class="num">Durée</span>
+          <span>Familles Sage</span>
+        </div>
+        <ul class="tbody">
+          @for (c of categories(); track c.id) {
+            <li>
+              <button type="button" class="trow" style="width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit" (click)="modifier(c)">
+                <span class="ref">{{ c.code }}</span>
+                <span class="name">{{ c.libelle }}</span>
+                <span class="ref">{{ c.compteImmo }}</span>
+                <span class="ref">{{ c.compteAmortissement || '—' }}</span>
+                <span class="ref">{{ c.compteDotation || '—' }}</span>
+                <span class="num">{{ c.amortissable ? c.dureeAnsDefaut + ' ans' : '—' }}</span>
+                <span>{{ c.famillesSage.length ? c.famillesSage.join(', ') : '—' }}</span>
+              </button>
+
+              @if (edition() === c.id) {
+                <form
+                  (ngSubmit)="enregistrer()"
+                  style="padding: 1rem 1.1rem; background: var(--me-bg-subtle); border-bottom: 1px solid var(--me-border)"
+                >
+                  <div class="card__form">
+                    <label class="field">
+                      <span>Libellé</span>
+                      <input type="text" name="libelle" maxlength="120" [(ngModel)]="form.libelle" required />
+                    </label>
+                    <label class="field field--sm">
+                      <span>Compte d’immobilisation</span>
+                      <input type="text" name="cimmo" maxlength="13" [(ngModel)]="form.compteImmo" required />
+                    </label>
+                    <label class="field field--sm">
+                      <span>Compte d’amortissement</span>
+                      <input type="text" name="camort" maxlength="13" [(ngModel)]="form.compteAmortissement" />
+                    </label>
+                    <label class="field field--sm">
+                      <span>Compte de dotation</span>
+                      <input type="text" name="cdot" maxlength="13" [(ngModel)]="form.compteDotation" />
+                    </label>
+                    <label class="field field--sm">
+                      <span>Compte en cours</span>
+                      <input type="text" name="cencours" maxlength="13" [(ngModel)]="form.compteEnCours" />
+                    </label>
+                    <label class="field field--sm">
+                      <span>Durée par défaut (ans)</span>
+                      <input type="number" name="duree" min="0" max="100" [(ngModel)]="form.dureeAnsDefaut" />
+                    </label>
+                    <label class="check"><input type="checkbox" name="amortissable" [(ngModel)]="form.amortissable" /> Amortissable</label>
+                    <label class="check"><input type="checkbox" name="lot" [(ngModel)]="form.gestionParLot" /> Gestion par lot</label>
+                  </div>
+
+                  <p style="margin: 1rem 0 0.4rem"><strong>Familles d’articles Sage rattachées</strong></p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem">
+                    @for (f of familles(); track f.code) {
+                      <label class="check">
+                        <input type="checkbox" [checked]="familleCochee(f.code)" (change)="basculerFamille(f.code)" />
+                        <span><strong>{{ f.code }}</strong> {{ f.intitule }}</span>
+                        @if (f.categorieCode && f.categorieCode !== c.code) {
+                          <span class="muted">(déjà dans {{ f.categorieCode }})</span>
+                        }
+                      </label>
+                    } @empty {
+                      <span class="muted">Aucune famille de détail trouvée dans Sage.</span>
+                    }
+                  </div>
+                  @if (c.tauxMaxDgi !== null) {
+                    <p class="muted" style="margin: 0.75rem 0 0">
+                      Plafond DGI : {{ c.tauxMaxDgi | number: '1.0-2' }} % ({{ c.tauxDgiCode }}).
+                    </p>
+                  }
+
+                  <div class="immo__actions" style="margin-top: 1rem">
+                    <button type="button" class="btn btn--ghost" (click)="edition.set(null)">Annuler</button>
+                    <button type="submit" class="btn btn--primary" [disabled]="saving()">
+                      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">Cliquez sur une catégorie pour la modifier</footer>
+    }
+  </div>
+</div>

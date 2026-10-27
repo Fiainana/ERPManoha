@@ -1,0 +1,265 @@
+<div class="immo" style="--cols: 0.6fr 0.6fr 1fr 1fr 1fr 1fr; --min: 640px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ fiche()?.numeroInventaire || '…' }}</strong>
+      </nav>
+      @if (fiche(); as f) {
+        <div class="immo__title-row">
+          <h1>{{ f.designation }}</h1>
+          <span class="badge" [attr.data-statut]="f.statut">{{ libelleStatut(f.statut) }}</span>
+        </div>
+        <p class="immo__subtitle">
+          {{ f.categorieLibelle || 'Sans catégorie' }} · valeur brute {{ f.valeurBrute | number: '1.0-0' }} Ar
+        </p>
+      } @else {
+        <h1>Immobilisation</h1>
+      }
+    </div>
+
+    <div class="immo__actions">
+      <a routerLink="/immo" class="btn btn--ghost">Retour</a>
+      @if (fiche(); as f) {
+        @if (f.statut === 'A_VALIDER') {
+          <a [routerLink]="['/immo/fiches', f.id, 'modifier']" class="btn btn--ghost">Modifier</a>
+          <button type="button" class="btn btn--danger" (click)="ouvrir('rejeter')" [disabled]="acting()">Rejeter</button>
+          <button type="button" class="btn btn--primary" (click)="ouvrir('valider')" [disabled]="acting()">Valider</button>
+        }
+        @if (f.statut === 'EN_COURS') {
+          <a [routerLink]="['/immo/fiches', f.id, 'modifier']" class="btn btn--ghost">Modifier</a>
+          <button type="button" class="btn btn--primary" (click)="ouvrir('service')" [disabled]="acting()">
+            Mettre en service
+          </button>
+        }
+        @if (f.statut === 'EN_SERVICE') {
+          <a [routerLink]="['/immo/fiches', f.id, 'modifier']" class="btn btn--ghost">Modifier</a>
+          <button type="button" class="btn btn--ghost" (click)="ouvrir('rebut')" [disabled]="acting()">
+            Mettre au rebut
+          </button>
+          <button type="button" class="btn btn--primary" (click)="ouvrir('ceder')" [disabled]="acting()">Céder</button>
+        }
+      }
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !fiche()) {
+    <div class="panel">
+      <div class="skeleton">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Formulaires d'action -->
+  @switch (action()) {
+    @case ('valider') {
+      <section class="card">
+        <h2>Valider l’immobilisation</h2>
+        <p>
+          Sans date de mise en service, la fiche passe « en cours » (pas d’amortissement). Avec une date, elle est
+          mise en service et le plan d’amortissement est calculé.
+        </p>
+        <div class="card__form">
+          <label class="field">
+            <span>Catégorie</span>
+            <select [(ngModel)]="categorieId">
+              <option [ngValue]="null">Choisir…</option>
+              @for (c of categories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.libelle }}</option>
+              }
+            </select>
+          </label>
+          <label class="field field--sm">
+            <span>Durée (ans)</span>
+            <input type="number" min="0" max="100" [(ngModel)]="dureeAns" />
+          </label>
+          <label class="field field--sm">
+            <span>Mise en service</span>
+            <input type="date" [(ngModel)]="dateService" />
+          </label>
+          <label class="check"><input type="checkbox" [(ngModel)]="accepterDgi" /> Accepter un dépassement du taux DGI</label>
+          <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting()">
+            {{ acting() ? '…' : 'Valider' }}
+          </button>
+        </div>
+      </section>
+    }
+    @case ('service') {
+      <section class="card">
+        <h2>Mettre en service</h2>
+        <p>L’amortissement démarre le mois de la mise en service (mois entier).</p>
+        <div class="card__form">
+          <label class="field field--sm">
+            <span>Date de mise en service</span>
+            <input type="date" [(ngModel)]="dateService" />
+          </label>
+          <label class="check"><input type="checkbox" [(ngModel)]="accepterDgi" /> Accepter un dépassement du taux DGI</label>
+          <button type="button" class="btn btn--primary" (click)="miseEnService()" [disabled]="acting() || !dateService">
+            {{ acting() ? '…' : 'Mettre en service' }}
+          </button>
+        </div>
+      </section>
+    }
+    @case ('rejeter') {
+      <section class="card">
+        <h2>Rejeter la fiche</h2>
+        <p>Pour une ligne d’achat importée qui n’est pas une immobilisation. Le motif est conservé dans la note.</p>
+        <div class="card__form">
+          <label class="field">
+            <span>Motif</span>
+            <input type="text" maxlength="500" [(ngModel)]="motif" placeholder="Ex. : consommable, charge…" />
+          </label>
+          <button type="button" class="btn btn--danger" (click)="rejeter()" [disabled]="acting() || !motif.trim()">
+            {{ acting() ? '…' : 'Rejeter' }}
+          </button>
+        </div>
+      </section>
+    }
+    @case ('ceder') {
+      <section class="card">
+        <h2>Céder le bien</h2>
+        <p>
+          Les dotations sont rattrapées jusqu’au mois de cession, puis le bien et ses amortissements sortent. Passez
+          le prix de cession ici seulement si la vente n’est pas déjà facturée dans Sage.
+        </p>
+        <div class="card__form">
+          <label class="field field--sm">
+            <span>Date de cession</span>
+            <input type="date" [(ngModel)]="dateSortie" [max]="aujourdhui" />
+          </label>
+          <label class="field field--sm">
+            <span>Prix de cession HT</span>
+            <input type="number" min="0" [(ngModel)]="prixCession" />
+          </label>
+          <label class="check"><input type="checkbox" [(ngModel)]="passerPrix" /> Passer aussi le prix en comptabilité</label>
+          <button type="button" class="btn btn--primary" (click)="ceder()" [disabled]="acting() || !dateSortie">
+            {{ acting() ? '…' : 'Enregistrer la cession' }}
+          </button>
+        </div>
+      </section>
+    }
+    @case ('rebut') {
+      <section class="card">
+        <h2>Mettre au rebut</h2>
+        <p>Bien jeté, cassé ou volé : même mécanique que la cession, sans prix.</p>
+        <div class="card__form">
+          <label class="field field--sm">
+            <span>Date</span>
+            <input type="date" [(ngModel)]="dateSortie" [max]="aujourdhui" />
+          </label>
+          <label class="field">
+            <span>Motif</span>
+            <input type="text" maxlength="300" [(ngModel)]="motif" placeholder="Ex. : cassé, irréparable" />
+          </label>
+          <button
+            type="button"
+            class="btn btn--danger"
+            (click)="mettreAuRebut()"
+            [disabled]="acting() || !dateSortie || !motif.trim()"
+          >
+            {{ acting() ? '…' : 'Mettre au rebut' }}
+          </button>
+        </div>
+      </section>
+    }
+  }
+
+  @if (sortie(); as s) {
+    <section class="card">
+      <h2>Résultat de la sortie</h2>
+      <div class="stats">
+        <div class="stat"><span>Dotation complémentaire</span><strong>{{ s.dotationComplementaire | number: '1.0-0' }}</strong></div>
+        <div class="stat"><span>Amortissements cumulés</span><strong>{{ s.amortissementsCumules | number: '1.0-0' }}</strong></div>
+        <div class="stat"><span>Valeur nette comptable</span><strong>{{ s.valeurNetteComptable | number: '1.0-0' }}</strong></div>
+        @if (s.prixCession > 0) {
+          <div class="stat"><span>Prix de cession</span><strong>{{ s.prixCession | number: '1.0-0' }}</strong></div>
+          <div class="stat">
+            <span>{{ s.plusOuMoinsValue < 0 ? 'Moins-value' : 'Plus-value' }}</span>
+            <strong [class.neg]="s.plusOuMoinsValue < 0">{{ s.plusOuMoinsValue | number: '1.0-0' }}</strong>
+          </div>
+        }
+      </div>
+      <p style="margin-top: 0.75rem">
+        Écriture <strong>{{ s.ecriture.numeroPiece }}</strong> mise en file ·
+        <a routerLink="/immo/ecritures">voir les écritures Sage</a>
+      </p>
+    </section>
+  }
+
+  @if (fiche(); as f) {
+    <section class="card">
+      <h2>Informations</h2>
+      <dl class="kv">
+        <div><dt>N° d’inventaire</dt><dd>{{ f.numeroInventaire }}</dd></div>
+        <div><dt>Catégorie</dt><dd>{{ f.categorieLibelle || '—' }}</dd></div>
+        <div><dt>Valeur brute</dt><dd>{{ f.valeurBrute | number: '1.0-0' }} Ar</dd></div>
+        <div><dt>Durée</dt><dd>{{ f.dureeAns ? f.dureeAns + ' ans' : 'Non amortissable' }}</dd></div>
+        <div><dt>Date d’acquisition</dt><dd>{{ f.dateAcquisition ? (f.dateAcquisition | date: 'dd/MM/yyyy') : '—' }}</dd></div>
+        <div><dt>Mise en service</dt><dd>{{ f.dateMiseEnService ? (f.dateMiseEnService | date: 'dd/MM/yyyy') : '—' }}</dd></div>
+        <div><dt>Fournisseur</dt><dd>{{ f.fournisseurCode || '—' }}</dd></div>
+        <div><dt>N° de série</dt><dd>{{ f.numeroSerie || '—' }}</dd></div>
+        <div><dt>Site</dt><dd>{{ f.site || '—' }}</dd></div>
+        <div><dt>Responsable</dt><dd>{{ f.responsable || '—' }}</dd></div>
+        <div>
+          <dt>Pièce d’achat Sage</dt>
+          <dd>{{ f.pieceSage ? f.pieceSage + (f.ligneSage ? ' · ligne ' + f.ligneSage : '') : 'Saisie manuelle' }}</dd>
+        </div>
+        <div><dt>Article Sage</dt><dd>{{ f.articleSage || '—' }}</dd></div>
+      </dl>
+      @if (f.note) {
+        <p style="margin: 0.9rem 0 0"><strong>Note :</strong> {{ f.note }}</p>
+      }
+    </section>
+
+    @if (f.plan && f.plan.length > 0) {
+      <div class="panel">
+        <div class="card" style="border: 0; border-radius: 0; padding-bottom: 0">
+          <h2>Plan d’amortissement</h2>
+        </div>
+        <div class="table-scroll">
+          <div class="thead">
+            <span>Exercice</span>
+            <span class="num">Mois</span>
+            <span class="num">Cumul début</span>
+            <span class="num">Dotation</span>
+            <span class="num">Cumul fin</span>
+            <span class="num">VNC</span>
+          </div>
+          <ul class="tbody">
+            @for (l of f.plan; track l.annee) {
+              <li class="trow">
+                <span class="ref">{{ l.annee }}</span>
+                <span class="num">{{ l.nbMois }}</span>
+                <span class="num">{{ l.cumulDebut | number: '1.0-0' }}</span>
+                <span class="num">{{ l.dotation | number: '1.0-0' }}</span>
+                <span class="num">{{ l.cumulFin | number: '1.0-0' }}</span>
+                <span class="num">{{ l.vnc | number: '1.0-0' }}</span>
+              </li>
+            }
+            <li class="trow tfoot">
+              <span>Total</span>
+              <span></span>
+              <span></span>
+              <span class="num">{{ dotationsTotal() | number: '1.0-0' }}</span>
+              <span></span>
+              <span></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    }
+  }
+</div>

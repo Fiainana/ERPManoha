@@ -1,0 +1,154 @@
+<div
+  class="immo"
+  style="--cols: minmax(190px, 3fr) 0.55fr repeat(9, minmax(88px, 1.2fr)); --min: 1180px"
+>
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>État annuel</strong>
+      </nav>
+      <h1>Tableau des immobilisations et amortissements</h1>
+      <p class="immo__subtitle">
+        Valeur brute, amortissements et valeur nette comptable de l’exercice, par catégorie
+      </p>
+    </div>
+    <div class="immo__actions">
+      <button type="button" class="btn btn--ghost" (click)="exporter('csv')" [disabled]="exporting() || !etat()">
+        Excel (CSV)
+      </button>
+      <button type="button" class="btn btn--primary" (click)="exporter('pdf')" [disabled]="exporting() || !etat()">
+        {{ exporting() ? 'Export…' : 'PDF' }}
+      </button>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  <div class="toolbar">
+    <label class="field field--sm">
+      <span>Exercice</span>
+      <select [(ngModel)]="annee" (ngModelChange)="load()" aria-label="Exercice">
+        @for (a of annees; track a) {
+          <option [ngValue]="a">{{ a }}</option>
+        }
+      </select>
+    </label>
+    @if (etat(); as e) {
+      @if (e.nbEnCours > 0) {
+        <span class="badge" data-statut="EN_COURS">
+          {{ e.nbEnCours }} en cours hors tableau · {{ e.valeurEnCours | number: '1.0-0' }} Ar
+        </span>
+      }
+    }
+  </div>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (etat(); as e) {
+    <div class="stats">
+      <div class="stat"><span>Valeur brute au 31/12/{{ e.annee }}</span><strong>{{ e.total.brutFin | number: '1.0-0' }}</strong></div>
+      <div class="stat"><span>Dotation de l’exercice</span><strong>{{ e.total.dotation | number: '1.0-0' }}</strong></div>
+      <div class="stat"><span>Amortissements cumulés</span><strong>{{ e.total.amortFin | number: '1.0-0' }}</strong></div>
+      <div class="stat"><span>Valeur nette comptable</span><strong>{{ e.total.vncFin | number: '1.0-0' }}</strong></div>
+    </div>
+  }
+
+  <div class="panel">
+    @if (loading() && !etat()) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (etat(); as e) {
+      @if (e.categories.length === 0) {
+        <div class="empty">
+          <h2>Aucune immobilisation en {{ e.annee }}</h2>
+          <p>Mettez des biens en service pour qu’ils apparaissent dans le tableau.</p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <div class="thead">
+            <span>Catégorie / bien</span>
+            <span class="num">Taux</span>
+            <span class="num">Brut début</span>
+            <span class="num">Acquisitions</span>
+            <span class="num">Sorties</span>
+            <span class="num">Brut fin</span>
+            <span class="num">Amort. début</span>
+            <span class="num">Dotation</span>
+            <span class="num">Amort. sorties</span>
+            <span class="num">Amort. fin</span>
+            <span class="num">VNC fin</span>
+          </div>
+          <ul class="tbody">
+            @for (c of e.categories; track c.categorieId) {
+              <li>
+                <button
+                  type="button"
+                  class="trow tfoot"
+                  style="width: 100%; border: 0; border-bottom: 1px solid var(--me-border); text-align: left; cursor: pointer; font: inherit; font-weight: 650; background: var(--me-red-soft)"
+                  (click)="basculer(c.categorieId)"
+                >
+                  <span class="name">{{ repliees().has(c.categorieId) ? '▸' : '▾' }} {{ c.libelle }} <span class="muted">({{ c.nbBiens }})</span></span>
+                  <span></span>
+                  <span class="num">{{ c.brutDebut | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.acquisitions | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.sorties | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.brutFin | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.amortDebut | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.dotation | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.amortSorties | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.amortFin | number: '1.0-0' }}</span>
+                  <span class="num">{{ c.vncFin | number: '1.0-0' }}</span>
+                </button>
+                @if (!repliees().has(c.categorieId)) {
+                  @for (f of c.fiches; track f.ficheId) {
+                    <a [routerLink]="['/immo/fiches', f.ficheId]" class="trow">
+                      <span class="name"><span class="ref">{{ f.numeroInventaire }}</span> {{ f.designation }}</span>
+                      <span class="num">{{ f.taux ? (f.taux | number: '1.0-2') + ' %' : '—' }}</span>
+                      <span class="num">{{ f.brutDebut | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.acquisitions | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.sorties | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.brutFin | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.amortDebut | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.dotation | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.amortSorties | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.amortFin | number: '1.0-0' }}</span>
+                      <span class="num">{{ f.vncFin | number: '1.0-0' }}</span>
+                    </a>
+                  }
+                }
+              </li>
+            }
+            <li class="trow tfoot" style="background: var(--me-red-muted)">
+              <span class="name">TOTAL GÉNÉRAL ({{ e.total.nbBiens }})</span>
+              <span></span>
+              <span class="num">{{ e.total.brutDebut | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.acquisitions | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.sorties | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.brutFin | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.amortDebut | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.dotation | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.amortSorties | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.amortFin | number: '1.0-0' }}</span>
+              <span class="num">{{ e.total.vncFin | number: '1.0-0' }}</span>
+            </li>
+          </ul>
+        </div>
+        <footer class="panel__footer">
+          Amortissement linéaire, mois de mise en service compté en entier · montants en Ar
+        </footer>
+      }
+    }
+  </div>
+</div>

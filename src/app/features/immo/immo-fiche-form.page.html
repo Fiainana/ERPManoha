@@ -1,0 +1,101 @@
+<div class="immo">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ modeEdition() ? 'Modifier' : 'Nouvelle' }}</strong>
+      </nav>
+      <h1>{{ modeEdition() ? fiche()?.numeroInventaire : 'Nouvelle immobilisation' }}</h1>
+      <p class="immo__subtitle">
+        @if (verrouillee()) {
+          Bien en service : seuls la désignation, le n° de série, le site, le responsable et la note sont modifiables.
+        } @else {
+          Saisie manuelle d’un bien qui ne vient pas d’un achat Sage. La fiche est créée « à valider ».
+        }
+      </p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <form class="card" (ngSubmit)="enregistrer()">
+    <div class="card__form">
+      <label class="field field--full">
+        <span>Désignation *</span>
+        <input type="text" name="designation" maxlength="200" [(ngModel)]="designation" required />
+      </label>
+
+      <label class="field">
+        <span>Catégorie</span>
+        <select name="categorie" [(ngModel)]="categorieId" (ngModelChange)="changerCategorie()" [disabled]="verrouillee()">
+          <option [ngValue]="null">Choisir…</option>
+          @for (c of categories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.libelle }}</option>
+          }
+        </select>
+      </label>
+      <label class="field field--sm">
+        <span>Valeur brute (Ar) {{ modeEdition() ? '' : '*' }}</span>
+        <input type="number" name="valeur" min="0" [(ngModel)]="valeurBrute" [disabled]="verrouillee()" />
+      </label>
+      <label class="field field--sm">
+        <span>Durée (ans)</span>
+        <input type="number" name="duree" min="0" max="100" [(ngModel)]="dureeAns" [disabled]="verrouillee()" />
+      </label>
+
+      <label class="field field--sm">
+        <span>Date d’acquisition</span>
+        <input type="date" name="acq" [(ngModel)]="dateAcquisition" [disabled]="verrouillee()" />
+      </label>
+      @if (!modeEdition()) {
+        <label class="field field--sm">
+          <span>Mise en service</span>
+          <input type="date" name="mes" [(ngModel)]="dateMiseEnService" />
+        </label>
+      }
+      <label class="field field--sm">
+        <span>Code fournisseur</span>
+        <input type="text" name="four" maxlength="17" [(ngModel)]="fournisseurCode" [disabled]="verrouillee()" />
+      </label>
+
+      <label class="field">
+        <span>N° de série</span>
+        <input type="text" name="serie" maxlength="60" [(ngModel)]="numeroSerie" />
+      </label>
+      <label class="field">
+        <span>Site</span>
+        @if (sites().length > 0) {
+          <select name="site" [(ngModel)]="site">
+            <option value="">—</option>
+            @for (s of sites(); track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        } @else {
+          <input type="text" name="site" maxlength="80" [(ngModel)]="site" />
+        }
+      </label>
+      <label class="field">
+        <span>Responsable</span>
+        <input type="text" name="resp" maxlength="80" [(ngModel)]="responsable" />
+      </label>
+
+      <label class="field field--full">
+        <span>Note</span>
+        <textarea name="note" maxlength="500" [(ngModel)]="note"></textarea>
+      </label>
+    </div>
+
+    <div class="immo__actions" style="margin-top: 1rem">
+      <a [routerLink]="modeEdition() ? ['/immo/fiches', fiche()?.id] : ['/immo']" class="btn btn--ghost">Annuler</a>
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>
