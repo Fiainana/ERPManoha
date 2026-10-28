@@ -35,14 +35,24 @@
       <button type="button" class="btn btn--ghost" (click)="apercu()" [disabled]="acting()">
         {{ acting() ? '…' : 'Aperçu' }}
       </button>
-      <button
-        type="button"
-        class="btn btn--primary"
-        (click)="generer()"
-        [disabled]="acting() || !resultat() || resultat()!.nbLignes === 0 || !resultat()!.apercu"
-      >
-        Générer les dotations
-      </button>
+      @if (!confirmer()) {
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="demanderGeneration()"
+          [disabled]="acting() || !resultat() || resultat()!.nbLignes === 0 || !resultat()!.apercu"
+        >
+          Générer les dotations
+        </button>
+      } @else {
+        <span style="align-self: center; font-weight: 600">
+          Générer {{ resultat()?.nbLignes }} dotation(s) et mettre l’écriture en file pour Sage ?
+        </span>
+        <button type="button" class="btn btn--primary" (click)="generer()" [disabled]="acting()">
+          {{ acting() ? 'Génération…' : 'Confirmer' }}
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="confirmer.set(false)" [disabled]="acting()">Annuler</button>
+      }
     </div>
     <p style="margin: 0.75rem 0 0">Lancez d’abord l’aperçu : la génération n’est possible qu’après avoir vérifié les montants.</p>
   </section>

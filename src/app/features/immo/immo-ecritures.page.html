@@ -18,9 +18,22 @@
     </div>
     <div class="immo__actions">
       <button type="button" class="btn btn--ghost" (click)="reload()" [disabled]="loading()">Actualiser</button>
-      <button type="button" class="btn btn--primary" (click)="exporter()" [disabled]="acting() || nbAExporter() === 0">
-        {{ acting() ? 'Envoi…' : 'Exporter vers Sage (' + nbAExporter() + ')' }}
-      </button>
+      @if (!confirmerExport()) {
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="confirmerExport.set(true)"
+          [disabled]="acting() || nbAExporter() === 0"
+        >
+          {{ acting() ? 'Envoi…' : 'Exporter vers Sage (' + nbAExporter() + ')' }}
+        </button>
+      } @else {
+        <span style="align-self: center; font-weight: 600">Envoyer {{ nbAExporter() }} écriture(s) dans Sage ?</span>
+        <button type="button" class="btn btn--primary" (click)="exporter()" [disabled]="acting()">
+          {{ acting() ? 'Envoi…' : 'Confirmer' }}
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="confirmerExport.set(false)" [disabled]="acting()">Annuler</button>
+      }
     </div>
   </header>
 
@@ -107,12 +120,35 @@
                       <a [routerLink]="['/immo/fiches', e.ficheId]" class="btn btn--ghost">Voir la fiche</a>
                     }
                     @if (e.statut === 'A_EXPORTER' || e.statut === 'ERREUR') {
-                      <button type="button" class="btn btn--ghost" (click)="changerJournal(e)" [disabled]="acting()">
-                        Changer le journal
-                      </button>
-                      <button type="button" class="btn btn--danger" (click)="annuler(e)" [disabled]="acting()">
-                        Annuler l’écriture
-                      </button>
+                      @if (saisie()?.id === e.id) {
+                        <label class="field" style="min-width: 260px">
+                          <span>{{ saisie()!.type === 'annuler' ? 'Motif de l’annulation' : 'Nouveau journal' }}</span>
+                          <input
+                            type="text"
+                            name="texte"
+                            [(ngModel)]="texte"
+                            [maxlength]="saisie()!.type === 'annuler' ? 300 : 6"
+                            [placeholder]="saisie()!.type === 'annuler' ? 'Ex. : écriture à refaire' : 'Ex. : OD'"
+                          />
+                        </label>
+                        @if (saisie()!.type === 'annuler') {
+                          <button type="button" class="btn btn--danger" (click)="annuler(e)" [disabled]="acting() || !texte.trim()">
+                            {{ acting() ? '…' : 'Confirmer l’annulation' }}
+                          </button>
+                        } @else {
+                          <button type="button" class="btn btn--primary" (click)="changerJournal(e)" [disabled]="acting() || !texte.trim()">
+                            {{ acting() ? '…' : 'Enregistrer le journal' }}
+                          </button>
+                        }
+                        <button type="button" class="btn btn--ghost" (click)="fermerSaisie()" [disabled]="acting()">Fermer</button>
+                      } @else {
+                        <button type="button" class="btn btn--ghost" (click)="ouvrirSaisie(e, 'journal')" [disabled]="acting()">
+                          Changer le journal
+                        </button>
+                        <button type="button" class="btn btn--danger" (click)="ouvrirSaisie(e, 'annuler')" [disabled]="acting()">
+                          Annuler l’écriture
+                        </button>
+                      }
                       <button type="button" class="btn btn--primary" (click)="exporter(e.id)" [disabled]="acting()">
                         Exporter cette écriture
                       </button>

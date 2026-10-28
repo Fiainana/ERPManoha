@@ -84,12 +84,29 @@
         Une fois clôturé, plus aucune dotation, mise en service ni sortie n’est possible jusqu’au 31/12/{{ d.annee }}.
       </p>
       <div class="card__form">
-        <button type="button" class="btn btn--primary" (click)="cloturer()" [disabled]="acting()">
-          {{ acting() ? '…' : 'Clôturer ' + d.annee }}
-        </button>
-        <button type="button" class="btn btn--ghost" (click)="rouvrir()" [disabled]="acting()">
-          Rouvrir {{ d.annee }}
-        </button>
+        @if (confirmation() === null) {
+          <button type="button" class="btn btn--primary" (click)="confirmation.set('cloturer')" [disabled]="acting()">
+            Clôturer {{ d.annee }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="confirmation.set('rouvrir')" [disabled]="acting()">
+            Rouvrir {{ d.annee }}
+          </button>
+        } @else {
+          <span style="align-self: center; font-weight: 600">
+            {{ confirmation() === 'cloturer'
+              ? 'Clôturer ' + d.annee + ' ? Plus aucune dotation, mise en service ni sortie jusqu’au 31/12/' + d.annee + '.'
+              : 'Rouvrir l’exercice ' + d.annee + ' ?' }}
+          </span>
+          <button
+            type="button"
+            class="btn btn--primary"
+            (click)="confirmation() === 'cloturer' ? cloturer() : rouvrir()"
+            [disabled]="acting()"
+          >
+            {{ acting() ? '…' : 'Confirmer' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="confirmation.set(null)" [disabled]="acting()">Annuler</button>
+        }
       </div>
     </section>
 

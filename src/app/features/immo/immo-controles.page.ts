@@ -45,17 +45,20 @@ export class ImmoControlesPage implements OnInit {
   readonly acting = signal(false);
   readonly toast = signal<string | null>(null);
 
+  /** Confirmation dans la page (une boîte de dialogue du navigateur peut être bloquée). */
+  readonly confirmation = signal<'cloturer' | 'rouvrir' | null>(null);
+
   /** Clôture l'exercice choisi : plus aucune dotation, mise en service ni sortie jusqu'au 31/12. */
   cloturer(): void {
     if (this.acting()) return;
-    if (!confirm(`Clôturer l’exercice ${this.annee} ?\nAucune dotation, mise en service ni sortie ne sera plus possible jusqu’au 31/12/${this.annee}.`)) return;
+    this.confirmation.set(null);
     this.lancer(this.api.cloturer(this.annee), `Exercice ${this.annee} clôturé.`);
   }
 
   /** Rouvre le dernier exercice clôturé. */
   rouvrir(): void {
     if (this.acting()) return;
-    if (!confirm(`Rouvrir l’exercice ${this.annee} ?`)) return;
+    this.confirmation.set(null);
     this.lancer(this.api.rouvrir(this.annee), `Exercice ${this.annee} rouvert.`);
   }
 

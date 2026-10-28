@@ -62,18 +62,31 @@ export class ImmoEcrituresPage implements OnInit {
     this.ouverte.set(this.ouverte() === id ? null : id);
   }
 
+  /** Saisie en ligne (motif d'annulation ou nouveau journal) : une boîte de dialogue du navigateur peut être bloquée. */
+  readonly saisie = signal<{ id: number; type: 'annuler' | 'journal' } | null>(null);
+  texte = '';
+  readonly confirmerExport = signal(false);
+
+  ouvrirSaisie(e: ImmoEcriture, type: 'annuler' | 'journal'): void {
+    this.saisie.set({ id: e.id, type });
+    this.texte = type === 'journal' ? e.journal : '';
+    this.error.set(null);
+  }
+
+  fermerSaisie(): void {
+    this.saisie.set(null);
+  }
+
   /** Annule une écriture pas encore dans Sage ; les dotations ou la sortie qu'elle réservait sont libérées. */
   annuler(e: ImmoEcriture): void {
-    if (this.acting()) return;
-    const motif = prompt(
-      `Annuler l’écriture ${e.numeroPiece} ?\nLes dotations ou la sortie du bien qu’elle avait réservées seront libérées.\n\nMotif :`
-    );
-    if (!motif?.trim()) return;
+    const motif = this.texte.trim();
+    if (this.acting() || !motif) return;
     this.acting.set(true);
     this.error.set(null);
-    this.api.annulerEcriture(e.id, motif.trim()).subscribe({
+    this.api.annulerEcriture(e.id, motif).subscribe({
       next: () => {
         this.acting.set(false);
+        this.saisie.set(null);
         this.toast.set(`Écriture ${e.numeroPiece} annulée.`);
         this.ouverte.set(null);
         this.reload();
@@ -87,14 +100,14 @@ export class ImmoEcrituresPage implements OnInit {
 
   /** Change le journal d'une écriture en erreur ou à exporter (ex. journal absent de Sage). */
   changerJournal(e: ImmoEcriture): void {
-    if (this.acting()) return;
-    const journal = prompt(`Nouveau journal pour ${e.numeroPiece} (actuel : ${e.journal}) :`, e.journal);
-    if (!journal?.trim() || journal.trim() === e.journal) return;
+    const journal = this.texte.trim();
+    if (this.acting() || !journal || journal === e.journal) return;
     this.acting.set(true);
     this.error.set(null);
-    this.api.changerJournal(e.id, journal.trim()).subscribe({
+    this.api.changerJournal(e.id, journal).subscribe({
       next: () => {
         this.acting.set(false);
+        this.saisie.set(null);
         this.toast.set(`Journal de ${e.numeroPiece} modifié.`);
         this.reload();
       },
@@ -107,7 +120,7 @@ export class ImmoEcrituresPage implements OnInit {
 
   exporter(id?: number): void {
     if (this.acting()) return;
-    if (!id && !confirm('Envoyer dans Sage toutes les écritures à exporter ?')) return;
+    this.confirmerExport.set(false);
     this.acting.set(true);
     this.error.set(null);
     this.toast.set(null);

@@ -126,7 +126,6 @@ export class ImmoFichesPage implements OnInit {
       this.error.set('500 étiquettes au plus par impression : filtrez la liste.');
       return;
     }
-    if (ids.length > 1 && !confirm(`Imprimer ${ids.length} étiquettes ?`)) return;
     this.impression.set(true);
     this.error.set(null);
     this.api.etiquettes(ids, layout).subscribe({

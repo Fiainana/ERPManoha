@@ -136,7 +136,6 @@ export class ImmoFicheDetailPage implements OnInit {
   ceder(): void {
     const f = this.fiche();
     if (!f || !this.dateSortie) return;
-    if (!confirm('Enregistrer la cession ? Les dotations seront rattrapées jusqu’à cette date.')) return;
     this.sortieAction(
       this.api.ceder(f.id, {
         dateCession: this.dateSortie,
@@ -150,7 +149,6 @@ export class ImmoFicheDetailPage implements OnInit {
   mettreAuRebut(): void {
     const f = this.fiche();
     if (!f || !this.dateSortie || !this.motif.trim()) return;
-    if (!confirm('Mettre ce bien au rebut ? Les dotations seront rattrapées jusqu’à cette date.')) return;
     this.sortieAction(this.api.rebut(f.id, this.dateSortie, this.motif.trim()), 'Mise au rebut enregistrée.');
   }
 

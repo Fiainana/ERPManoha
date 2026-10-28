@@ -38,8 +38,15 @@ export class ImmoDotationsPage {
     this.lancer(true);
   }
 
+  /** Confirmation dans la page (une boîte de dialogue du navigateur peut être bloquée). */
+  readonly confirmer = signal(false);
+
+  demanderGeneration(): void {
+    this.confirmer.set(true);
+  }
+
   generer(): void {
-    if (!confirm('Générer les dotations ? Une écriture 681 / 28 sera mise en file pour Sage.')) return;
+    this.confirmer.set(false);
     this.lancer(false);
   }
 
