@@ -332,6 +332,8 @@ export function libelleActionImmo(a: string): string {
     SYNCHRO_ACHATS: 'Synchro des achats',
     DOTATIONS: 'Dotations générées',
     EXPORT_SAGE: 'Export vers Sage',
+    ETIQUETTE: 'Étiquette imprimée',
+    ETIQUETTES: 'Étiquettes imprimées',
     ANNULATION_ECRITURE: 'Écriture annulée',
     JOURNAL_ECRITURE: 'Journal modifié',
     CLOTURE: 'Clôture d’exercice',

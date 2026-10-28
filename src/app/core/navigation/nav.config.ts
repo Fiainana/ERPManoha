@@ -134,6 +134,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'État annuel', route: '/immo/etat', roles: COMPTA },
       { label: 'Contrôles', route: '/immo/controles', roles: COMPTA },
       { label: 'Catégories', route: '/immo/categories', roles: COMPTA },
+      { label: 'Historique', route: '/immo/historique', roles: COMPTA },
     ],
   },
 
