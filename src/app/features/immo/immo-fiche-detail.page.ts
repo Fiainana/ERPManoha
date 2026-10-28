@@ -117,14 +117,14 @@ export class ImmoFicheDetailPage implements OnInit {
         dateMiseEnService: this.dateService || null,
         accepterDepassementDgi: this.accepterDgi,
       }),
-      'Immobilisation validée.'
+      'Immobilisation validée. Les dotations d’amortissement se génèrent ensuite dans l’onglet Dotations.'
     );
   }
 
   miseEnService(): void {
     const f = this.fiche();
     if (!f || !this.dateService) return;
-    this.executer(this.api.miseEnService(f.id, this.dateService, this.accepterDgi), 'Immobilisation mise en service.');
+    this.executer(this.api.miseEnService(f.id, this.dateService, this.accepterDgi), 'Immobilisation mise en service. Les dotations d’amortissement se génèrent ensuite dans l’onglet Dotations.');
   }
 
   rejeter(): void {
