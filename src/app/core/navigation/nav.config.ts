@@ -33,6 +33,7 @@ export type NavSection =
 const ADMIN: AppRole[] = ['Admin'];
 const DEPOT: AppRole[] = ['Admin', 'Depot'];
 const RH: AppRole[] = ['Admin', 'HR'];
+const COMPTA: AppRole[] = ['Admin', 'Compta'];
 
 /**
  * Menu ERP, organisé par métier (hors comptoir et borne d'impression).
@@ -125,14 +126,14 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Immobilisations',
     icon: 'immo',
     section: 'Comptabilité',
-    roles: ADMIN,
+    roles: COMPTA,
     items: [
-      { label: 'Fiches', route: '/immo', roles: ADMIN, exact: true },
-      { label: 'Dotations', route: '/immo/dotations', roles: ADMIN },
-      { label: 'Écritures Sage', route: '/immo/ecritures', roles: ADMIN },
-      { label: 'État annuel', route: '/immo/etat', roles: ADMIN },
-      { label: 'Contrôles', route: '/immo/controles', roles: ADMIN },
-      { label: 'Catégories', route: '/immo/categories', roles: ADMIN },
+      { label: 'Fiches', route: '/immo', roles: COMPTA, exact: true },
+      { label: 'Dotations', route: '/immo/dotations', roles: COMPTA },
+      { label: 'Écritures Sage', route: '/immo/ecritures', roles: COMPTA },
+      { label: 'État annuel', route: '/immo/etat', roles: COMPTA },
+      { label: 'Contrôles', route: '/immo/controles', roles: COMPTA },
+      { label: 'Catégories', route: '/immo/categories', roles: COMPTA },
     ],
   },
 

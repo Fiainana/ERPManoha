@@ -320,7 +320,7 @@ export const routes: Routes = [
 
       {
         path: 'immo',
-        canActivate: [roleGuard('Admin')],
+        canActivate: [roleGuard('Admin', 'Compta')],
         loadChildren: () => import('./features/immo/immo.routes').then((m) => m.IMMO_ROUTES),
       },
 

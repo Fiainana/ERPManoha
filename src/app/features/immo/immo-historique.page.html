@@ -1,0 +1,73 @@
+<div class="immo" style="--cols: 1.2fr 1.4fr 3fr 1fr; --min: 640px">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/immo">Immobilisations</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Historique</strong>
+      </nav>
+      <div class="immo__title-row">
+        <h1>Historique des actions</h1>
+        <span class="count-pill">{{ loading() && items().length === 0 ? '…' : items().length }}</span>
+      </div>
+      <p class="immo__subtitle">Qui a fait quoi sur les immobilisations, du plus récent au plus ancien</p>
+    </div>
+    <div class="immo__actions">
+      <button type="button" class="btn btn--ghost" (click)="load()" [disabled]="loading()">Actualiser</button>
+    </div>
+  </header>
+
+  <app-immo-tabs />
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    @if (loading() && items().length === 0) {
+      <div class="skeleton">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <div class="empty">
+        <h2>Aucune action tracée</h2>
+        <p>Les actions apparaissent dès qu’une fiche est créée, validée, cédée ou qu’une écriture est exportée.</p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Date</span>
+          <span>Action</span>
+          <span>Détail</span>
+          <span>Utilisateur</span>
+        </div>
+        <ul class="tbody">
+          @for (h of items(); track h.id) {
+            <li>
+              @if (h.ficheId) {
+                <a [routerLink]="['/immo/fiches', h.ficheId]" class="trow">
+                  <span>{{ h.dateAction | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  <span class="name">{{ libelle(h.action) }}</span>
+                  <span class="name">{{ h.detail || '—' }}</span>
+                  <span>{{ h.utilisateur || '—' }}</span>
+                </a>
+              } @else {
+                <div class="trow">
+                  <span>{{ h.dateAction | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  <span class="name">{{ libelle(h.action) }}</span>
+                  <span class="name">{{ h.detail || '—' }}</span>
+                  <span>{{ h.utilisateur || '—' }}</span>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">{{ items().length }} action(s) affichée(s)</footer>
+    }
+  </div>
+</div>

@@ -26,6 +26,9 @@ export const accueilGuard: CanActivateFn = () => {
   if (!ROLES_ACCUEIL_ERP.some((r) => roles.includes(r)) && roles.includes('HR')) {
     return router.createUrlTree(['/rh']);
   }
+  if (!ROLES_ACCUEIL_ERP.some((r) => roles.includes(r)) && roles.includes('Compta')) {
+    return router.createUrlTree(['/immo']);
+  }
   return true;
 };
 

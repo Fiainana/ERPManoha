@@ -18,7 +18,10 @@
     </div>
     <div class="immo__actions">
       <button type="button" class="btn btn--ghost" (click)="exporter('csv')" [disabled]="exporting() || !etat()">
-        Excel (CSV)
+        CSV
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="exporter('xlsx')" [disabled]="exporting() || !etat()">
+        Excel (.xlsx)
       </button>
       <button type="button" class="btn btn--primary" (click)="exporter('pdf')" [disabled]="exporting() || !etat()">
         {{ exporting() ? 'Export…' : 'PDF' }}

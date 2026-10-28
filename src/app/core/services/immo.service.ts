@@ -6,6 +6,7 @@ import { ApiResponse } from '../models/api-response';
 import {
   ImmoCategorie,
   ImmoCategorieRequest,
+  ImmoClotureResultat,
   ImmoControles,
   ImmoDotationResultat,
   ImmoEcriture,
@@ -14,10 +15,17 @@ import {
   ImmoFamilleSage,
   ImmoFiche,
   ImmoFicheRequest,
+  ImmoHistorique,
   ImmoSortieResultat,
   ImmoSyncResultat,
   ImmoValiderRequest,
 } from '../models/immo.model';
+
+const TYPES_MIME: Record<'pdf' | 'csv' | 'xlsx', string> = {
+  pdf: 'application/pdf',
+  csv: 'text/csv;charset=utf-8',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
 
 /** Immobilisations : fiches, synchro des achats Sage, dotations, sorties et écritures vers Sage. */
 @Injectable({ providedIn: 'root' })
@@ -110,6 +118,29 @@ export class ImmoService {
     );
   }
 
+  annulerEcriture(id: number, motif: string) {
+    return this.post<ImmoEcriture>(`ecritures/${id}/annuler`, { motif });
+  }
+
+  changerJournal(id: number, journal: string) {
+    return this.call(this.http.put<ApiResponse<ImmoEcriture>>(`${this.base}/ecritures/${id}/journal`, { journal }));
+  }
+
+  // —— Historique et clôture ——
+  historique(ficheId?: number, limite = 100) {
+    let params = new HttpParams().set('limite', String(limite));
+    if (ficheId) params = params.set('ficheId', String(ficheId));
+    return this.get<ImmoHistorique[]>('historique', params);
+  }
+
+  cloturer(annee: number) {
+    return this.post<ImmoClotureResultat>(`exercices/${annee}/cloturer`, null);
+  }
+
+  rouvrir(annee: number) {
+    return this.post<ImmoClotureResultat>(`exercices/${annee}/rouvrir`, null);
+  }
+
   // —— États et contrôles ——
   etatAnnuel(annee: number) {
     return this.get<ImmoEtatAnnuel>('etat-annuel', new HttpParams().set('annee', String(annee)));
@@ -119,8 +150,8 @@ export class ImmoService {
     return this.get<ImmoControles>('controles', new HttpParams().set('annee', String(annee)));
   }
 
-  /** Télécharge l'état annuel en PDF ou en CSV (ouvert par Excel). */
-  telechargerEtat(annee: number, format: 'pdf' | 'csv') {
+  /** Télécharge l'état annuel en PDF, Excel (.xlsx) ou CSV. */
+  telechargerEtat(annee: number, format: 'pdf' | 'csv' | 'xlsx') {
     const params = new HttpParams().set('annee', String(annee)).set('format', format);
     return this.http.get(`${this.base}/etat-annuel`, { params, responseType: 'blob', observe: 'response' }).pipe(
       map((resp) => {
@@ -128,7 +159,7 @@ export class ImmoService {
         if (!blob || blob.size === 0) throw new Error('Fichier vide');
         const nom = `immobilisations-${annee}.${format}`;
         const url = URL.createObjectURL(
-          new Blob([blob], { type: format === 'pdf' ? 'application/pdf' : 'text/csv;charset=utf-8' })
+          new Blob([blob], { type: TYPES_MIME[format] })
         );
         const a = document.createElement('a');
         a.href = url;

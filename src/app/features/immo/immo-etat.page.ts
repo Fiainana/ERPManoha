@@ -52,7 +52,7 @@ export class ImmoEtatPage implements OnInit {
     this.repliees.set(s);
   }
 
-  exporter(format: 'pdf' | 'csv'): void {
+  exporter(format: 'pdf' | 'csv' | 'xlsx'): void {
     if (this.exporting()) return;
     this.exporting.set(true);
     this.error.set(null);

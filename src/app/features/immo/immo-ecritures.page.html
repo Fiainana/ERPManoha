@@ -107,6 +107,12 @@
                       <a [routerLink]="['/immo/fiches', e.ficheId]" class="btn btn--ghost">Voir la fiche</a>
                     }
                     @if (e.statut === 'A_EXPORTER' || e.statut === 'ERREUR') {
+                      <button type="button" class="btn btn--ghost" (click)="changerJournal(e)" [disabled]="acting()">
+                        Changer le journal
+                      </button>
+                      <button type="button" class="btn btn--danger" (click)="annuler(e)" [disabled]="acting()">
+                        Annuler l’écriture
+                      </button>
                       <button type="button" class="btn btn--primary" (click)="exporter(e.id)" [disabled]="acting()">
                         Exporter cette écriture
                       </button>

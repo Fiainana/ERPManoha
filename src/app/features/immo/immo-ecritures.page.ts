@@ -29,6 +29,7 @@ export class ImmoEcrituresPage implements OnInit {
     { value: 'A_EXPORTER', label: 'À exporter' },
     { value: 'ERREUR', label: 'En erreur' },
     { value: 'EXPORTEE', label: 'Exportées' },
+    { value: 'ANNULEE', label: 'Annulées' },
   ];
 
   readonly libelleType = libelleTypeEcriture;
@@ -59,6 +60,49 @@ export class ImmoEcrituresPage implements OnInit {
 
   basculer(id: number): void {
     this.ouverte.set(this.ouverte() === id ? null : id);
+  }
+
+  /** Annule une écriture pas encore dans Sage ; les dotations ou la sortie qu'elle réservait sont libérées. */
+  annuler(e: ImmoEcriture): void {
+    if (this.acting()) return;
+    const motif = prompt(
+      `Annuler l’écriture ${e.numeroPiece} ?\nLes dotations ou la sortie du bien qu’elle avait réservées seront libérées.\n\nMotif :`
+    );
+    if (!motif?.trim()) return;
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.annulerEcriture(e.id, motif.trim()).subscribe({
+      next: () => {
+        this.acting.set(false);
+        this.toast.set(`Écriture ${e.numeroPiece} annulée.`);
+        this.ouverte.set(null);
+        this.reload();
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.error.set(err?.message || 'Annulation impossible');
+      },
+    });
+  }
+
+  /** Change le journal d'une écriture en erreur ou à exporter (ex. journal absent de Sage). */
+  changerJournal(e: ImmoEcriture): void {
+    if (this.acting()) return;
+    const journal = prompt(`Nouveau journal pour ${e.numeroPiece} (actuel : ${e.journal}) :`, e.journal);
+    if (!journal?.trim() || journal.trim() === e.journal) return;
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.changerJournal(e.id, journal.trim()).subscribe({
+      next: () => {
+        this.acting.set(false);
+        this.toast.set(`Journal de ${e.numeroPiece} modifié.`);
+        this.reload();
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.error.set(err?.message || 'Modification impossible');
+      },
+    });
   }
 
   exporter(id?: number): void {

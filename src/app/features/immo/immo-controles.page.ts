@@ -42,6 +42,40 @@ export class ImmoControlesPage implements OnInit {
     });
   }
 
+  readonly acting = signal(false);
+  readonly toast = signal<string | null>(null);
+
+  /** Clôture l'exercice choisi : plus aucune dotation, mise en service ni sortie jusqu'au 31/12. */
+  cloturer(): void {
+    if (this.acting()) return;
+    if (!confirm(`Clôturer l’exercice ${this.annee} ?\nAucune dotation, mise en service ni sortie ne sera plus possible jusqu’au 31/12/${this.annee}.`)) return;
+    this.lancer(this.api.cloturer(this.annee), `Exercice ${this.annee} clôturé.`);
+  }
+
+  /** Rouvre le dernier exercice clôturé. */
+  rouvrir(): void {
+    if (this.acting()) return;
+    if (!confirm(`Rouvrir l’exercice ${this.annee} ?`)) return;
+    this.lancer(this.api.rouvrir(this.annee), `Exercice ${this.annee} rouvert.`);
+  }
+
+  private lancer(req: ReturnType<ImmoService['cloturer']>, message: string): void {
+    this.acting.set(true);
+    this.error.set(null);
+    this.toast.set(null);
+    req.subscribe({
+      next: () => {
+        this.acting.set(false);
+        this.toast.set(message);
+        this.load();
+      },
+      error: (err) => {
+        this.acting.set(false);
+        this.error.set(err?.message || 'Action impossible');
+      },
+    });
+  }
+
   libelleNiveau(n: string): string {
     return n === 'ERREUR' ? 'Erreur' : n === 'AVERTISSEMENT' ? 'À surveiller' : 'Information';
   }

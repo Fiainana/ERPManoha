@@ -224,6 +224,22 @@
       }
     </section>
 
+    @if (historique().length > 0) {
+      <section class="card">
+        <h2>Historique</h2>
+        <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem">
+          @for (h of historique(); track h.id) {
+            <li style="display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; align-items: baseline">
+              <span class="muted" style="min-width: 8.5rem">{{ h.dateAction | date: 'dd/MM/yyyy HH:mm' }}</span>
+              <strong>{{ libelleAction(h.action) }}</strong>
+              <span>{{ h.detail }}</span>
+              <span class="muted">· {{ h.utilisateur || '—' }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     @if (f.plan && f.plan.length > 0) {
       <div class="panel">
         <div class="card" style="border: 0; border-radius: 0; padding-bottom: 0">

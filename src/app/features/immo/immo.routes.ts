@@ -37,6 +37,10 @@ export const IMMO_ROUTES: Routes = [
     loadComponent: () => import('./immo-controles.page').then((m) => m.ImmoControlesPage),
   },
   {
+    path: 'historique',
+    loadComponent: () => import('./immo-historique.page').then((m) => m.ImmoHistoriquePage),
+  },
+  {
     path: 'categories',
     loadComponent: () => import('./immo-categories.page').then((m) => m.ImmoCategoriesPage),
   },

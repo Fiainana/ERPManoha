@@ -90,5 +90,6 @@ export const APP_ROLE_OPTIONS = [
     label: 'Responsable d’équipe',
     hint: 'Avis sur les demandes d’absence de son département',
   },
+  { value: 'Compta', label: 'Comptabilité', hint: 'Immobilisations : validation, export vers Sage, clôture' },
   { value: 'Admin', label: 'Admin', hint: 'Administration complète' },
 ] as const;

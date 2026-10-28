@@ -34,6 +34,9 @@
     </label>
   </div>
 
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
   @if (error()) {
     <div class="alert" role="alert">{{ error() }}</div>
   }
@@ -72,6 +75,22 @@
           }
         </div>
       }
+    </section>
+
+    <section class="card">
+      <h2>Clôture de l’exercice {{ d.annee }}</h2>
+      <p>
+        La clôture est refusée tant qu’il reste des écritures non envoyées à Sage ou des dotations non générées.
+        Une fois clôturé, plus aucune dotation, mise en service ni sortie n’est possible jusqu’au 31/12/{{ d.annee }}.
+      </p>
+      <div class="card__form">
+        <button type="button" class="btn btn--primary" (click)="cloturer()" [disabled]="acting()">
+          {{ acting() ? '…' : 'Clôturer ' + d.annee }}
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="rouvrir()" [disabled]="acting()">
+          Rouvrir {{ d.annee }}
+        </button>
+      </div>
     </section>
 
     <div class="panel">

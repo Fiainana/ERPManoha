@@ -6,7 +6,9 @@ import { ImmoService } from '../../core/services/immo.service';
 import {
   ImmoCategorie,
   ImmoFiche,
+  ImmoHistorique,
   ImmoSortieResultat,
+  libelleActionImmo,
   libelleStatutImmo,
 } from '../../core/models/immo.model';
 
@@ -30,6 +32,8 @@ export class ImmoFicheDetailPage implements OnInit {
   readonly categories = signal<ImmoCategorie[]>([]);
   readonly sortie = signal<ImmoSortieResultat | null>(null);
   readonly action = signal<Action>(null);
+  readonly historique = signal<ImmoHistorique[]>([]);
+  readonly libelleAction = libelleActionImmo;
 
   readonly libelleStatut = libelleStatutImmo;
   readonly aujourdhui = new Date().toISOString().slice(0, 10);
@@ -61,6 +65,7 @@ export class ImmoFicheDetailPage implements OnInit {
       next: (f) => {
         this.fiche.set(f);
         this.loading.set(false);
+        this.api.historique(this.id, 50).subscribe({ next: (h) => this.historique.set(h ?? []) });
       },
       error: (err) => {
         this.loading.set(false);

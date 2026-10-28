@@ -13,6 +13,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <a routerLink="/immo/etat" routerLinkActive="is-active">État annuel</a>
       <a routerLink="/immo/controles" routerLinkActive="is-active">Contrôles</a>
       <a routerLink="/immo/categories" routerLinkActive="is-active">Catégories</a>
+      <a routerLink="/immo/historique" routerLinkActive="is-active">Historique</a>
     </nav>
   `,
   styleUrl: './immo.shared.scss',

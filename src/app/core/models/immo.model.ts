@@ -124,7 +124,7 @@ export interface ImmoEcritureLigne {
   credit: number;
 }
 
-export type ImmoEcritureStatut = 'A_EXPORTER' | 'EN_COURS' | 'EXPORTEE' | 'ERREUR';
+export type ImmoEcritureStatut = 'A_EXPORTER' | 'EN_COURS' | 'EXPORTEE' | 'ERREUR' | 'ANNULEE';
 
 export interface ImmoEcriture {
   id: number;
@@ -219,6 +219,8 @@ export function libelleStatutEcriture(s: string): string {
       return 'Exportée';
     case 'ERREUR':
       return 'Erreur';
+    case 'ANNULEE':
+      return 'Annulée';
     default:
       return s;
   }
@@ -300,4 +302,40 @@ export interface ImmoControles {
   alertes: ImmoAlerte[];
   nbErreurs: number;
   nbAvertissements: number;
+}
+
+// —— Historique, annulation d'écriture, clôture ——
+
+export interface ImmoHistorique {
+  id: number;
+  ficheId: number | null;
+  action: string;
+  detail: string | null;
+  utilisateur: string | null;
+  dateAction: string;
+}
+
+export interface ImmoClotureResultat {
+  annee: number;
+  dateCloture: string;
+}
+
+export function libelleActionImmo(a: string): string {
+  const m: Record<string, string> = {
+    CREATION: 'Création',
+    MODIFICATION: 'Modification',
+    VALIDATION: 'Validation',
+    MISE_EN_SERVICE: 'Mise en service',
+    REJET: 'Rejet',
+    CESSION: 'Cession',
+    REBUT: 'Mise au rebut',
+    SYNCHRO_ACHATS: 'Synchro des achats',
+    DOTATIONS: 'Dotations générées',
+    EXPORT_SAGE: 'Export vers Sage',
+    ANNULATION_ECRITURE: 'Écriture annulée',
+    JOURNAL_ECRITURE: 'Journal modifié',
+    CLOTURE: 'Clôture d’exercice',
+    REOUVERTURE: 'Réouverture d’exercice',
+  };
+  return m[a] ?? a;
 }
