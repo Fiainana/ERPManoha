@@ -111,6 +111,24 @@
     @if (aValider() > 0) {
       <span class="badge" data-statut="A_VALIDER">{{ aValider() }} à valider</span>
     }
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="imprimerEtiquettes('rouleau')"
+      [disabled]="impression() || filtrees().length === 0"
+      title="Une étiquette par page, pour l’imprimante d’étiquettes"
+    >
+      {{ impression() ? 'Préparation…' : 'Étiquettes (' + filtrees().length + ')' }}
+    </button>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="imprimerEtiquettes('planche')"
+      [disabled]="impression() || filtrees().length === 0"
+      title="Planche A4 de 21 étiquettes"
+    >
+      Planche A4
+    </button>
   </div>
 
   @if (toast()) {

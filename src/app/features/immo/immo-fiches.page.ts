@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ImmoService } from '../../core/services/immo.service';
+import { FacturesService } from '../../core/services/factures.service';
 import { IMMO_STATUTS, ImmoFiche, ImmoSyncResultat, libelleStatutImmo } from '../../core/models/immo.model';
 import { ImmoTabsComponent } from './immo-tabs.component';
 
@@ -14,6 +15,7 @@ import { ImmoTabsComponent } from './immo-tabs.component';
 })
 export class ImmoFichesPage implements OnInit {
   private readonly api = inject(ImmoService);
+  private readonly factures = inject(FacturesService);
 
   readonly loading = signal(false);
   readonly acting = signal(false);
@@ -100,6 +102,36 @@ export class ImmoFichesPage implements OnInit {
   /** Fiches qui seraient créées (aperçu) : somme des fiches prévues par ligne. */
   aCreer(s: ImmoSyncResultat): number {
     return s.lignes.reduce((n, l) => n + (l.nbFiches || 0), 0);
+  }
+
+  readonly impression = signal(false);
+
+  /**
+   * Imprime les étiquettes (QR code) des biens affichés : une étiquette par page pour l'imprimante d'étiquettes,
+   * ou une planche A4 de 21 étiquettes.
+   */
+  imprimerEtiquettes(layout: 'rouleau' | 'planche'): void {
+    const ids = this.filtrees()
+      .filter((f) => f.statut !== 'REJETEE')
+      .map((f) => f.id);
+    if (ids.length === 0 || this.impression()) return;
+    if (ids.length > 500) {
+      this.error.set('500 étiquettes au plus par impression : filtrez la liste.');
+      return;
+    }
+    if (ids.length > 1 && !confirm(`Imprimer ${ids.length} étiquettes ?`)) return;
+    this.impression.set(true);
+    this.error.set(null);
+    this.api.etiquettes(ids, layout).subscribe({
+      next: (pdf) => {
+        this.impression.set(false);
+        this.factures.imprimerDirect(pdf);
+      },
+      error: (err: Error) => {
+        this.impression.set(false);
+        this.error.set(err.message || 'Impression impossible');
+      },
+    });
   }
 
   libelleResultat(r: string): string {

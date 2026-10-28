@@ -21,6 +21,10 @@ export const IMMO_ROUTES: Routes = [
     loadComponent: () => import('./immo-fiche-detail.page').then((m) => m.ImmoFicheDetailPage),
   },
   {
+    path: 'numero/:numero',
+    loadComponent: () => import('./immo-numero.page').then((m) => m.ImmoNumeroPage),
+  },
+  {
     path: 'dotations',
     loadComponent: () => import('./immo-dotations.page').then((m) => m.ImmoDotationsPage),
   },

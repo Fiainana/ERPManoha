@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ImmoService } from '../../core/services/immo.service';
+import { FacturesService } from '../../core/services/factures.service';
 import {
   ImmoCategorie,
   ImmoFiche,
@@ -22,7 +23,9 @@ type Action = 'valider' | 'service' | 'rejeter' | 'ceder' | 'rebut' | null;
 })
 export class ImmoFicheDetailPage implements OnInit {
   private readonly api = inject(ImmoService);
+  private readonly factures = inject(FacturesService);
   private readonly route = inject(ActivatedRoute);
+  readonly impression = signal(false);
 
   readonly loading = signal(false);
   readonly acting = signal(false);
@@ -70,6 +73,24 @@ export class ImmoFicheDetailPage implements OnInit {
       error: (err) => {
         this.loading.set(false);
         this.error.set(err?.message || 'Immobilisation introuvable');
+      },
+    });
+  }
+
+  /** Imprime l'étiquette (QR code) sur l'imprimante d'étiquettes : boîte d'impression directe, une étiquette par page. */
+  imprimerEtiquette(): void {
+    const f = this.fiche();
+    if (!f || this.impression()) return;
+    this.impression.set(true);
+    this.error.set(null);
+    this.api.etiquette(f.id).subscribe({
+      next: (pdf) => {
+        this.impression.set(false);
+        this.factures.imprimerDirect(pdf);
+      },
+      error: (err: Error) => {
+        this.impression.set(false);
+        this.error.set(err.message || 'Impression impossible');
       },
     });
   }

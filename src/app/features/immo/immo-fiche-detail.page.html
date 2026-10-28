@@ -24,6 +24,11 @@
     <div class="immo__actions">
       <a routerLink="/immo" class="btn btn--ghost">Retour</a>
       @if (fiche(); as f) {
+        @if (f.statut !== 'REJETEE') {
+          <button type="button" class="btn btn--ghost" (click)="imprimerEtiquette()" [disabled]="impression()">
+            {{ impression() ? 'Préparation…' : 'Imprimer l’étiquette' }}
+          </button>
+        }
         @if (f.statut === 'A_VALIDER') {
           <a [routerLink]="['/immo/fiches', f.id, 'modifier']" class="btn btn--ghost">Modifier</a>
           <button type="button" class="btn btn--danger" (click)="ouvrir('rejeter')" [disabled]="acting()">Rejeter</button>

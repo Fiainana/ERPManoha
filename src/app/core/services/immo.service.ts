@@ -59,6 +59,40 @@ export class ImmoService {
     return this.get<ImmoFiche>(`fiches/${id}`);
   }
 
+  /** Fiche par n° d'inventaire (ouverture depuis le QR code d'une étiquette). */
+  ficheParNumero(numero: string) {
+    return this.get<ImmoFiche>(`fiches/numero/${encodeURIComponent(numero)}`);
+  }
+
+  // —— Étiquettes d'inventaire (QR code) ——
+  /** PDF d'une étiquette. `rouleau` = une étiquette par page (imprimante d'étiquettes), `planche` = A4. */
+  etiquette(id: number, layout: 'rouleau' | 'planche' = 'rouleau') {
+    return this.pdf(`fiches/${id}/etiquette`, new HttpParams().set('layout', layout));
+  }
+
+  etiquettes(ids: number[], layout: 'rouleau' | 'planche' = 'rouleau') {
+    return this.pdf('etiquettes', new HttpParams().set('ids', ids.join(',')).set('layout', layout));
+  }
+
+  private pdf(path: string, params: HttpParams) {
+    return this.http.get(`${this.base}/${path}`, { params, responseType: 'blob' }).pipe(
+      map((blob) => {
+        if (!blob || blob.size === 0) throw new Error('PDF vide');
+        return blob;
+      }),
+      catchError((err) =>
+        throwError(() => new Error(err instanceof HttpErrorResponse ? this.messagePdf(err) : (err as Error).message))
+      )
+    );
+  }
+
+  private messagePdf(err: HttpErrorResponse): string {
+    if (err.status === 404) return 'Immobilisation introuvable.';
+    if (err.status === 400) return 'Aucune étiquette à imprimer (fiche rejetée ou liste vide).';
+    if (err.status === 403) return 'Accès refusé.';
+    return `Impression impossible (${err.status})`;
+  }
+
   creer(body: ImmoFicheRequest) {
     return this.post<ImmoFiche>('fiches', body);
   }
