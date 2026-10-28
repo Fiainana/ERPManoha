@@ -41,14 +41,26 @@
         <button type="button" class="btn btn--ghost" (click)="lancerSync(true)" [disabled]="acting()">
           {{ acting() ? '…' : 'Aperçu' }}
         </button>
-        <button
-          type="button"
-          class="btn btn--primary"
-          (click)="lancerSync(false)"
-          [disabled]="acting() || !sync() || sync()!.lignes.length === 0"
-        >
-          Importer
-        </button>
+        @if (!confirmerImport()) {
+          <button
+            type="button"
+            class="btn btn--primary"
+            (click)="demanderImport()"
+            [disabled]="acting() || !sync() || sync()!.lignes.length === 0"
+          >
+            Importer
+          </button>
+        } @else {
+          <span style="align-self: center; font-weight: 600">
+            Créer {{ sync() ? aCreer(sync()!) : 0 }} fiche(s) d’immobilisation ?
+          </span>
+          <button type="button" class="btn btn--primary" (click)="lancerSync(false)" [disabled]="acting()">
+            {{ acting() ? 'Import…' : 'Confirmer l’import' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="confirmerImport.set(false)" [disabled]="acting()">
+            Annuler
+          </button>
+        }
       </div>
 
       @if (sync(); as s) {

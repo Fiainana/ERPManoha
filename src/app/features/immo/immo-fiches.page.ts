@@ -75,9 +75,16 @@ export class ImmoFichesPage implements OnInit {
     if (this.syncOuvert() && !this.sync()) this.lancerSync(true);
   }
 
+  /** Confirmation dans la page (une boîte de dialogue du navigateur peut être bloquée). */
+  readonly confirmerImport = signal(false);
+
+  demanderImport(): void {
+    this.confirmerImport.set(true);
+  }
+
   lancerSync(apercu: boolean): void {
     if (this.acting()) return;
-    if (!apercu && !confirm('Importer les achats Sage et créer les fiches d’immobilisation ?')) return;
+    this.confirmerImport.set(false);
     this.acting.set(true);
     this.error.set(null);
     this.toast.set(null);
