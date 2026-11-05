@@ -28,6 +28,8 @@ import {
   RhPresenceDuJour,
   RhRapportPresence,
   RhResponsablePossible,
+  RhSemaineSansOff,
+  RhSemaineSansOffResult,
   RhSoldeConges,
   RhStatutPointeuse,
   RhTableauBord,
@@ -228,6 +230,20 @@ export class RhService {
 
   planifierRotation(req: RhPlanifierRotationRequest) {
     return this.send<RhPlanifierRotationResult>('POST', 'jours-off/planifier-rotation', req);
+  }
+
+  /** Semaines sans off qui touchent la période (défaut API : semaine en cours + 12). */
+  semainesSansOff(q: { debut?: string; fin?: string } = {}) {
+    return this.get<RhSemaineSansOff[]>('semaines-sans-off', q);
+  }
+
+  /** Toute la semaine de `date` passe sans off ; les jours off générés (Auto) de la semaine sont retirés. */
+  ajouterSemaineSansOff(date: string, motif: string | null) {
+    return this.send<RhSemaineSansOffResult>('POST', 'semaines-sans-off', { date, motif });
+  }
+
+  supprimerSemaineSansOff(date: string) {
+    return this.send<unknown>('DELETE', `semaines-sans-off/${date}`);
   }
 
   // —— Présence ——

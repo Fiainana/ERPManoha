@@ -81,6 +81,9 @@
                   <td>
                     <span class="badge" [attr.data-tone]="tonPresence(l.statut)">{{ libellePresence(l.statut) }}</span>
                     <span class="muted small"> {{ libelleRepos(l.reposType) }} {{ typeAbsence(l.typeAbsence) }}{{ l.jourFerie ? ' ' + l.jourFerie : '' }}</span>
+                    @if (l.sortieManquante) {
+                      <span class="badge" data-tone="warn" [title]="titreSortieManquante">Sortie manquante</span>
+                    }
                   </td>
                   <td class="small">
                     {{ l.pointages.join(' · ') || '—' }}
@@ -184,7 +187,7 @@
                       <span class="badge" [attr.data-tone]="tonPresence(l.statut)">{{ libellePresence(l.statut) }}</span>
                       <span class="muted small"> {{ libelleRepos(l.reposType) }} {{ typeAbsence(l.typeAbsence) }}{{ l.jourFerie ? ' ' + l.jourFerie : '' }}</span>
                       @if (l.sortieManquante) {
-                        <span class="badge" data-tone="warn">Sortie manquante</span>
+                        <span class="badge" data-tone="warn" [title]="titreSortieManquante">Sortie manquante</span>
                       }
                       @if (l.horsHoraire) {
                         <span class="badge" data-tone="info">Hors horaire</span>

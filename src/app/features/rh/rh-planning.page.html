@@ -64,6 +64,26 @@
     </div>
   }
 
+  @if (semainesAffichees().length) {
+    <div class="semaines-off" aria-label="Jours off par semaine">
+      <span class="semaines-off__titre">Jours off par semaine</span>
+      @for (s of semainesAffichees(); track s.lundi) {
+        <div class="semaine-off" [class.semaine-off--bloquee]="s.sansOff"
+          [title]="s.sansOff ? 'Semaine sans off' + (s.motif ? ' : ' + s.motif : '') + (s.creePar ? ' (' + s.creePar + ')' : '') : 'Les jours off sont possibles cette semaine'">
+          <span class="semaine-off__libelle">
+            <strong>S{{ s.numero }}</strong> {{ jj(s.lundi) }} – {{ jj(s.dimanche) }}
+          </span>
+          @if (s.sansOff) {
+            <span class="badge" data-tone="warn">🚫 sans off{{ s.motif ? ' · ' + s.motif : '' }}</span>
+            <button type="button" class="linkish small" (click)="retablirSemaine(s)" [disabled]="acting()">Rétablir les off</button>
+          } @else {
+            <button type="button" class="linkish small" (click)="ouvrirSemaineSansOff(s)" [disabled]="acting()">Désactiver les off</button>
+          }
+        </div>
+      }
+    </div>
+  }
+
   <div class="panel">
     @if (loading() && !planning()) {
       @for (_ of [1, 2, 3, 4]; track $index) {
@@ -77,10 +97,13 @@
               <th class="col-nom">Employé</th>
               @for (j of p.jours; track j.date) {
                 <th class="col-jour" [class.today]="estAujourdhui(j.date)" [class.lundi]="estLundi(j.date)"
-                  [class.ferie]="!!j.jourFerie" [title]="j.jourFerie || ''">
+                  [class.ferie]="!!j.jourFerie" [class.sans-off]="!!j.semaineSansOff"
+                  [title]="j.jourFerie || (j.semaineSansOff ? 'Semaine sans off' : '')">
                   <span class="jour-nom">{{ j.jour.substring(0, 3) }}</span>
                   <span class="jour-date">{{ j.date | date: 'dd/MM' }}</span>
-                  @if (j.offBloque) {
+                  @if (j.semaineSansOff) {
+                    <span class="jour-bloque" title="Semaine sans off : pas de jour off, repos fixes suspendus">🚫</span>
+                  } @else if (j.offBloque) {
                     <span class="jour-bloque" title="Pas de jour off ce jour (Rh:JoursSansOff)">🔒</span>
                   }
                 </th>
@@ -125,6 +148,7 @@
         <span><i class="attente" data-statut="Travail"></i>Demande en attente</span>
         <span><i data-statut="Ferie"></i>Férié</span>
         <span>🔒 jour sans off</span>
+        <span>🚫 semaine sans off (repos fixes suspendus, sauf jours hors horaire)</span>
       </footer>
     }
   </div>
@@ -151,10 +175,14 @@
             <a class="linkish" [routerLink]="['/rh/absences', c.jour.absence?.id]" (click)="cellule.set(null)">Voir l’absence</a>
           }
           @case ('Repos') {
-            <p style="margin: 0">Jour de repos {{ c.employe.modeRepos === 'Rotation' ? '(fermeture du magasin)' : 'fixe' }}.</p>
+            <p style="margin: 0">
+              Jour de repos {{ c.employe.modeRepos === 'Rotation' || semaineSansOff(c.jour.date) ? '(fermeture du magasin)' : 'fixe' }}.
+            </p>
           }
           @default {
-            @if (offBloque(c.jour.date)) {
+            @if (semaineSansOff(c.jour.date)) {
+              <div class="alert alert--warn">Semaine sans off : aucun jour off possible cette semaine.</div>
+            } @else if (offBloqueParParametre(c.jour.date)) {
               <div class="alert alert--warn">Pas de jour off le {{ c.jour.date | date: 'EEEE' }} (paramètre Rh:JoursSansOff).</div>
             } @else {
               <label class="field">
@@ -178,6 +206,36 @@
         } @else if (c.jour.statut === 'Travail' && !offBloque(c.jour.date)) {
           <button type="button" class="btn btn--primary" (click)="poserOff()" [disabled]="acting()">Poser un jour off</button>
         }
+      </footer>
+    </div>
+  </div>
+}
+
+@if (semaineABloquer(); as s) {
+  <div class="overlay" (click)="semaineABloquer.set(null)">
+    <div class="modal" style="width: min(480px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">Semaine {{ s.numero }} · du {{ s.lundi | date: 'dd/MM' }} au {{ s.dimanche | date: 'dd/MM/yyyy' }}</p>
+          <h2>Désactiver les off</h2>
+        </div>
+      </header>
+      <div class="modal__body">
+        <ul style="margin: 0 0 0.75rem; padding-left: 1.1rem">
+          <li>Personne n’a de jour off cette semaine, employés en rotation compris.</li>
+          <li>Les repos fixes ne s’appliquent pas : seuls les jours hors horaire (ex. dimanche) restent des repos.</li>
+          <li>Les jours off générés par la rotation sont retirés. Les jours off posés à la main restent (ils sont signalés).</li>
+        </ul>
+        <label class="field">
+          <span>Motif (facultatif)</span>
+          <input [(ngModel)]="motifSemaine" name="motifSemaine" maxlength="200" placeholder="Inventaire, fin d’année, forte activité…" />
+        </label>
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="semaineABloquer.set(null)">Annuler</button>
+        <button type="button" class="btn btn--primary" (click)="bloquerSemaine()" [disabled]="acting()">
+          {{ acting() ? 'Enregistrement…' : 'Désactiver les off' }}
+        </button>
       </footer>
     </div>
   </div>
@@ -252,6 +310,9 @@
                     <td class="nowrap">{{ s.lundi | date: 'dd/MM' }}</td>
                     @for (e of a.employes; track e.employeId) {
                       <td>
+                        @if (e.semaines[i]?.sansOff) {
+                          <span class="badge" data-tone="warn">sans off</span>
+                        }
                         @for (j of joursOffAuto(e.semaines[i]); track j.date) {
                           <span class="badge" [attr.data-tone]="j.nouveau ? 'violet' : ''">{{ j.jour.substring(0, 3) }} {{ j.date | date: 'dd' }}</span>
                           {{ ' ' }}

@@ -290,9 +290,30 @@ export interface RhJourPlanning {
 export interface RhSemaineRotation {
   semaine: string;
   lundi: string;
+  /** Semaine sans off (rh_semaine_sans_off) : quota et aPlanifier valent 0. */
+  sansOff?: boolean;
   quota: number;
   planifies: number;
   aPlanifier: number;
+}
+
+/** Semaine où personne n'a de jour off (rotation comprise) : seuls les jours hors horaire restent des repos. */
+export interface RhSemaineSansOff {
+  semaine: string;
+  lundi: string;
+  dimanche: string;
+  motif: string | null;
+  creeLe: string;
+  creePar: string | null;
+}
+
+export interface RhSemaineSansOffResult {
+  semaine: string;
+  lundi: string;
+  dimanche: string;
+  motif: string | null;
+  joursOffSupprimes: number;
+  avertissements: string[];
 }
 
 export interface RhPlanningEmploye {
@@ -316,7 +337,9 @@ export interface RhPlanning {
     date: string;
     jour: string;
     jourFerie: string | null;
+    /** Rh:JoursSansOff ou semaine sans off. */
     offBloque: boolean;
+    semaineSansOff?: boolean;
     auTravail: number;
     enRepos: number;
     absents: number;
@@ -352,6 +375,7 @@ export interface RhPlanifierRotationResult {
     semaines: {
       semaine: string;
       lundi: string;
+      sansOff?: boolean;
       quota: number;
       joursOff: { date: string; jour: string; origine: string; nouveau: boolean }[];
     }[];
