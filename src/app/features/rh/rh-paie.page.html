@@ -28,6 +28,10 @@
       <button type="button" class="btn btn--ghost" (click)="imprimerEtatSalaire()" [disabled]="!periode()?.bulletins?.length">
         État de salaire
       </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerEtatSalaireBrut()" [disabled]="!periode()?.bulletins?.length"
+        title="Salaire de base, retenues et brut comme net à payer, sans CNaPS, OSTIE ni IRSA">
+        État de salaire (brut)
+      </button>
       <button type="button" class="btn btn--ghost" (click)="imprimerDeclarations()" [disabled]="!periode()?.bulletins?.length">
         Déclarations
       </button>

@@ -295,3 +295,31 @@ export function htmlDeclarations(p: PaiePeriode): string {
     </table>`;
   return document_('État des déclarations', `${enteteEtat('État des déclarations sociales et fiscales', p)}${recap}${detail}`);
 }
+
+/**
+ * État de salaire brut : sans CNaPS, OSTIE ni IRSA. Le brut (salaire de base − retenues de présence) est
+ * présenté comme net à payer, avec une colonne de signature pour le paiement.
+ */
+export function htmlEtatSalaireBrut(p: PaiePeriode): string {
+  const t = p.totaux;
+  const lignes = p.bulletins
+    .map(
+      (b: PaieBulletinLigne, i: number) => `<tr>
+        <td class="num">${i + 1}</td><td>${esc(b.matricule)}</td><td>${esc(b.nom)}</td>
+        <td class="num">${n(b.salaireBase)}</td><td class="num">${n(b.retenues)}</td>
+        <td class="num"><strong>${n(b.brut)}</strong></td><td class="signature"></td></tr>`,
+    )
+    .join('');
+  const corps = `${enteteEtat('État de salaire', p)}
+    <table class="etat">
+      <thead><tr><th class="num">N°</th><th>Matricule</th><th>Nom et prénoms</th>
+        <th class="num">Salaire de base</th><th class="num">Retenues</th><th class="num">Net à payer</th><th>Signature</th></tr></thead>
+      <tbody>${lignes}</tbody>
+      <tfoot><tr><td colspan="3">TOTAL (${t.nbBulletins} salarié${t.nbBulletins > 1 ? 's' : ''})</td>
+        <td class="num">${n(t.salaireBase)}</td><td class="num">${n(t.retenues)}</td><td class="num">${n(t.brut)}</td><td></td></tr></tfoot>
+    </table>
+    <div class="signatures-etat"><div>Établi par</div><div>Vérifié par</div><div>Approuvé par la direction</div></div>`;
+  const css = `@page { size: A4 portrait; margin: 12mm; } body { font-size: 9.5pt; }
+    table.etat td { height: 9mm; } td.signature { width: 45mm; }`;
+  return document_('État de salaire (brut)', corps).replace('</style>', `${css}</style>`);
+}

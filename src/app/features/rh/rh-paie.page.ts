@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RhService } from '../../core/services/rh.service';
 import { PaieBulletinLigne, PaiePeriode } from '../../core/models/rh.model';
-import { htmlBulletins, htmlDeclarations, htmlEtatSalaire, imprimerHtml } from './rh-paie-impression';
+import { htmlBulletins, htmlDeclarations, htmlEtatSalaire, htmlEtatSalaireBrut, imprimerHtml } from './rh-paie-impression';
 
 /** Paie du mois : calcul des bulletins, validation, journal de paie et montants à déclarer. */
 @Component({
@@ -82,6 +82,12 @@ export class RhPaiePage implements OnInit {
   imprimerEtatSalaire(): void {
     const p = this.periode();
     if (p && p.bulletins.length > 0) imprimerHtml(htmlEtatSalaire(p));
+  }
+
+  /** État de salaire brut : base, retenues et brut comme net à payer, sans CNaPS, OSTIE ni IRSA. */
+  imprimerEtatSalaireBrut(): void {
+    const p = this.periode();
+    if (p && p.bulletins.length > 0) imprimerHtml(htmlEtatSalaireBrut(p));
   }
 
   imprimerDeclarations(): void {
