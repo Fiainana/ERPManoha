@@ -84,10 +84,23 @@ export class RhPaiePage implements OnInit {
     if (p && p.bulletins.length > 0) imprimerHtml(htmlEtatSalaire(p));
   }
 
-  /** État de salaire brut : base, retenues et brut comme net à payer, sans CNaPS, OSTIE ni IRSA. */
+  /** État de salaire brut (paysage) : base, retenues détaillées par motif, brut comme net à payer, sans CNaPS, OSTIE ni IRSA. */
   imprimerEtatSalaireBrut(): void {
     const p = this.periode();
-    if (p && p.bulletins.length > 0) imprimerHtml(htmlEtatSalaireBrut(p));
+    if (!p || p.bulletins.length === 0 || this.acting()) return;
+    // Le détail des retenues (motifs et durées) est dans les bulletins complets.
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.paieBulletinsDuMois(p.mois).subscribe({
+      next: (liste) => {
+        this.acting.set(false);
+        imprimerHtml(htmlEtatSalaireBrut(p, liste));
+      },
+      error: (err: Error) => {
+        this.acting.set(false);
+        this.error.set(err.message);
+      },
+    });
   }
 
   imprimerDeclarations(): void {
