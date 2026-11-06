@@ -28,11 +28,19 @@
       <button type="button" class="btn btn--ghost" (click)="imprimerEtatSalaire()" [disabled]="!periode()?.bulletins?.length">
         État de salaire
       </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerEtatSalaireBrut()" [disabled]="acting() || !periode()?.bulletins?.length"
+        title="Salaire de base, retenues et brut comme net à payer, sans CNaPS, OSTIE ni IRSA">
+        État de salaire (brut)
+      </button>
       <button type="button" class="btn btn--ghost" (click)="imprimerDeclarations()" [disabled]="!periode()?.bulletins?.length">
         Déclarations
       </button>
       <button type="button" class="btn btn--ghost" (click)="imprimerBulletins()" [disabled]="acting() || !periode()?.bulletins?.length">
         Bulletins (A5 ×2)
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerBulletins(true)" [disabled]="acting() || !periode()?.bulletins?.length"
+        title="Bulletins sans CNaPS, OSTIE ni IRSA : le brut est le net à payer, retenues détaillées">
+        Bulletins brut (A5 ×2)
       </button>
       <button type="button" class="btn btn--ghost" (click)="calculer()" [disabled]="acting() || loading()">
         {{ acting() ? 'Calcul…' : periode()?.bulletins?.length ? 'Recalculer' : 'Calculer la paie' }}

@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RhService } from '../../core/services/rh.service';
 import { PaieBulletinLigne, PaiePeriode } from '../../core/models/rh.model';
-import { htmlBulletins, htmlDeclarations, htmlEtatSalaire, imprimerHtml } from './rh-paie-impression';
+import { htmlBulletins, htmlDeclarations, htmlEtatSalaire, htmlEtatSalaireBrut, imprimerHtml } from './rh-paie-impression';
 
 /** Paie du mois : calcul des bulletins, validation, journal de paie et montants à déclarer. */
 @Component({
@@ -84,13 +84,32 @@ export class RhPaiePage implements OnInit {
     if (p && p.bulletins.length > 0) imprimerHtml(htmlEtatSalaire(p));
   }
 
+  /** État de salaire brut (paysage) : base, retenues détaillées par motif, brut comme net à payer, sans CNaPS, OSTIE ni IRSA. */
+  imprimerEtatSalaireBrut(): void {
+    const p = this.periode();
+    if (!p || p.bulletins.length === 0 || this.acting()) return;
+    // Le détail des retenues (motifs et durées) est dans les bulletins complets.
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.paieBulletinsDuMois(p.mois).subscribe({
+      next: (liste) => {
+        this.acting.set(false);
+        imprimerHtml(htmlEtatSalaireBrut(p, liste));
+      },
+      error: (err: Error) => {
+        this.acting.set(false);
+        this.error.set(err.message);
+      },
+    });
+  }
+
   imprimerDeclarations(): void {
     const p = this.periode();
     if (p && p.bulletins.length > 0) imprimerHtml(htmlDeclarations(p));
   }
 
   /** Tous les bulletins du mois : une feuille A4 (2 × A5) par employé. */
-  imprimerBulletins(): void {
+  imprimerBulletins(brut = false): void {
     const p = this.periode();
     if (!p || p.bulletins.length === 0 || this.acting()) return;
     this.acting.set(true);
@@ -98,7 +117,7 @@ export class RhPaiePage implements OnInit {
     this.api.paieBulletinsDuMois(p.mois).subscribe({
       next: (liste) => {
         this.acting.set(false);
-        imprimerHtml(htmlBulletins(liste));
+        imprimerHtml(htmlBulletins(liste, brut));
       },
       error: (err: Error) => {
         this.acting.set(false);

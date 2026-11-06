@@ -48,6 +48,8 @@ export class RhPresencePage implements OnInit {
   readonly tonPresence = tonPresence;
   readonly typeAbsence = rhLibelleTypeAbsence;
   readonly duree = rhDuree;
+  readonly titreSortieManquante =
+    'Entrée badgée sans sortie : la journée compte comme une absence. Ajoutez le pointage de sortie oublié ou justifiez l’absence.';
 
   departementId: number | null = null;
   employeId: number | null = null;

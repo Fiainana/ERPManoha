@@ -10,6 +10,7 @@ import {
   RhPlanifierRotationResult,
   RhPlanning,
   RhPlanningEmploye,
+  RhSemaineSansOff,
   rhAjouterJours,
   rhIso,
   rhJourIso,
@@ -21,6 +22,24 @@ import { libelleRegime } from './rh-ui';
 interface CelluleChoisie {
   employe: RhPlanningEmploye;
   jour: RhJourPlanning;
+}
+
+/** Une semaine de la période affichée, avec son état « sans off ». */
+interface SemaineAffichee {
+  lundi: string;
+  dimanche: string;
+  numero: number;
+  sansOff: boolean;
+  motif: string | null;
+  creePar: string | null;
+}
+
+/** N° de semaine ISO d'une date yyyy-MM-dd. */
+function numeroSemaineIso(date: string): number {
+  const d = new Date(date + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const debutAnnee = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - debutAnnee.getTime()) / 86_400_000 + 1) / 7);
 }
 
 @Component({
@@ -45,6 +64,32 @@ export class RhPlanningPage implements OnInit {
   readonly rotationOpen = signal(false);
   readonly rotationError = signal<string | null>(null);
   readonly apercu = signal<RhPlanifierRotationResult | null>(null);
+
+  /** Semaines sans off de la période (pour le motif et l'auteur). */
+  readonly semainesSansOff = signal<RhSemaineSansOff[]>([]);
+  /** Semaine dont on désactive les off (fenêtre de confirmation). */
+  readonly semaineABloquer = signal<SemaineAffichee | null>(null);
+  motifSemaine = '';
+
+  /** Semaines de la période affichée, à partir des jours du planning. */
+  readonly semainesAffichees = computed<SemaineAffichee[]>(() => {
+    const p = this.planning();
+    if (!p) return [];
+    const liste = this.semainesSansOff();
+    return p.jours
+      .filter((j) => rhJourIso(j.date) === 1)
+      .map((j) => {
+        const s = liste.find((x) => x.lundi === j.date);
+        return {
+          lundi: j.date,
+          dimanche: rhAjouterJours(j.date, 6),
+          numero: numeroSemaineIso(j.date),
+          sansOff: !!j.semaineSansOff || !!s,
+          motif: s?.motif ?? null,
+          creePar: s?.creePar ?? null,
+        };
+      });
+  });
 
   readonly jours = RH_JOURS_SEMAINE;
   readonly libelleRegime = libelleRegime;
@@ -112,6 +157,10 @@ export class RhPlanningPage implements OnInit {
           this.error.set(err.message);
         },
       });
+    this.api.semainesSansOff({ debut: this.lundi, fin: this.fin }).subscribe({
+      next: (s) => this.semainesSansOff.set(s),
+      error: () => this.semainesSansOff.set([]),
+    });
   }
 
   estAujourdhui(date: string): boolean {
@@ -147,6 +196,7 @@ export class RhPlanningPage implements OnInit {
     if (j.statut === 'JourOff') parts.push(`Jour off ${j.origine === 'Auto' ? '(généré)' : '(manuel)'}`);
     if (j.statut === 'Absence') parts.push(`${this.typeAbsence(j.absence?.type)} ${j.absence?.demiJournee ? '(' + j.absence.demiJournee + ')' : ''}`);
     if (j.jourFerie) parts.push(j.jourFerie);
+    if (this.semaineSansOff(j.date)) parts.push('Semaine sans off');
     if (j.demandeEnAttente) parts.push(`Demande en attente : ${this.typeAbsence(j.demandeEnAttente.type)}`);
     return parts.join('\n');
   }
@@ -157,8 +207,74 @@ export class RhPlanningPage implements OnInit {
     this.cellule.set({ employe: e, jour: j });
   }
 
+  /** Pas de jour off ce jour : paramètre Rh:JoursSansOff ou semaine sans off. */
   offBloque(date: string): boolean {
+    return this.offBloqueParParametre(date) || this.semaineSansOff(date);
+  }
+
+  offBloqueParParametre(date: string): boolean {
     return (this.planning()?.joursSansOff ?? []).includes(rhJourIso(date));
+  }
+
+  semaineSansOff(date: string): boolean {
+    return !!this.planning()?.jours.find((j) => j.date === date)?.semaineSansOff;
+  }
+
+  // —— Semaines sans off ——
+
+  ouvrirSemaineSansOff(s: SemaineAffichee): void {
+    this.motifSemaine = '';
+    this.semaineABloquer.set(s);
+  }
+
+  bloquerSemaine(): void {
+    const s = this.semaineABloquer();
+    if (!s || this.acting()) return;
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.ajouterSemaineSansOff(s.lundi, this.motifSemaine.trim() || null).subscribe({
+      next: (res) => {
+        this.acting.set(false);
+        this.semaineABloquer.set(null);
+        this.avertissements.set(res.data.avertissements ?? []);
+        const n = res.data.joursOffSupprimes;
+        this.toast.set(
+          `Semaine ${s.numero} (du ${this.jj(s.lundi)} au ${this.jj(s.dimanche)}) sans off` +
+            (n ? ` : ${n} jour(s) off généré(s) retiré(s).` : '.')
+        );
+        this.load();
+      },
+      error: (err: Error) => {
+        this.acting.set(false);
+        this.semaineABloquer.set(null);
+        this.error.set(err.message);
+      },
+    });
+  }
+
+  retablirSemaine(s: SemaineAffichee): void {
+    if (this.acting()) return;
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.supprimerSemaineSansOff(s.lundi).subscribe({
+      next: () => {
+        this.acting.set(false);
+        this.avertissements.set([]);
+        this.toast.set(
+          `Off rétablis pour la semaine ${s.numero}. Les jours off générés retirés ne reviennent qu’en relançant « Générer la rotation ».`
+        );
+        this.load();
+      },
+      error: (err: Error) => {
+        this.acting.set(false);
+        this.error.set(err.message);
+      },
+    });
+  }
+
+  /** yyyy-MM-dd → dd/MM. */
+  jj(date: string): string {
+    return date.split('-').reverse().slice(0, 2).join('/');
   }
 
   poserOff(): void {
