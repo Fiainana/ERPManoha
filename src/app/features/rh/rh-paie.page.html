@@ -38,6 +38,10 @@
       <button type="button" class="btn btn--ghost" (click)="imprimerBulletins()" [disabled]="acting() || !periode()?.bulletins?.length">
         Bulletins (A5 ×2)
       </button>
+      <button type="button" class="btn btn--ghost" (click)="imprimerBulletins(true)" [disabled]="acting() || !periode()?.bulletins?.length"
+        title="Bulletins sans CNaPS, OSTIE ni IRSA : le brut est le net à payer, retenues détaillées">
+        Bulletins brut (A5 ×2)
+      </button>
       <button type="button" class="btn btn--ghost" (click)="calculer()" [disabled]="acting() || loading()">
         {{ acting() ? 'Calcul…' : periode()?.bulletins?.length ? 'Recalculer' : 'Calculer la paie' }}
       </button>

@@ -96,15 +96,31 @@ const CSS_BULLETIN = `
   .patronal .total { width: 100%; font-weight: 700; }
   .signatures { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; padding-top: 4mm; }
   .signatures div { border: 1px solid #999; height: 20mm; padding: 1.5mm 2mm; font-size: 7.5pt; color: #444; }
+  .titre .petit { display: block; }
+  .motif { display: block; font-size: 6.8pt; color: #555; margin-top: 0.4mm; }
   .pied { margin-top: 2.5mm; font-size: 6.8pt; color: #555; }
 `;
 
-function exemplaire(b: PaieBulletin, mention: string): string {
+/** Explication de chaque motif de retenue (bulletin brut). */
+const MOTIFS_RETENUE: Record<'retard' | 'pauseDepassee' | 'departAnticipe' | 'absence', string> = {
+  absence: 'jours non pointés sans justificatif, jours avec seulement l’entrée badgée (sortie oubliée), congé sans solde',
+  retard: 'arrivée après l’heure de début et la tolérance',
+  pauseDepassee: 'pause réelle au-delà de la pause prévue',
+  departAnticipe: 'sortie avant l’heure de fin',
+};
+
+/**
+ * Un exemplaire de bulletin. `brut` : bulletin sans CNaPS, OSTIE ni IRSA (cotisations pas encore déclarées) ;
+ * le brut est le net à payer et chaque retenue est détaillée (motif, durée × taux horaire).
+ */
+function exemplaire(b: PaieBulletin, mention: string, brut = false): string {
   const p = b.parametres;
-  const ligneRet = (libelle: string, minutes: number, montant: number): string =>
-    montant
-      ? `<tr><td>${libelle} <span class="petit">(${duree(minutes)})</span></td><td class="num petit">${n(b.tauxHoraire)}&nbsp;/h</td><td class="num"></td><td class="num">${n(montant)}</td></tr>`
-      : '';
+  const ligneRet = (libelle: string, minutes: number, montant: number, motif: string): string =>
+    !montant
+      ? ''
+      : brut
+        ? `<tr><td>${libelle}<span class="motif">${motif}</span></td><td class="num petit">${duree(minutes)}<br>× ${n(b.tauxHoraire)}&nbsp;/h</td><td class="num"></td><td class="num">${n(montant)}</td></tr>`
+        : `<tr><td>${libelle} <span class="petit">(${duree(minutes)})</span></td><td class="num petit">${n(b.tauxHoraire)}&nbsp;/h</td><td class="num"></td><td class="num">${n(montant)}</td></tr>`;
 
   const prorata =
     b.prorata < 1
@@ -126,6 +142,14 @@ function exemplaire(b: PaieBulletin, mention: string): string {
     .map((t) => `<span>${t}</span>`)
     .join('');
 
+  const lignesFinComplet = `<tr class="sous"><td>Salaire brut</td><td class="num"></td><td class="num">${n(b.brut)}</td><td class="num"></td></tr>
+        <tr><td>CNaPS <span class="petit">(part salarié${p ? ', ' + p.CnapsSalarie + ' %' : ''})</span></td><td class="num"></td><td class="num"></td><td class="num">${n(b.cnapsSalarie)}</td></tr>
+        <tr><td>OSTIE – santé <span class="petit">(part salarié${p ? ', ' + p.OstieSalarie + ' %' : ''})</span></td><td class="num"></td><td class="num"></td><td class="num">${n(b.ostieSalarie)}</td></tr>
+        ${irsaLigne}
+        <tr class="net"><td colspan="3">NET À PAYER</td><td class="num">${n(b.net)}&nbsp;Ar</td></tr>`;
+  const lignesFinBrut = `${b.retenues.total ? `<tr class="sous"><td>Total des retenues</td><td class="num"></td><td class="num"></td><td class="num">${n(b.retenues.total)}</td></tr>` : ''}
+        <tr class="net"><td colspan="3">NET À PAYER <span class="petit">(salaire brut)</span></td><td class="num">${n(b.brut)}&nbsp;Ar</td></tr>`;
+
   const calcule = `Calculé le ${esc(b.calculeLe ? new Date(b.calculeLe).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '')}${b.calculePar ? ' par ' + esc(b.calculePar) : ''}.`;
   const valide = b.valideLe
     ? ` Validé le ${esc(new Date(b.valideLe).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }))}${b.validePar ? ' par ' + esc(b.validePar) : ''}.`
@@ -141,7 +165,7 @@ function exemplaire(b: PaieBulletin, mention: string): string {
         <div class="petit">${esc(b.societe.adresse)}</div>
         <div class="petit">${esc(b.societe.legal)}</div>
       </div>
-      <div class="titre"><strong>BULLETIN DE PAIE</strong>${esc(libelleMois(b.mois))}</div>
+      <div class="titre"><strong>BULLETIN DE PAIE</strong>${esc(libelleMois(b.mois))}${brut ? '<span class="petit">Salaire brut, hors cotisations</span>' : ''}</div>
     </header>
 
     <div class="employe">
@@ -153,7 +177,7 @@ function exemplaire(b: PaieBulletin, mention: string): string {
       </dl>
       <dl>
         <div><dt>N° CIN</dt><dd>${esc(b.employe.cin) || '—'}</dd></div>
-        <div><dt>N° CNaPS</dt><dd>${esc(b.employe.cnaps) || '—'}</dd></div>
+        ${brut ? '' : `<div><dt>N° CNaPS</dt><dd>${esc(b.employe.cnaps) || '—'}</dd></div>`}
         <div><dt>Embauche</dt><dd>${dateFr(b.employe.dateEmbauche)}</dd></div>
         <div><dt>Famille</dt><dd>${esc(b.employe.situationFamiliale) || '—'}, ${b.nbEnfants} enfant(s)</dd></div>
       </dl>
@@ -163,19 +187,14 @@ function exemplaire(b: PaieBulletin, mention: string): string {
       <thead><tr><th>Désignation</th><th class="num">Base</th><th class="num">Gains</th><th class="num">Retenues</th></tr></thead>
       <tbody>
         <tr><td>Salaire de base${prorata}</td><td class="num">${n(b.salaireContrat)}</td><td class="num">${n(b.salaireBase)}</td><td class="num"></td></tr>
-        ${ligneRet('Retards', b.minutes.retard, b.retenues.retard)}
-        ${ligneRet('Pause déjeuner dépassée', b.minutes.pauseDepassee, b.retenues.pauseDepassee)}
-        ${ligneRet('Départs anticipés', b.minutes.departAnticipe, b.retenues.departAnticipe)}
-        ${ligneRet('Absences non payées', b.minutes.absence, b.retenues.absence)}
-        <tr class="sous"><td>Salaire brut</td><td class="num"></td><td class="num">${n(b.brut)}</td><td class="num"></td></tr>
-        <tr><td>CNaPS <span class="petit">(part salarié${p ? ', ' + p.CnapsSalarie + ' %' : ''})</span></td><td class="num"></td><td class="num"></td><td class="num">${n(b.cnapsSalarie)}</td></tr>
-        <tr><td>OSTIE – santé <span class="petit">(part salarié${p ? ', ' + p.OstieSalarie + ' %' : ''})</span></td><td class="num"></td><td class="num"></td><td class="num">${n(b.ostieSalarie)}</td></tr>
-        ${irsaLigne}
-        <tr class="net"><td colspan="3">NET À PAYER</td><td class="num">${n(b.net)}&nbsp;Ar</td></tr>
+        ${ligneRet('Absences non payées', b.minutes.absence, b.retenues.absence, MOTIFS_RETENUE.absence)}
+        ${ligneRet('Retards', b.minutes.retard, b.retenues.retard, MOTIFS_RETENUE.retard)}
+        ${ligneRet('Pause déjeuner dépassée', b.minutes.pauseDepassee, b.retenues.pauseDepassee, MOTIFS_RETENUE.pauseDepassee)}
+        ${ligneRet('Départs anticipés', b.minutes.departAnticipe, b.retenues.departAnticipe, MOTIFS_RETENUE.departAnticipe)}
+        ${brut ? lignesFinBrut : lignesFinComplet}
       </tbody>
     </table>
-
-    <div class="patronal"><strong>Charges patronales</strong>${patronal}<span class="total">Coût total employeur : ${n(b.coutEmployeur)} Ar</span></div>
+    ${brut ? '' : `<div class="patronal"><strong>Charges patronales</strong>${patronal}<span class="total">Coût total employeur : ${n(b.coutEmployeur)} Ar</span></div>`}
 
     <div class="signatures">
       <div>Signature de l’employeur</div>
@@ -186,11 +205,11 @@ function exemplaire(b: PaieBulletin, mention: string): string {
 }
 
 /** Une feuille A4 paysage par bulletin : exemplaire salarié à gauche, exemplaire société à droite. */
-export function htmlBulletins(bulletins: PaieBulletin[]): string {
+export function htmlBulletins(bulletins: PaieBulletin[], brut = false): string {
   const feuilles = bulletins
-    .map((b) => `<div class="feuille">${exemplaire(b, 'Exemplaire salarié')}${exemplaire(b, 'Exemplaire société')}</div>`)
+    .map((b) => `<div class="feuille">${exemplaire(b, 'Exemplaire salarié', brut)}${exemplaire(b, 'Exemplaire société', brut)}</div>`)
     .join('');
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Bulletins de paie</title><style>${CSS_BASE}${CSS_BULLETIN}</style></head><body>${feuilles}</body></html>`;
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Bulletins de paie${brut ? ' (brut)' : ''}</title><style>${CSS_BASE}${CSS_BULLETIN}</style></head><body>${feuilles}</body></html>`;
 }
 
 // —— États du mois ——

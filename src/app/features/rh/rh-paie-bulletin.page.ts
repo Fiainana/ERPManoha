@@ -45,9 +45,9 @@ export class RhPaieBulletinPage implements OnInit {
   }
 
   /** Bulletin A5 en deux exemplaires (salarié / société) sur une feuille A4 paysage. */
-  imprimer(): void {
+  imprimer(brut = false): void {
     const b = this.bulletin();
-    if (b) imprimerHtml(htmlBulletins([b]));
+    if (b) imprimerHtml(htmlBulletins([b], brut));
   }
 
   valider(): void {

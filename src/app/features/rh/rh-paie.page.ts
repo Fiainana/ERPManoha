@@ -109,7 +109,7 @@ export class RhPaiePage implements OnInit {
   }
 
   /** Tous les bulletins du mois : une feuille A4 (2 × A5) par employé. */
-  imprimerBulletins(): void {
+  imprimerBulletins(brut = false): void {
     const p = this.periode();
     if (!p || p.bulletins.length === 0 || this.acting()) return;
     this.acting.set(true);
@@ -117,7 +117,7 @@ export class RhPaiePage implements OnInit {
     this.api.paieBulletinsDuMois(p.mois).subscribe({
       next: (liste) => {
         this.acting.set(false);
-        imprimerHtml(htmlBulletins(liste));
+        imprimerHtml(htmlBulletins(liste, brut));
       },
       error: (err: Error) => {
         this.acting.set(false);

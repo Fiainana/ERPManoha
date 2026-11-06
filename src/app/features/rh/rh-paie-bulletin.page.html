@@ -21,6 +21,8 @@
       <a routerLink="/rh/paie" class="btn btn--ghost">Retour à la paie</a>
       @if (bulletin(); as b) {
         <button type="button" class="btn btn--ghost" (click)="imprimer()">Imprimer (A5 ×2)</button>
+        <button type="button" class="btn btn--ghost" (click)="imprimer(true)"
+          title="Sans CNaPS, OSTIE ni IRSA : le brut est le net à payer, retenues détaillées">Imprimer brut</button>
         @if (b.statut === 'Brouillon') {
           <button type="button" class="btn btn--primary" (click)="valider()" [disabled]="acting()">Valider</button>
         } @else {
