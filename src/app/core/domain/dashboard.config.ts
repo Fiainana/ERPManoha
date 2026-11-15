@@ -39,34 +39,10 @@ export const DASHBOARD_ACTIONS: DashboardAction[] = [
     roles: ['Admin', 'Commercial', 'Vendeur', 'Rayon', 'Caisse', 'Depot', 'Recouvrement'],
   },
   {
-    id: 'mes-da',
-    label: "Mes demandes d'achat",
-    description: 'Demandes commerciales',
-    route: '/achat/demandes-achat',
-    icon: 'achat',
-    roles: ['Admin', 'Commercial'],
-  },
-  {
-    id: 'da-admin',
-    label: "Demandes d'achat (Admin)",
-    description: 'Validation & BC',
-    route: '/achat/demandes-achat-admin',
-    icon: 'achat',
-    roles: ['Admin'],
-  },
-  {
-    id: 'bc-achat',
-    label: 'BC Achat',
-    description: 'Commandes fournisseurs',
-    route: '/achat/bc-achat',
-    icon: 'achat',
-    roles: ['Admin', 'Depot'],
-  },
-  {
     id: 'receptions',
     label: 'Réceptions',
-    description: 'BL fournisseurs',
-    route: '/achat/bl-achat',
+    description: 'Commandes fournisseurs à recevoir',
+    route: '/depot/bc-reception',
     icon: 'depot',
     roles: ['Admin', 'Depot'],
   },
@@ -122,7 +98,7 @@ export const DASHBOARD_INSIGHTS: DashboardInsight[] = [
   {
     id: 'admin-governance',
     title: 'Pilotage',
-    description: 'Validation des demandes d’achat, fournisseurs et utilisateurs.',
+    description: 'Validation des devis, fournisseurs et utilisateurs.',
     roles: ['Admin'],
     tone: 'accent',
   },
@@ -138,11 +114,11 @@ export const DASHBOARD_INSIGHTS: DashboardInsight[] = [
 const ROLE_PROFILES: Partial<Record<AppRole, DashboardProfile>> = {
   Admin: {
     greeting: 'Espace administration',
-    focus: 'Pilotage global · achats · utilisateurs · dépôt',
+    focus: 'Pilotage global · ventes · utilisateurs · dépôt',
   },
   Commercial: {
     greeting: 'Espace commercial',
-    focus: 'Clients · devis · factures · demandes d’achat',
+    focus: 'Clients · devis · factures',
   },
   Depot: {
     greeting: 'Espace dépôt',

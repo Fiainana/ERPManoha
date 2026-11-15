@@ -105,12 +105,6 @@ export class DashboardApiService {
         route: '/vente/factures',
       },
       {
-        id: 'da',
-        label: "Demandes d'achat ouvertes",
-        value: String(this.int(files['demandesAchatOuvertes'] ?? files['DemandesAchatOuvertes'])),
-        route: '/achat/demandes-achat-admin',
-      },
-      {
         id: 'stock',
         label: 'Articles sous mini',
         value: String(this.int(files['articlesSousMini'] ?? files['ArticlesSousMini'])),
@@ -314,7 +308,7 @@ export class DashboardApiService {
         id: 'bl',
         label: 'Réceptions (jour)',
         value: String(this.int(auj['receptionsNb'] ?? auj['ReceptionsNb'])),
-        route: '/achat/bl-achat',
+        route: '/depot/bc-reception',
       },
       {
         id: 'art',

@@ -14,7 +14,7 @@
       </div>
       <p class="fou__subtitle">Référentiel fournisseurs</p>
     </div>
-    <a routerLink="/achat/fournisseurs/nouveau" class="btn btn--primary">Nouveau fournisseur</a>
+    <a routerLink="/fournisseurs/nouveau" class="btn btn--primary">Nouveau fournisseur</a>
   </header>
 
   <div class="fou__toolbar">
@@ -49,7 +49,7 @@
       <div class="empty">
         <h2>Aucun fournisseur</h2>
         <p>Modifie la recherche ou crée un nouveau fournisseur.</p>
-        <a routerLink="/achat/fournisseurs/nouveau" class="btn btn--primary">Nouveau fournisseur</a>
+        <a routerLink="/fournisseurs/nouveau" class="btn btn--primary">Nouveau fournisseur</a>
       </div>
     } @else {
       <div class="table-scroll">
@@ -62,7 +62,7 @@
         <ul class="tbody">
           @for (f of items(); track f.numero) {
             <li [class.is-sommeil]="f.sommeil">
-              <a [routerLink]="['/achat/fournisseurs', f.numero]" class="trow">
+              <a [routerLink]="['/fournisseurs', f.numero]" class="trow">
                 <span class="col-main">
                   <span class="ref">{{ f.numero }}</span>
                   <span class="name">{{ f.intitule || '—' }}</span>

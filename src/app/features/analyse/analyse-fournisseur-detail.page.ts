@@ -21,7 +21,7 @@ import { CompactPipe, JoursPipe, PctPipe, sensDelta } from './analyse-format';
         [fil]="{ libelle: 'Fournisseurs', lien: '/analyse/fournisseurs' }"
       >
         <div class="immo__actions">
-          <a class="btn btn--ghost" [routerLink]="['/achat/fournisseurs', numero()]">Fiche fournisseur</a>
+          <a class="btn btn--ghost" [routerLink]="['/fournisseurs', numero()]">Fiche fournisseur</a>
         </div>
       </app-analyse-entete>
 
@@ -122,7 +122,7 @@ import { CompactPipe, JoursPipe, PctPipe, sensDelta } from './analyse-format';
               <ul class="tbody">
                 @for (c of d.commandesEnCours; track c.numeroPiece) {
                   <li>
-                    <a class="trow" [routerLink]="['/achat/bc-achat', c.numeroPiece]">
+                    <a class="trow" [routerLink]="['/achats/commandes', c.numeroPiece]">
                       <span class="ref">{{ c.numeroPiece }}</span>
                       <span>{{ c.date | date: 'dd/MM/yy' }}</span>
                       <span>{{ c.reference ?? '—' }}</span>

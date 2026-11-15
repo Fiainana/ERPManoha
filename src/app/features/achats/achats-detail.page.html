@@ -1,0 +1,322 @@
+<div class="immo achats">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Achats</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <a [routerLink]="['/achats', type()]">{{ info().libelle }}</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>{{ piece() }}</strong>
+      </nav>
+      <div class="immo__title-row">
+        <h1>{{ info().singulier }} {{ piece() }}</h1>
+        @if (detail(); as d) {
+          @if (paiement(); as p) {
+            <span class="badge" [attr.data-statut]="p.code">{{ p.libelle }}</span>
+            @if (d.entete.comptabilisee) {
+              <span class="badge">Comptabilisée</span>
+            }
+          } @else if (d.entete.statutLibelle) {
+            <span class="badge" [attr.data-statut]="d.entete.statut">{{ d.entete.statutLibelle }}</span>
+          }
+        }
+      </div>
+      @if (detail(); as d) {
+        <p class="immo__subtitle">
+          {{ d.entete.fournisseurIntitule || d.entete.fournisseurCode }}
+          @if (d.entete.dateDocument) {
+            · {{ d.entete.dateDocument | date: 'dd/MM/yyyy' }}
+          }
+        </p>
+      }
+    </div>
+
+    @if (detail(); as d) {
+      <div class="immo__actions">
+        @switch (type()) {
+          @case ('demandes') {
+            <button type="button" class="btn btn--primary" (click)="fenetre.set('commander')" [disabled]="lignesArticle().length === 0">
+              Commander
+            </button>
+          }
+          @case ('preparations') {
+            <button type="button" class="btn btn--primary" (click)="fenetre.set('commander')" [disabled]="lignesArticle().length === 0">
+              Commander
+            </button>
+          }
+          @case ('commandes') {
+            @if (aRecevoir()) {
+              @if (d.entete.statut === 2) {
+                <a class="btn btn--primary" [routerLink]="['/depot/bc-reception', piece()]">Réceptionner</a>
+              } @else {
+                <button type="button" class="btn btn--primary" (click)="changerStatut(2)" [disabled]="acting()">
+                  Rendre réceptionnable
+                </button>
+              }
+            }
+          }
+          @case ('receptions') {
+            <button type="button" class="btn btn--primary" (click)="fenetre.set('facturer')">Facturer</button>
+          }
+          @case ('factures') {
+            @if ((d.entete.resteAPayer ?? 0) > 0.009) {
+              <button type="button" class="btn btn--primary" (click)="fenetre.set('regler')" [disabled]="!etat()">Régler</button>
+            }
+          }
+        }
+      </div>
+    }
+  </header>
+
+  <app-achats-tabs />
+
+  @if (message()) {
+    <div class="alert alert--ok" role="status">{{ message() }}</div>
+  }
+  @if (avertissement()) {
+    <div class="alert alert--warn" role="status">{{ avertissement() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="panel">
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (detail(); as d) {
+    @if (d.origines.length > 0 || d.suites.length > 0) {
+      <ol class="chaine" aria-label="Documents liés">
+        @for (o of d.origines; track o.numeroPiece) {
+          <li>
+            @if (lien(o); as l) {
+              <a [routerLink]="l"><strong>{{ o.numeroPiece }}</strong><small>{{ o.typeLibelle }}</small></a>
+            } @else {
+              <span class="absent" title="Entièrement transformé : n'existe plus dans Sage">
+                <strong>{{ o.numeroPiece }}</strong><small>{{ o.typeLibelle }}</small>
+              </span>
+            }
+          </li>
+        }
+        <li>
+          <span class="ici"><strong>{{ piece() }}</strong><small>{{ d.entete.typeLibelle }}</small></span>
+        </li>
+        @for (s of d.suites; track s.numeroPiece) {
+          <li>
+            @if (lien(s); as l) {
+              <a [routerLink]="l"><strong>{{ s.numeroPiece }}</strong><small>{{ s.typeLibelle }}</small></a>
+            } @else {
+              <span class="absent"><strong>{{ s.numeroPiece }}</strong><small>{{ s.typeLibelle }}</small></span>
+            }
+          </li>
+        }
+      </ol>
+    }
+
+    <section class="card">
+      <dl class="kv">
+        <div>
+          <dt>Fournisseur</dt>
+          <dd>
+            <a [routerLink]="['/fournisseurs', d.entete.fournisseurCode]">{{ d.entete.fournisseurIntitule || d.entete.fournisseurCode }}</a>
+            <span class="sub">{{ d.entete.fournisseurCode }}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Date</dt>
+          <dd>{{ d.entete.dateDocument ? (d.entete.dateDocument | date: 'dd/MM/yyyy') : '—' }}</dd>
+        </div>
+        @if (d.entete.dateLivraison) {
+          <div>
+            <dt>Livraison prévue</dt>
+            <dd>{{ d.entete.dateLivraison | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Référence</dt>
+          <dd>{{ d.entete.reference || '—' }}</dd>
+        </div>
+        @if (type() === 'factures') {
+          <div>
+            <dt>N° facture fournisseur</dt>
+            <dd>{{ d.entete.numeroFactureFournisseur || '—' }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Dépôt</dt>
+          <dd>{{ d.entete.depotIntitule || '—' }}</dd>
+        </div>
+        @if (d.statutsPossibles.length > 1) {
+          <div>
+            <dt>Statut</dt>
+            <dd class="immo__actions" style="margin-top: 0.3rem">
+              @for (s of d.statutsPossibles; track s.code) {
+                <button
+                  type="button"
+                  class="btn btn--sm"
+                  [class.btn--primary]="s.code === d.entete.statut"
+                  [class.btn--ghost]="s.code !== d.entete.statut"
+                  [attr.aria-pressed]="s.code === d.entete.statut"
+                  [disabled]="acting()"
+                  (click)="changerStatut(s.code)"
+                >
+                  {{ s.libelle }}
+                </button>
+              }
+            </dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+    @if (d.resteARecevoir; as r) {
+      <div class="alert" [class.alert--ok]="r.completementLivre" [class.alert--warn]="!r.completementLivre" role="status">
+        {{ r.message }}
+      </div>
+    }
+
+    <section
+      class="panel"
+      [style.--cols]="
+        type() === 'commandes'
+          ? 'minmax(200px, 3fr) 80px 80px 80px minmax(100px, 1fr) minmax(110px, 1fr)'
+          : 'minmax(200px, 3fr) 90px minmax(100px, 1fr) 70px minmax(110px, 1fr)'
+      "
+      style="--min: 680px"
+    >
+      <div class="panel__titre">
+        <h2>Lignes</h2>
+        <span class="muted">{{ lignesArticle().length }} article{{ lignesArticle().length > 1 ? 's' : '' }}</span>
+      </div>
+      <div class="table-scroll">
+        <div class="thead">
+          <span>Article</span>
+          @if (type() === 'commandes') {
+            <span class="num">Commandé</span>
+            <span class="num">Reçu</span>
+            <span class="num">Reste</span>
+          } @else {
+            <span class="num">Quantité</span>
+          }
+          <span class="num">P.U. HT</span>
+          @if (type() !== 'commandes') {
+            <span class="num">Remise</span>
+          }
+          <span class="num">Montant HT</span>
+        </div>
+        <ul class="tbody">
+          @for (l of d.lignes; track l.numeroLigne) {
+            <li class="trow">
+              <span class="name">
+                {{ l.designation || '—' }}
+                @if (l.articleReference) {
+                  <span class="sub">
+                    {{ l.articleReference }}
+                    @if (l.referenceFournisseur) {
+                      · réf. fournisseur {{ l.referenceFournisseur }}
+                    }
+                  </span>
+                }
+              </span>
+              @if (type() === 'commandes') {
+                <span class="num">{{ l.quantite | qte }}</span>
+                <span class="num">{{ l.quantiteLivree | qte }}</span>
+                <span class="num" [class.neg]="(l.quantiteResteARecevoir ?? 0) > 0">{{ l.quantiteResteARecevoir | qte }}</span>
+              } @else {
+                <span class="num">{{ l.quantite | qte }} <span class="muted">{{ l.unite }}</span></span>
+              }
+              <span class="num">{{ l.prixUnitaire | ar }}</span>
+              @if (type() !== 'commandes') {
+                <span class="num">{{ l.remisePourcent ? (l.remisePourcent | qte) + ' %' : '—' }}</span>
+              }
+              <span class="num">{{ l.montantHT | ar }}</span>
+            </li>
+          } @empty {
+            <li class="empty"><p>Ce document n’a plus de ligne.</p></li>
+          }
+        </ul>
+      </div>
+      <div class="totaux">
+        <div><span>Total HT</span><strong>{{ d.entete.totalHT | ar }}</strong></div>
+        <div><span>TVA</span><strong>{{ d.entete.totalTVA | ar }}</strong></div>
+        <div><span>Total TTC</span><strong class="ttc">{{ d.entete.totalTTC | ar }}</strong></div>
+      </div>
+    </section>
+
+    @if (etat(); as e) {
+      <section class="panel" style="--cols: 100px minmax(120px, 1.5fr) minmax(110px, 1fr) minmax(120px, 1.5fr) minmax(110px, 1fr); --min: 640px">
+        <div class="panel__titre">
+          <h2>Règlements</h2>
+          <span>
+            <strong>{{ e.montantRegle | ar }}</strong>&ngsp;<span class="muted">réglés sur {{ e.netAPayer | ar }}</span>
+            @if (e.resteAPayer > 0.009) {
+              · <strong class="neg">reste {{ e.resteAPayer | ar }}</strong>
+            }
+          </span>
+        </div>
+        @if (e.reglements.length > 0) {
+          <div class="table-scroll">
+            <div class="thead">
+              <span>Date</span><span>Mode</span><span>Caisse / banque</span><span>Référence</span><span class="num">Montant</span>
+            </div>
+            <ul class="tbody">
+              @for (r of e.reglements; track r.numeroReglement) {
+                <li class="trow">
+                  <span>{{ r.date ? (r.date | date: 'dd/MM/yy') : '—' }}</span>
+                  <span class="name">{{ r.modeReglement || '—' }}</span>
+                  <span>{{ r.codeJournal || '—' }}</span>
+                  <span class="name" style="font-weight: 500">{{ r.reference || '—' }}<span class="sub">{{ r.libelle }}</span></span>
+                  <span class="num">{{ r.montantImputeSurFacture | ar }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <div class="empty" style="padding: 1.5rem">
+            <p>Aucun règlement enregistré pour cette facture.</p>
+          </div>
+        }
+        @if (e.echeances.length > 1) {
+          <div class="panel__footer" style="justify-content: flex-start; flex-wrap: wrap">
+            @for (x of e.echeances; track x.numeroEcheance) {
+              <span>
+                Échéance du {{ x.date | date: 'dd/MM/yy' }} : {{ x.montant | ar }}
+                @if (x.resteAPayer > 0.009) {
+                  (reste {{ x.resteAPayer | ar }})
+                } @else {
+                  (réglée)
+                }
+              </span>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+
+  @if (detail(); as d) {
+    @switch (fenetre()) {
+      @case ('commander') {
+        <app-achats-commander [type]="type()" [detail]="d" (ferme)="fenetre.set(null)" (fait)="surCommande($event)" />
+      }
+      @case ('facturer') {
+        <app-achats-facturer [pieces]="pieces()" (ferme)="fenetre.set(null)" (fait)="surFacture($event)" />
+      }
+      @case ('regler') {
+        @if (etat(); as e) {
+          <app-achats-regler [etat]="e" (ferme)="fenetre.set(null)" (fait)="surReglement($event)" />
+        }
+      }
+    }
+  }
+</div>

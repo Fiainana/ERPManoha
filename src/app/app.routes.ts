@@ -13,19 +13,9 @@ import { DevisDetailPage } from './features/vente/devis-detail.page';
 import { DevisFormPage } from './features/vente/devis-form.page';
 import { FacturesPage } from './features/vente/factures.page';
 import { FactureDetailPage } from './features/vente/facture-detail.page';
-import { FournisseursPage } from './features/achat/fournisseurs.page';
-import { FournisseurDetailPage } from './features/achat/fournisseur-detail.page';
-import { FournisseurFormPage } from './features/achat/fournisseur-form.page';
-import { DemandesAchatPage } from './features/achat/demandes-achat.page';
-import { DemandeAchatFormPage } from './features/achat/demande-achat-form.page';
-import { DemandeAchatDetailPage } from './features/achat/demande-achat-detail.page';
-import { DemandesAchatAdminPage } from './features/achat/demandes-achat-admin.page';
-import { DemandeAchatAdminDetailPage } from './features/achat/demande-achat-admin-detail.page';
-import { BcAchatPage } from './features/achat/bc-achat.page';
-import { PrepaAchatPage } from './features/achat/prepa-achat.page';
-import { BlAchatPage } from './features/achat/bl-achat.page';
-import { FacturesAchatPage } from './features/achat/factures-achat.page';
-import { DocAchatDetailPage } from './features/achat/doc-achat-detail.page';
+import { FournisseursPage } from './features/fournisseurs/fournisseurs.page';
+import { FournisseurDetailPage } from './features/fournisseurs/fournisseur-detail.page';
+import { FournisseurFormPage } from './features/fournisseurs/fournisseur-form.page';
 import { BonsRetourPage } from './features/depot/bons-retour.page';
 import { BonRetourDetailPage } from './features/depot/bon-retour-detail.page';
 import { BcReceptionPage } from './features/depot/bc-reception.page';
@@ -171,88 +161,19 @@ export const routes: Routes = [
       },
 
       {
-        path: 'achat/fournisseurs',
+        path: 'fournisseurs',
         component: FournisseursPage,
         canActivate: [roleGuard('Admin')],
       },
       {
-        path: 'achat/fournisseurs/nouveau',
+        path: 'fournisseurs/nouveau',
         component: FournisseurFormPage,
         canActivate: [roleGuard('Admin')],
       },
       {
-        path: 'achat/fournisseurs/:numero',
+        path: 'fournisseurs/:numero',
         component: FournisseurDetailPage,
         canActivate: [roleGuard('Admin')],
-      },
-      {
-        path: 'achat/demandes-achat',
-        component: DemandesAchatPage,
-        canActivate: [roleGuard('Admin', 'Commercial')],
-      },
-      {
-        path: 'achat/demandes-achat/nouvelle',
-        component: DemandeAchatFormPage,
-        canActivate: [roleGuard('Admin', 'Commercial')],
-      },
-      {
-        path: 'achat/demandes-achat/:id',
-        component: DemandeAchatDetailPage,
-        canActivate: [roleGuard('Admin', 'Commercial')],
-      },
-      {
-        path: 'achat/demandes-achat-admin',
-        component: DemandesAchatAdminPage,
-        canActivate: [roleGuard('Admin')],
-      },
-      {
-        path: 'achat/demandes-achat-admin/:id',
-        component: DemandeAchatAdminDetailPage,
-        canActivate: [roleGuard('Admin')],
-      },
-      {
-        path: 'achat/prepa-achat',
-        component: PrepaAchatPage,
-        canActivate: [roleGuard('Admin')],
-      },
-      {
-        path: 'achat/prepa-achat/:piece',
-        component: DocAchatDetailPage,
-        canActivate: [roleGuard('Admin')],
-        data: { kind: 'preparations', listPath: '/achat/prepa-achat', titleLabel: 'Préparation' },
-      },
-      {
-        path: 'achat/bc-achat',
-        component: BcAchatPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
-      },
-      {
-        path: 'achat/bc-achat/:piece',
-        component: DocAchatDetailPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
-        data: { kind: 'commandes', listPath: '/achat/bc-achat', titleLabel: 'BC' },
-      },
-      {
-        path: 'achat/bl-achat',
-        component: BlAchatPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
-      },
-      {
-        path: 'achat/bl-achat/:piece',
-        component: DocAchatDetailPage,
-        canActivate: [roleGuard('Admin', 'Depot')],
-        data: { kind: 'receptions', listPath: '/achat/bl-achat', titleLabel: 'BL' },
-      },
-      {
-        path: 'achat/factures-achat',
-        component: FacturesAchatPage,
-        canActivate: [roleGuard('Admin')],
-      },
-      {
-        path: 'achat/factures-achat/:piece',
-        component: DocAchatDetailPage,
-        canActivate: [roleGuard('Admin')],
-        data: { kind: 'factures', listPath: '/achat/factures-achat', titleLabel: 'FA' },
       },
 
       {
@@ -318,6 +239,11 @@ export const routes: Routes = [
         canActivate: [roleGuard('Admin')],
       },
 
+      {
+        path: 'achats',
+        canActivate: [roleGuard('Admin')],
+        loadChildren: () => import('./features/achats/achats.routes').then((m) => m.ACHATS_ROUTES),
+      },
       {
         path: 'analyse',
         canActivate: [roleGuard('Admin')],

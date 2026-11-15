@@ -1,0 +1,236 @@
+<div class="immo achats">
+  <header class="immo__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Achats</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <a routerLink="/achats/demandes">Demandes d’achat</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Nouvelle</strong>
+      </nav>
+      <h1>Nouvelle demande d’achat</h1>
+      <p class="immo__subtitle">Créée dans Sage. Un fournisseur ou un article absent se crée pendant la saisie.</p>
+    </div>
+    <div class="immo__actions">
+      <a routerLink="/achats/demandes" class="btn btn--ghost">Annuler</a>
+      <button type="button" class="btn btn--primary" (click)="enregistrer()" [disabled]="saving()">
+        {{ saving() ? 'Création…' : 'Créer la demande' }}
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <section class="card card--ouverte">
+    <h2>Fournisseur et en-tête</h2>
+    <div class="form-grid">
+      <div class="field field--wide lookup">
+        <span>Fournisseur <span class="req">*</span></span>
+        @if (fournisseur; as f) {
+          <div class="picked">
+            <div>
+              <strong>{{ f.intitule }}</strong>
+              <span class="mono">{{ f.numero }}</span>
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="changerFournisseur()">Changer</button>
+          </div>
+        } @else {
+          <input
+            #champFournisseur
+            type="search"
+            [(ngModel)]="saisieFournisseur"
+            (ngModelChange)="surSaisieFournisseur()"
+            (keydown)="toucheFournisseur($event)"
+            placeholder="Nom ou n° du fournisseur…"
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            [attr.aria-expanded]="fournisseursCherches()"
+            aria-controls="liste-fournisseurs"
+          />
+          @if (fournisseursCherches()) {
+            <ul class="hits" id="liste-fournisseurs" role="listbox">
+              @for (f of fournisseurs(); track f.numero; let i = $index) {
+                <li role="option" [attr.aria-selected]="i === fournisseurActif()">
+                  <button type="button" [class.is-actif]="i === fournisseurActif()" (click)="choisirFournisseur(f)">
+                    <span class="hit-main">
+                      <strong>{{ f.intitule }}</strong>
+                      <span class="mono">{{ f.numero }}</span>
+                    </span>
+                    <span class="hit-meta">{{ f.ville }}</span>
+                  </button>
+                </li>
+              } @empty {
+                <li class="hits__info">Aucun fournisseur ne correspond à « {{ saisieFournisseur.trim() }} ».</li>
+              }
+              <li class="hits__creer" role="option" [attr.aria-selected]="fournisseurActif() === fournisseurs().length">
+                <button
+                  type="button"
+                  [class.is-actif]="fournisseurActif() === fournisseurs().length"
+                  (click)="creation.set('fournisseur')"
+                >
+                  + Créer le fournisseur « {{ saisieFournisseur.trim() }} »
+                </button>
+              </li>
+            </ul>
+          }
+        }
+      </div>
+
+      <label class="field">
+        <span>Dépôt</span>
+        <select [(ngModel)]="depotNo" name="depot">
+          @for (d of depots(); track d.no) {
+            <option [ngValue]="d.no">{{ d.intitule }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Date</span>
+        <input type="date" [(ngModel)]="date" name="date" />
+      </label>
+      <label class="field">
+        <span>Livraison souhaitée</span>
+        <input type="date" [(ngModel)]="dateLivraison" name="dateLivraison" [min]="date" />
+      </label>
+      <label class="field">
+        <span>Référence</span>
+        <input type="text" [(ngModel)]="reference" name="reference" maxlength="17" placeholder="Facultatif" />
+      </label>
+      <label class="check field--wide">
+        <input type="checkbox" [(ngModel)]="validee" name="validee" />
+        Demande validée : elle pourra être commandée tout de suite
+      </label>
+    </div>
+  </section>
+
+  <section class="card card--ouverte">
+    <h2>Articles</h2>
+    <div class="field lookup" style="margin-bottom: 0.85rem">
+      <span>Ajouter un article</span>
+      <input
+        #champArticle
+        type="search"
+        [(ngModel)]="saisieArticle"
+        (ngModelChange)="surSaisieArticle()"
+        (keydown)="toucheArticle($event)"
+        placeholder="Référence ou désignation (plusieurs mots possibles)…"
+        autocomplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        [attr.aria-expanded]="articlesCherches()"
+        aria-controls="liste-articles"
+      />
+      @if (articlesCherches()) {
+        <ul class="hits" id="liste-articles" role="listbox">
+          @if (articlesTotal() > articles().length) {
+            <li class="hits__info">{{ articles().length }} sur {{ articlesTotal() }} articles : ajoutez un mot pour préciser.</li>
+          }
+          @for (a of articles(); track a.reference; let i = $index) {
+            <li role="option" [attr.aria-selected]="i === articleActif()">
+              <button
+                type="button"
+                [class.is-actif]="i === articleActif()"
+                (click)="ajouterArticle(a.reference, a.designation || a.reference, a.prixAchat ?? null)"
+              >
+                <span class="hit-main">
+                  <strong>{{ a.designation || a.reference }}</strong>
+                  <span class="mono">{{ a.reference }}</span>
+                </span>
+                <span class="hit-meta">
+                  {{ a.prixAchat | ar }}<br />
+                  Stock {{ a.stockDisponible ?? a.stockTotal | qte }}
+                </span>
+              </button>
+            </li>
+          } @empty {
+            <li class="hits__info">Aucun article ne correspond à « {{ saisieArticle.trim() }} ».</li>
+          }
+          <li class="hits__creer" role="option" [attr.aria-selected]="articleActif() === articles().length">
+            <button type="button" [class.is-actif]="articleActif() === articles().length" (click)="creation.set('article')">
+              + Créer l’article « {{ saisieArticle.trim() }} »
+            </button>
+          </li>
+        </ul>
+      }
+    </div>
+
+    @if (lignes.length > 0) {
+      <div class="lines-scroll">
+        <table class="lines">
+          <thead>
+            <tr>
+              <th>Article</th>
+              <th class="num">Quantité</th>
+              <th class="num">P.U. HT</th>
+              <th class="num">Montant HT</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lignes; track l.articleReference; let i = $index) {
+              <tr>
+                <td>
+                  <strong>{{ l.designation }}</strong>
+                  <span class="sub">{{ l.articleReference }}</span>
+                </td>
+                <td class="num">
+                  <input
+                    type="number"
+                    [id]="'qte-' + i"
+                    [(ngModel)]="l.quantite"
+                    [name]="'q' + i"
+                    min="0.0001"
+                    step="any"
+                    [attr.aria-label]="'Quantité de ' + l.designation"
+                    (keydown.enter)="retourRecherche($event)"
+                  />
+                </td>
+                <td class="num">
+                  <input
+                    type="number"
+                    [(ngModel)]="l.prixUnitaire"
+                    [name]="'p' + i"
+                    min="0"
+                    step="any"
+                    placeholder="Prix Sage"
+                    [attr.aria-label]="'Prix unitaire de ' + l.designation"
+                    (keydown.enter)="retourRecherche($event)"
+                  />
+                </td>
+                <td class="num">{{ l.prixUnitaire != null ? (montant(l) | ar) : '—' }}</td>
+                <td>
+                  <button type="button" class="btn-icon" (click)="retirer(i)" [attr.aria-label]="'Retirer ' + l.designation" title="Retirer">×</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="totaux" style="background: transparent; padding: 0.85rem 0 0">
+        <div><span>{{ lignes.length }} article{{ lignes.length > 1 ? 's' : '' }} · total HT estimé</span><strong class="ttc">{{ totalHt() | ar }}</strong></div>
+      </div>
+    } @else {
+      <p class="aide">Aucun article pour l’instant. Cherchez-en un ci-dessus.</p>
+    }
+    <p class="aide" style="margin-top: 0.75rem">
+      <kbd>↑</kbd> <kbd>↓</kbd> pour choisir · <kbd>Entrée</kbd> pour ajouter, puis pour revenir à la recherche ·
+      <kbd>Ctrl</kbd> + <kbd>Entrée</kbd> pour créer la demande
+    </p>
+  </section>
+
+  @switch (creation()) {
+    @case ('fournisseur') {
+      <app-achats-creer-fournisseur [initial]="saisieFournisseur.trim()" (ferme)="annulerCreation()" (cree)="surFournisseurCree($event)" />
+    }
+    @case ('article') {
+      <app-achats-creer-article [initial]="saisieArticle.trim()" (ferme)="annulerCreation()" (cree)="surArticleCree($event)" />
+    }
+  }
+</div>

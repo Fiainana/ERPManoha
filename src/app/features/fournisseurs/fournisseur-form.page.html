@@ -2,7 +2,7 @@
   <header class="ff__header">
     <div>
       <nav class="breadcrumb">
-        <a routerLink="/achat/fournisseurs">Fournisseurs</a>
+        <a routerLink="/fournisseurs">Fournisseurs</a>
         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
           <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
         </svg>
@@ -12,7 +12,7 @@
       <p class="ff__subtitle">Création d'un fournisseur</p>
     </div>
     <div class="ff__actions">
-      <a routerLink="/achat/fournisseurs" class="btn btn--ghost">Annuler</a>
+      <a routerLink="/fournisseurs" class="btn btn--ghost">Annuler</a>
       <button type="button" class="btn btn--primary" (click)="submit()" [disabled]="saving()">
         {{ saving() ? 'Création…' : 'Créer' }}
       </button>

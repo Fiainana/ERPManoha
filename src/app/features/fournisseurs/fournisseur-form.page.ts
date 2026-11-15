@@ -57,7 +57,7 @@ export class FournisseurFormPage {
       .subscribe({
         next: (num) => {
           this.saving.set(false);
-          void this.router.navigate(['/achat/fournisseurs', num]);
+          void this.router.navigate(['/fournisseurs', num]);
         },
         error: (err) => {
           this.saving.set(false);

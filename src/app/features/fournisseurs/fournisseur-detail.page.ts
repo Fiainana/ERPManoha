@@ -41,7 +41,7 @@ export class FournisseurDetailPage implements OnInit {
   ngOnInit(): void {
     this.numero = this.route.snapshot.paramMap.get('numero') || '';
     if (!this.numero) {
-      void this.router.navigate(['/achat/fournisseurs']);
+      void this.router.navigate(['/fournisseurs']);
       return;
     }
     this.load();
