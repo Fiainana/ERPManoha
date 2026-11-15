@@ -1,0 +1,241 @@
+<div class="immo analyse">
+  <app-analyse-entete
+    titre="Magasin et distribution"
+    sousTitre="Ticket, panier, affluence, vendeurs, encaissements et performance du stock"
+  />
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+  @if (loading() && !data()) {
+    <div class="panel"><div class="skeleton">@for (_ of [1, 2, 3, 4]; track $index) {<div class="skeleton__row"></div>}</div></div>
+  }
+
+  @if (data(); as d) {
+    <!-- Indicateurs de vente du magasin -->
+    <div class="stats">
+      <div class="stat">
+        <span>Tickets</span><strong>{{ d.total.nbTickets | number: '1.0-0' }}</strong>
+        <small>{{ d.total.ticketsParJourDeVente | nb }} par jour de vente</small>
+      </div>
+      <div class="stat">
+        <span>Panier moyen HT</span><strong>{{ d.total.panierMoyenHt | compact }}</strong>
+        <small>{{ d.total.panierNetMoyenHt | compact }} après retours</small>
+      </div>
+      <div class="stat">
+        <span>Articles par ticket</span><strong>{{ d.total.lignesParTicket | nb }}</strong>
+        <small>{{ d.total.qteParTicket | nb }} unités par ticket</small>
+      </div>
+      <div class="stat">
+        <span>Prix moyen vendu</span><strong>{{ d.total.prixMoyenUnitaireHt | compact }}</strong>
+        <small>HT par unité</small>
+      </div>
+      <div class="stat">
+        <span>Remises accordées</span><strong>{{ d.total.remiseHt | compact }}</strong>
+        <small>{{ d.total.tauxRemisePct | pct }} du prix de vente</small>
+      </div>
+      <div class="stat" [class.stat--alerte]="(d.total.tauxRetourPct ?? 0) > 5">
+        <span>Taux de retour</span><strong>{{ d.total.tauxRetourPct | pct }}</strong>
+        <small>{{ d.total.retoursHt | compact }} repris</small>
+      </div>
+      <div class="stat">
+        <span>CA par jour de vente</span><strong>{{ d.total.caParJourDeVente | compact }}</strong>
+        <small>{{ d.total.joursDeVente }} jours avec des ventes</small>
+      </div>
+    </div>
+
+    <!-- Comparaison des canaux -->
+    <section class="panel">
+      <div class="card" style="border: 0; padding-bottom: 0">
+        <h2>Par canal <small>comptoir = client {{ d.clientComptoir || 'non configuré' }}</small></h2>
+      </div>
+      <div class="table-scroll" style="--cols: minmax(150px, 1.4fr) repeat(10, minmax(84px, 1fr)); --min: 1080px">
+        <div class="thead">
+          <span>Canal</span>
+          <span class="num">CA HT</span><span class="num">Part</span><span class="num">Taux marque</span>
+          <span class="num">Tickets</span><span class="num">Panier</span><span class="num">Art./ticket</span>
+          <span class="num">Remise</span><span class="num">Retours</span><span class="num">Clients</span><span class="num">CA / jour</span>
+        </div>
+        <ul class="tbody">
+          @for (c of d.canaux; track c.canal) {
+            <li class="trow">
+              <span class="name">{{ c.canal }}</span>
+              <span class="num">{{ c.caHt | compact }}</span>
+              <span class="num">{{ c.partCaPct | pct }}</span>
+              <span class="num" [class.neg]="(c.tauxMarquePct ?? 0) < 0">{{ c.tauxMarquePct | pct }}</span>
+              <span class="num">{{ c.nbTickets }}</span>
+              <span class="num">{{ c.panierMoyenHt | compact }}</span>
+              <span class="num">{{ c.lignesParTicket | nb }}</span>
+              <span class="num">{{ c.tauxRemisePct | pct }}</span>
+              <span class="num">{{ c.tauxRetourPct | pct }}</span>
+              <span class="num">{{ c.nbClients }}</span>
+              <span class="num">{{ c.caParJourDeVente | compact }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <!-- Performance du stock -->
+    <section class="panel">
+      <div class="card" style="border: 0; padding-bottom: 0"><h2>Performance du stock <small>stock actuel</small></h2></div>
+      <dl class="ratios">
+        <div>
+          <dt>GMROI</dt>
+          <dd [class.neg]="(d.stock.gmroi ?? 0) < 0">{{ d.stock.gmroi | nb }}</dd>
+          <p>Marge brute annuelle par Ar de stock (au coût)</p>
+        </div>
+        <div>
+          <dt>Rotation</dt>
+          <dd>{{ d.stock.rotationAn | nb }} fois / an</dd>
+          <p>Coût des ventes annualisé / valeur du stock</p>
+        </div>
+        <div>
+          <dt>Taux d’écoulement</dt>
+          <dd>{{ d.stock.tauxEcoulementPct | pct }}</dd>
+          <p>Vendu / (vendu + reste en stock), articles vendus</p>
+        </div>
+        <div>
+          <dt>Taux de rupture</dt>
+          <dd [class.neg]="(d.stock.tauxRupturePct ?? 0) > 10">{{ d.stock.tauxRupturePct | pct }}</dd>
+          <p>
+            <a routerLink="/analyse/articles" [queryParams]="{ vue: 'ruptures' }">{{ d.stock.nbArticlesEnRupture }} articles</a>
+            vendus sans stock sur {{ d.stock.nbArticlesVendus }}
+          </p>
+        </div>
+        <div>
+          <dt>Stock dormant</dt>
+          <dd>{{ d.stock.tauxDormantPct | pct }}</dd>
+          <p>
+            <a routerLink="/analyse/articles" [queryParams]="{ vue: 'dormants' }">des articles en stock</a>,
+            {{ d.stock.valeurDormante | compact }}
+          </p>
+        </div>
+        <div>
+          <dt>Démarque (inventaires)</dt>
+          @if (d.demarque.nbInventaires > 0) {
+            <dd [class.neg]="(d.demarque.ecartNetValeur ?? 0) < 0">{{ d.demarque.ecartNetValeur | compact }}</dd>
+            <p>
+              {{ d.demarque.manquantsValeur | compact }} manquants, {{ d.demarque.surplusValeur | compact }} surplus ·
+              {{ d.demarque.tauxDemarquePct | pct }} du coût des ventes · {{ d.demarque.nbInventaires }} inventaires validés
+            </p>
+          } @else {
+            <dd>—</dd>
+            <p>Aucun inventaire validé sur la période</p>
+          }
+        </div>
+      </dl>
+    </section>
+
+    <!-- Affluence -->
+    <div class="grille-2">
+      <section class="card">
+        <h2>Ventes par jour de la semaine <small>CA moyen d’un jour de vente</small></h2>
+        <ul class="repartition">
+          @for (j of d.parJourSemaine; track j.jour) {
+            <li>
+              <span>{{ j.libelle }} <span class="muted">({{ j.ticketsMoyensParJour | nb }} t/j)</span></span>
+              <span class="piste"><span class="remplissage" [style.width.%]="largeur(j.caMoyenParJour, maxJour())"></span></span>
+              <span class="num">{{ j.caMoyenParJour | compact }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Tickets par heure <small>heure de la facture</small></h2>
+        <ul class="repartition">
+          @for (h of d.parHeure; track h.heure) {
+            <li>
+              <span>{{ h.libelle }}</span>
+              <span class="piste"><span class="remplissage" [style.width.%]="largeur(h.nbTickets, maxHeure())"></span></span>
+              <span class="num">{{ h.nbTickets }} <span class="muted">({{ h.partTicketsPct | pct }})</span></span>
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
+
+    @if (carte(); as c) {
+      @if (c.heures.length > 0) {
+        <section class="card">
+          <h2>Affluence <small>nombre de tickets par jour et par heure</small></h2>
+          <div class="table-scroll">
+            <table class="carte">
+              <thead>
+                <tr><th></th>@for (h of c.heures; track h) {<th>{{ h }}h</th>}</tr>
+              </thead>
+              <tbody>
+                @for (l of c.lignes; track l.jour) {
+                  <tr>
+                    <th>{{ l.jour }}</th>
+                    @for (x of l.cellules; track x.heure) {
+                      <td [style.background]="x.fond" [style.color]="x.texte"
+                          [attr.title]="l.jour + ' ' + x.heure + 'h : ' + x.n + ' tickets, ' + (x.ca | compact) + ' Ar'">
+                        {{ x.n || '' }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="carte__legende" aria-hidden="true">
+            <span>0</span>
+            @for (r of rampe; track r) {<i [style.background]="r"></i>}
+            <span>{{ c.max }} tickets</span>
+          </div>
+        </section>
+      }
+    }
+
+    <!-- Vendeurs -->
+    <section class="panel">
+      <div class="card" style="border: 0; padding-bottom: 0"><h2>Vendeurs <small>représentant de la facture</small></h2></div>
+      <div class="table-scroll" style="--cols: minmax(180px, 1.6fr) repeat(9, minmax(84px, 1fr)); --min: 1040px">
+        <div class="thead">
+          <span>Vendeur</span>
+          <span class="num">CA HT</span><span class="num">Part</span><span class="num">dont comptoir</span>
+          <span class="num">Taux marque</span><span class="num">Tickets</span><span class="num">Panier</span>
+          <span class="num">Art./ticket</span><span class="num">Remise</span><span class="num">CA / jour</span>
+        </div>
+        <ul class="tbody">
+          @for (v of d.vendeurs; track v.coNo) {
+            <li class="trow">
+              <span class="name">{{ v.nom }}</span>
+              <span class="num">{{ v.caHt | compact }}</span>
+              <span class="num">{{ v.partCaPct | pct }}</span>
+              <span class="num">{{ v.caComptoirHt | compact }}</span>
+              <span class="num" [class.neg]="(v.tauxMarquePct ?? 0) < 0">{{ v.tauxMarquePct | pct }}</span>
+              <span class="num">{{ v.nbTickets }}</span>
+              <span class="num">{{ v.panierMoyenHt | compact }}</span>
+              <span class="num">{{ v.lignesParTicket | nb }}</span>
+              <span class="num">{{ v.tauxRemisePct | pct }}</span>
+              <span class="num">{{ v.caParJourDeVente | compact }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <!-- Encaissements -->
+    <section class="card">
+      <h2>Encaissements par mode de règlement <small>règlements clients de la période</small></h2>
+      <ul class="repartition">
+        @for (e of d.encaissements; track e.mode) {
+          <li>
+            <span>{{ e.libelle }} <span class="muted">({{ e.nb }})</span></span>
+            <span class="piste"><span class="remplissage" [style.width.%]="e.partPct ?? 0"></span></span>
+            <span class="num">{{ e.montant | compact }} <span class="muted">{{ e.partPct | pct }}</span></span>
+          </li>
+        } @empty {
+          <li><span class="muted">Aucun règlement sur la période.</span></li>
+        }
+      </ul>
+    </section>
+
+    <p class="note">
+      Ticket = facture de vente. Articles par ticket = lignes d’articles par facture. Remise = prix unitaire × quantité − montant net.
+      GMROI = marge brute annualisée / valeur du stock au coût (au-dessus de 1, le stock rapporte plus qu’il ne coûte).
+    </p>
+  }
+</div>

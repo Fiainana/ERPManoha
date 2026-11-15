@@ -64,6 +64,24 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
+  {
+    id: 'analyse',
+    label: 'Analytique',
+    icon: 'analytics',
+    section: 'Pilotage',
+    roles: ADMIN,
+    items: [
+      { label: 'Synthèse et ratios', route: '/analyse', roles: ADMIN, exact: true },
+      { label: 'Magasin', route: '/analyse/magasin', roles: ADMIN },
+      { label: 'Marketing et clientèle', route: '/analyse/marketing', roles: ADMIN },
+      { label: 'Articles', route: '/analyse/articles', roles: ADMIN },
+      { label: 'Familles', route: '/analyse/familles', roles: ADMIN },
+      { label: 'Clients', route: '/analyse/clients', roles: ADMIN },
+      { label: 'Fournisseurs', route: '/analyse/fournisseurs', roles: ADMIN },
+      { label: 'Commerciaux', route: '/analyse/commerciaux', roles: ADMIN },
+    ],
+  },
+
   // —— Commercial ——
   {
     id: 'vente',

@@ -1,0 +1,93 @@
+<div class="immo analyse">
+  <app-analyse-entete
+    titre="Marketing et clientèle"
+    sousTitre="Fidélisation, segments de clients (RFM) et articles achetés ensemble"
+  />
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+  @if (loading() && !data()) {
+    <div class="panel"><div class="skeleton">@for (_ of [1, 2, 3, 4]; track $index) {<div class="skeleton__row"></div>}</div></div>
+  }
+
+  @if (data(); as d) {
+    <h2 class="section-titre">Fidélisation <small class="muted">clients en compte, hors comptoir (acheteurs anonymes)</small></h2>
+    <div class="stats">
+      <div class="stat">
+        <span>Clients actifs</span><strong>{{ d.fidelisation.nbClientsActifs }}</strong>
+        <small>{{ d.fidelisation.nbClientsActifsN1 }} un an plus tôt</small>
+      </div>
+      <div class="stat">
+        <span>Rétention</span><strong>{{ d.fidelisation.tauxRetentionPct | pct }}</strong>
+        <small>clients de l’an dernier revenus acheter</small>
+      </div>
+      <div class="stat" [class.stat--alerte]="(d.fidelisation.tauxAttritionPct ?? 0) > 30">
+        <span>Attrition</span><strong>{{ d.fidelisation.tauxAttritionPct | pct }}</strong>
+        <small>clients de l’an dernier perdus</small>
+      </div>
+      <div class="stat">
+        <span>Réachat</span><strong>{{ d.fidelisation.tauxReachatPct | pct }}</strong>
+        <small>ont acheté au moins 2 fois</small>
+      </div>
+      <div class="stat">
+        <span>Fréquence d’achat</span><strong>{{ d.fidelisation.frequenceAchat | nb }}</strong>
+        <small>factures par client · tous les {{ d.fidelisation.delaiMoyenEntreAchatsJours | jours }}</small>
+      </div>
+      <div class="stat">
+        <span>Valeur client</span><strong>{{ d.fidelisation.caMoyenParClient | compact }}</strong>
+        <small>CA moyen · marge {{ d.fidelisation.margeMoyenneParClient | compact }}</small>
+      </div>
+      <div class="stat">
+        <span>Nouveaux clients</span><strong>{{ d.fidelisation.partNouveauxPct | pct }}</strong>
+        <small>des clients actifs</small>
+      </div>
+    </div>
+
+    <h2 class="section-titre">Segments de clients (RFM)</h2>
+    <p class="note">
+      Chaque client en compte reçoit une note de 1 à 5 sur la récence de son dernier achat, sa fréquence et son montant,
+      puis rejoint un segment. Cliquez sur un segment pour voir ses clients.
+    </p>
+    <div class="segments">
+      @for (s of d.segments; track s.id) {
+        <button type="button" [routerLink]="['/analyse/clients']" [queryParams]="{ vue: 'segment-' + s.id, tri: 'ca' }">
+          <span>{{ s.libelle }}</span>
+          <strong>{{ s.nbClients }} clients <small>· {{ s.partCaPct | pct }} du CA</small></strong>
+          <small>{{ s.caHt | compact }} HT · encours {{ s.encours | compact }}</small>
+          <small>{{ s.action }}</small>
+        </button>
+      }
+    </div>
+
+    <section class="panel">
+      <div class="card" style="border: 0; padding-bottom: 0">
+        <h2>Articles achetés ensemble <small>pistes de ventes croisées, d’implantation et de lots</small></h2>
+      </div>
+      <div class="table-scroll" style="--cols: minmax(220px, 2fr) minmax(220px, 2fr) repeat(4, minmax(90px, 0.8fr)); --min: 960px">
+        <div class="thead">
+          <span>Article A</span><span>Article B</span>
+          <span class="num">Tickets</span><span class="num">Support</span><span class="num">Si A, alors B</span><span class="num">Lift</span>
+        </div>
+        <ul class="tbody">
+          @for (a of d.associations; track a.articleA + a.articleB) {
+            <li class="trow">
+              <a class="name" [routerLink]="['/analyse/articles', a.articleA]"><span class="ref">{{ a.articleA }}</span> {{ a.designationA }}</a>
+              <a class="name" [routerLink]="['/analyse/articles', a.articleB]"><span class="ref">{{ a.articleB }}</span> {{ a.designationB }}</a>
+              <span class="num">{{ a.nbTicketsEnsemble }}</span>
+              <span class="num">{{ a.supportPct | pct }}</span>
+              <span class="num">{{ a.confianceAversBPct | pct }}</span>
+              <span class="num">{{ a.lift | nb }}</span>
+            </li>
+          } @empty {
+            <li class="trow"><span class="muted">Pas assez de tickets à plusieurs articles sur la période.</span></li>
+          }
+        </ul>
+      </div>
+      <footer class="panel__footer">
+        Support = part des tickets qui contiennent les deux articles · « Si A, alors B » = part des tickets de A qui contiennent aussi B ·
+        Lift &gt; 1 = associés plus souvent que le hasard
+      </footer>
+    </section>
+  }
+</div>

@@ -319,6 +319,12 @@ export const routes: Routes = [
       },
 
       {
+        path: 'analyse',
+        canActivate: [roleGuard('Admin')],
+        loadChildren: () => import('./features/analyse/analyse.routes').then((m) => m.ANALYSE_ROUTES),
+      },
+
+      {
         path: 'immo',
         canActivate: [roleGuard('Admin', 'Compta')],
         loadChildren: () => import('./features/immo/immo.routes').then((m) => m.IMMO_ROUTES),

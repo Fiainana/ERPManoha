@@ -1,0 +1,131 @@
+<div
+  class="immo analyse"
+  style="--cols: minmax(220px, 2.6fr) 0.4fr repeat(3, minmax(90px, 1fr)) 0.8fr repeat(4, minmax(90px, 1fr)) minmax(120px, 1.1fr); --min: 1320px"
+>
+  <app-analyse-entete titre="Analyse des articles" sousTitre="Ce qui se vend, ce qui rapporte, ce qui dort en stock" />
+
+  @if (data(); as d) {
+    <div class="stats">
+      <div class="stat">
+        <span>CA HT</span><strong>{{ d.resume.caHt | compact }}</strong>
+        <small>{{ d.resume.nbArticlesVendus }} articles vendus</small>
+      </div>
+      <div class="stat" [class.stat--alerte]="d.resume.margeBrute < 0">
+        <span>Marge brute</span><strong>{{ d.resume.margeBrute | compact }}</strong>
+        <small>Taux de marque {{ d.resume.tauxMarquePct | pct }}</small>
+      </div>
+      @for (a of d.resume.abc; track a.classe) {
+        <div class="stat">
+          <span>Classe {{ a.classe }}</span><strong>{{ a.partCaPct | pct }} du CA</strong>
+          <small>{{ a.nbArticles }} articles ({{ a.partArticlesPct | pct }}) · marge {{ a.margeBrute | compact }}</small>
+        </div>
+      }
+      <div class="stat">
+        <span>Stock dormant</span><strong>{{ d.resume.valeurDormante | compact }}</strong>
+        <small>{{ d.resume.nbDormants }} articles · {{ d.resume.joursDormant }} j sans vente</small>
+      </div>
+    </div>
+  }
+
+  <div class="toolbar">
+    <label class="field">
+      <span>Recherche</span>
+      <input type="text" [(ngModel)]="search" (ngModelChange)="rechercher()" placeholder="Référence, désignation, fournisseur" />
+    </label>
+    <label class="field field--sm">
+      <span>Famille</span>
+      <select [(ngModel)]="famille" (ngModelChange)="changerFamille()">
+        <option value="">Toutes</option>
+        @for (f of data()?.extra?.familles ?? []; track f.code) {
+          <option [value]="f.code">{{ f.intitule }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="vues" role="group" aria-label="Filtre">
+    @for (v of vues; track v.id) {
+      <button type="button" [class.is-active]="vue() === v.id" (click)="choisirVue(v.id)">
+        {{ v.libelle }}
+        @if (data() && compte(v.id, data()!.resume) !== null) {
+          <span>{{ compte(v.id, data()!.resume) }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="panel">
+    <div class="table-scroll">
+      <div class="thead">
+        <span><button type="button" [class.is-tri]="tri() === 'reference'" (click)="trier('reference')">Article {{ fleche('reference') }}</button></span>
+        <span>ABC</span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'qte'" (click)="trier('qte')">Qté vendue {{ fleche('qte') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'ca'" (click)="trier('ca')">CA HT {{ fleche('ca') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'marge'" (click)="trier('marge')">Marge {{ fleche('marge') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'taux'" (click)="trier('taux')">Taux {{ fleche('taux') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'evolution'" (click)="trier('evolution')">Évol. {{ fleche('evolution') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'stock'" (click)="trier('stock')">Stock {{ fleche('stock') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'couverture'" (click)="trier('couverture')">Couverture {{ fleche('couverture') }}</button></span>
+        <span class="num"><button type="button" [class.is-tri]="tri() === 'sans-vente'" (click)="trier('sans-vente')">Dern. vente {{ fleche('sans-vente') }}</button></span>
+        <span>Signaux</span>
+      </div>
+      @if (loading() && !data()) {
+        <div class="skeleton">
+          @for (_ of [1, 2, 3, 4, 5]; track $index) {
+            <div class="skeleton__row"></div>
+          }
+        </div>
+      } @else if (data(); as d) {
+        @if (items().length === 0 && !loading()) {
+          <div class="empty"><h2>Aucun article</h2><p>Aucun article ne correspond à ce filtre sur la période.</p></div>
+        }
+        <ul class="tbody">
+          @for (a of items(); track a.reference) {
+            <li>
+              <a class="trow" [routerLink]="['/analyse/articles', a.reference]">
+                <span class="name">
+                  <span class="ref">{{ a.reference }}</span> {{ a.designation }}
+                  <span class="sub">{{ a.familleIntitule ?? '—' }}{{ a.fournisseurIntitule ? ' · ' + a.fournisseurIntitule : '' }}</span>
+                </span>
+                <span><span class="classe" [attr.data-classe]="a.classe">{{ a.classe ?? '–' }}</span></span>
+                <span class="num">{{ a.qteVendue | number: '1.0-2' }}</span>
+                <span class="num">{{ a.caHt | compact }}<span class="sub">{{ a.partCaPct | pct }}</span></span>
+                <span class="num" [class.neg]="a.margeBrute < 0">{{ a.margeBrute | compact }}</span>
+                <span class="num" [class.neg]="(a.tauxMarquePct ?? 0) < 0">{{ a.tauxMarquePct | pct }}</span>
+                <span class="num"><b [class]="sens(a.evolutionPct)">{{ a.evolutionPct | pct: true }}</b></span>
+                <span class="num">{{ a.qteStock | number: '1.0-2' }}<span class="sub">{{ a.valeurStock | compact }}</span></span>
+                <span class="num">{{ a.couvertureJours | jours }}</span>
+                <span class="num">{{ a.derniereVente ? (a.derniereVente | date: 'dd/MM/yy') : '—' }}<span class="sub">{{ a.joursSansVente | jours }}</span></span>
+                <span class="drapeaux">
+                  @if (a.margeNegative) {<span class="badge" data-statut="danger">À perte</span>}
+                  @else if (a.margeFaible) {<span class="badge" data-statut="warn">Marge faible</span>}
+                  @if (a.rupture) {<span class="badge" data-statut="danger">Rupture</span>}
+                  @if (a.sousMini) {<span class="badge" data-statut="warn">Sous mini</span>}
+                  @if (a.dormant) {<span class="badge">Dormant</span>}
+                  @if (a.enSommeil) {<span class="badge">En sommeil</span>}
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+        <div [appScrollInfini]="items().length" (visible)="suite()"></div>
+        <footer class="panel__footer">
+          @if (loadingSuite()) {
+            Chargement…
+          } @else {
+            {{ items().length }} / {{ d.total }} articles{{ fin() ? '' : ' · faites défiler pour la suite' }}
+          }
+        </footer>
+      }
+    </div>
+  </div>
+
+  <p class="note">
+    ABC : A = articles qui font 80 % du CA, B = les 15 % suivants, C = le reste. Couverture = stock / ventes moyennes par jour.
+    Marge faible : taux de marque sous {{ data()?.resume?.tauxMargeFaible ?? 10 }} %.
+  </p>
+</div>

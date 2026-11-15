@@ -1,0 +1,257 @@
+<div class="immo analyse">
+  <app-analyse-entete
+    titre="Analyse"
+    sousTitre="Indicateurs et ratios d’aide à la décision : ventes, marge, stock, trésorerie"
+  />
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <div class="panel">
+      <div class="skeleton">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (data(); as d) {
+    @if (d.alertes.length > 0) {
+      <div class="alertes">
+        @for (a of d.alertes; track a.message) {
+          <div class="alert" [class.alert--warn]="a.niveau !== 'danger'" role="status">
+            {{ a.message }}
+            @if (a.lien; as l) {
+              <a [routerLink]="lien(l).route" [queryParams]="lien(l).params">Voir le détail</a>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Indicateurs clés -->
+    <div class="stats">
+      <div class="stat">
+        <span>CA HT</span>
+        <strong>{{ d.ventes.caHt | compact }}</strong>
+        <small><b [class]="sens(d.ventes.evolutionPct)">{{ d.ventes.evolutionPct | pct: true }}</b> vs {{ d.ventes.caHtN1 | compact }}</small>
+      </div>
+      <div class="stat" [class.stat--alerte]="d.ventes.margeBrute < 0">
+        <span>Marge brute</span>
+        <strong>{{ d.ventes.margeBrute | compact }}</strong>
+        <small>Taux de marque {{ d.ventes.tauxMarquePct | pct }}</small>
+      </div>
+      <div class="stat">
+        <span>Factures</span>
+        <strong>{{ d.ventes.nbFactures }}</strong>
+        <small>{{ d.ventes.nbFacturesN1 }} un an plus tôt</small>
+      </div>
+      <div class="stat">
+        <span>Panier moyen HT</span>
+        <strong>{{ d.ventes.panierMoyenHt | compact }}</strong>
+        <small><b [class]="sens(d.ventes.evolutionPanierPct)">{{ d.ventes.evolutionPanierPct | pct: true }}</b> sur un an</small>
+      </div>
+      <div class="stat">
+        <span>Clients actifs</span>
+        <strong>{{ d.ventes.nbClients }}</strong>
+        <small>{{ d.ventes.nbClientsN1 }} un an plus tôt</small>
+      </div>
+      <div class="stat">
+        <span>Devis facturés</span>
+        <strong>{{ d.devis.tauxTransformationPct | pct }}</strong>
+        <small>{{ d.devis.nbTransformes }} / {{ d.devis.nb }} devis</small>
+      </div>
+    </div>
+
+    <!-- Évolution -->
+    <section class="card">
+      <h2>Évolution <small>{{ d.periode.nbJours }} jours</small></h2>
+      <app-graphique-evolution
+        [tranches]="d.evolution"
+        [indicateurs]="indicateurs"
+        [granulariteServeur]="d.periode.granulariteAuto ? d.periode.granularite : null"
+      />
+    </section>
+
+    <!-- Ratios -->
+    <div class="grille-2">
+      <section class="panel">
+        <div class="card" style="border: 0; padding-bottom: 0"><h2>Rentabilité</h2></div>
+        <dl class="ratios">
+          <div>
+            <dt>Taux de marque</dt>
+            <dd>{{ d.ventes.tauxMarquePct | pct }}</dd>
+            <p>Marge / CA HT. Un an plus tôt : {{ d.ventes.tauxMarquePctN1 | pct }}</p>
+          </div>
+          <div>
+            <dt>Taux de marge</dt>
+            <dd>{{ d.ventes.tauxMargePct | pct }}</dd>
+            <p>Marge / coût de revient</p>
+          </div>
+          <div>
+            <dt>Coefficient</dt>
+            <dd>{{ d.ventes.coefficient | nb }}</dd>
+            <p>CA HT / coût de revient</p>
+          </div>
+          <div>
+            <dt>Taux de retour</dt>
+            <dd>{{ d.ventes.tauxRetourPct | pct }}</dd>
+            <p>{{ d.ventes.retoursHt | compact }} de retours sur {{ d.ventes.ventesBrutesHt | compact }} vendus</p>
+          </div>
+          <div>
+            <dt>CA moyen par jour</dt>
+            <dd>{{ d.ventes.caMoyenJourHt | compact }}</dd>
+            <p>Sur {{ d.periode.nbJours }} jours calendaires</p>
+          </div>
+          <div>
+            <dt>Évolution de la marge</dt>
+            <dd [class]="sens(d.ventes.evolutionMargePct)">{{ d.ventes.evolutionMargePct | pct: true }}</dd>
+            <p>{{ d.ventes.margeBruteN1 | compact }} un an plus tôt</p>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <div class="card" style="border: 0; padding-bottom: 0"><h2>Stock <small>valeur actuelle</small></h2></div>
+        <dl class="ratios">
+          <div>
+            <dt>Valeur du stock</dt>
+            <dd>{{ d.stock.valeur | compact }}</dd>
+            <p>{{ d.stock.nbArticles }} articles en stock</p>
+          </div>
+          <div>
+            <dt>Rotation</dt>
+            <dd>{{ d.stock.rotationAn | nb }} fois / an</dd>
+            <p>Coût des ventes annualisé / valeur du stock</p>
+          </div>
+          <div>
+            <dt>Couverture</dt>
+            <dd>{{ d.stock.couvertureJours | jours }}</dd>
+            <p>Jours de ventes que le stock permet de couvrir</p>
+          </div>
+          <div>
+            <dt>Stock dormant</dt>
+            <dd>{{ d.stock.partDormantePct | pct }}</dd>
+            <p>
+              <a routerLink="/analyse/articles" [queryParams]="{ vue: 'dormants' }">{{ d.stock.nbDormants }} articles</a>
+              sans vente depuis {{ d.stock.joursDormant }} j · {{ d.stock.valeurDormante | compact }}
+            </p>
+          </div>
+          <div>
+            <dt>Ruptures</dt>
+            <dd>{{ d.stock.nbRuptures }}</dd>
+            <p><a routerLink="/analyse/articles" [queryParams]="{ vue: 'ruptures' }">Articles vendus sans stock</a></p>
+          </div>
+          <div>
+            <dt>Sous le stock mini</dt>
+            <dd>{{ d.stock.nbSousMini }}</dd>
+            <p><a routerLink="/analyse/articles" [queryParams]="{ vue: 'sous-mini' }">Voir les articles</a></p>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <div class="card" style="border: 0; padding-bottom: 0"><h2>Trésorerie <small>à aujourd’hui</small></h2></div>
+        <dl class="ratios">
+          <div>
+            <dt>Créances clients</dt>
+            <dd>{{ d.tresorerie.creancesClients | compact }}</dd>
+            <p>{{ d.tresorerie.nbFacturesImpayees }} factures · {{ d.tresorerie.nbClientsDebiteurs }} clients</p>
+          </div>
+          <div>
+            <dt>Délai d’encaissement (DSO)</dt>
+            <dd>{{ d.tresorerie.dsoJours | jours }}</dd>
+            <p>Créances / CA TTC moyen par jour</p>
+          </div>
+          <div>
+            <dt>Dettes fournisseurs</dt>
+            <dd>{{ d.tresorerie.dettesFournisseurs | compact }}</dd>
+            <p>{{ d.tresorerie.nbFacturesFournisseursNonReglees }} factures non réglées</p>
+          </div>
+          <div>
+            <dt>Délai de paiement (DPO)</dt>
+            <dd>{{ d.tresorerie.dpoJours | jours }}</dd>
+            <p>Dettes / achats TTC moyens par jour</p>
+          </div>
+          <div>
+            <dt>BFR d’exploitation</dt>
+            <dd>{{ d.tresorerie.bfrExploitation | compact }}</dd>
+            <p>Stock + créances − dettes fournisseurs</p>
+          </div>
+          <div>
+            <dt>Cycle de trésorerie</dt>
+            <dd>{{ d.tresorerie.cycleConversionJours | jours }}</dd>
+            <p>DSO + couverture du stock − DPO</p>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <div class="card" style="border: 0; padding-bottom: 0"><h2>Achats</h2></div>
+        <dl class="ratios">
+          <div>
+            <dt>Achats HT</dt>
+            <dd>{{ d.achats.achatsHt | compact }}</dd>
+            <p><b [class]="sens(d.achats.evolutionPct, true)">{{ d.achats.evolutionPct | pct: true }}</b> vs {{ d.achats.achatsHtN1 | compact }}</p>
+          </div>
+          <div>
+            <dt>Achats / ventes</dt>
+            <dd>{{ d.achats.ratioAchatsVentesPct | pct }}</dd>
+            <p>Au-dessus de 100 % : le stock augmente</p>
+          </div>
+          <div>
+            <dt>Fournisseurs actifs</dt>
+            <dd>{{ d.achats.nbFournisseurs }}</dd>
+            <p>{{ d.achats.nbFactures }} factures fournisseurs</p>
+          </div>
+          <div>
+            <dt>Devis en cours</dt>
+            <dd>{{ d.devis.montantEnCoursHt | compact }}</dd>
+            <p>{{ d.devis.nbEnCours }} devis non facturés de la période</p>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <div class="grille-2">
+      <section class="card">
+        <h2>Créances clients par ancienneté <small>{{ d.tresorerie.creancesClients | compact }}</small></h2>
+        <ul class="repartition">
+          @for (t of d.tresorerie.tranchesClients; track t.libelle; let last = $last) {
+            <li>
+              <span>{{ t.libelle }} <span class="muted">({{ t.nb }})</span></span>
+              <span class="piste"><span class="remplissage" [class.remplissage--alerte]="last" [style.width.%]="largeur(t, d.tresorerie.tranchesClients)"></span></span>
+              <span class="num">{{ t.montant | compact }}</span>
+            </li>
+          }
+        </ul>
+        <p class="note" style="margin-top: 0.75rem">
+          <a routerLink="/analyse/clients" [queryParams]="{ vue: 'a-risque', tri: 'retard' }">Clients avec des impayés de plus de 90 jours</a>
+        </p>
+      </section>
+      <section class="card">
+        <h2>Dettes fournisseurs par ancienneté <small>{{ d.tresorerie.dettesFournisseurs | compact }}</small></h2>
+        <ul class="repartition">
+          @for (t of d.tresorerie.tranchesFournisseurs; track t.libelle) {
+            <li>
+              <span>{{ t.libelle }} <span class="muted">({{ t.nb }})</span></span>
+              <span class="piste"><span class="remplissage" [style.width.%]="largeur(t, d.tresorerie.tranchesFournisseurs)"></span></span>
+              <span class="num">{{ t.montant | compact }}</span>
+            </li>
+          }
+        </ul>
+        <p class="note" style="margin-top: 0.75rem">
+          <a routerLink="/analyse/fournisseurs" [queryParams]="{ vue: 'dettes', tri: 'dettes' }">Fournisseurs à payer</a>
+        </p>
+      </section>
+    </div>
+
+    <p class="note">
+      CA = lignes des factures de vente, retours déduits. Marge = CA − prix de revient Sage des lignes (DL_PrixRU).
+      Stock, créances et dettes : situation actuelle, quelle que soit la période.
+    </p>
+  }
+</div>
