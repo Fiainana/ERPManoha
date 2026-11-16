@@ -7,7 +7,10 @@ import {
   signal,
 } from '@angular/core';
 import {
+  NavigationCancel,
   NavigationEnd,
+  NavigationError,
+  NavigationStart,
   Router,
   RouterLink,
   RouterLinkActive,
@@ -26,7 +29,7 @@ const MQ_DESKTOP = '(min-width: 960px)';
   selector: 'app-layout',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './layout.component.html',
-  styleUrls: ['./layout.component.scss', './layout.notif.scss'],
+  styleUrls: ['./layout.component.scss', './layout.notif.scss', './layout.chargement.scss'],
 })
 export class LayoutComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
@@ -41,6 +44,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
   );
   readonly pageTitle = signal('Tableau de bord');
   readonly expandedGroups = signal<Record<string, boolean>>({});
+  /** Navigation en cours (écran chargé à la demande) : barre de chargement en haut de page. */
+  readonly chargement = signal(false);
+  private delaiChargement?: ReturnType<typeof setTimeout>;
+  private chargementSub?: Subscription;
 
   private navSub?: Subscription;
   private mq?: MediaQueryList;
@@ -64,6 +71,17 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.expandActiveGroup(this.router.url);
     this.notifications.start();
 
+    // Affichée seulement si la navigation dure plus de 120 ms, pour ne pas clignoter.
+    this.chargementSub = this.router.events.subscribe((e) => {
+      if (e instanceof NavigationStart) {
+        clearTimeout(this.delaiChargement);
+        this.delaiChargement = setTimeout(() => this.chargement.set(true), 120);
+      } else if (e instanceof NavigationEnd || e instanceof NavigationCancel || e instanceof NavigationError) {
+        clearTimeout(this.delaiChargement);
+        this.chargement.set(false);
+      }
+    });
+
     this.navSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
@@ -77,6 +95,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
+    this.chargementSub?.unsubscribe();
+    clearTimeout(this.delaiChargement);
     this.notifications.stop();
     if (this.mq && this.mqHandler) {
       this.mq.removeEventListener('change', this.mqHandler);

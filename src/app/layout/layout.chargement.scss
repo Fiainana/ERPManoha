@@ -1,0 +1,76 @@
+// Chargement d'un écran (navigation vers une page chargée à la demande).
+
+.content {
+  position: relative;
+}
+
+// Barre fine qui défile en haut de la zone de contenu.
+.nav-chargement {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 3px;
+  margin: -1.15rem -1.35rem 0;
+  overflow: hidden;
+  background: var(--me-red-soft);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: var(--me-red);
+    border-radius: 3px;
+    animation: nav-chargement-glisse 1.1s ease-in-out infinite;
+  }
+}
+
+// Voile léger sur l'écran précédent, avec une roue au centre, pour montrer que le clic a été pris en compte.
+.nav-chargement__voile {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding-top: 18vh;
+  background: color-mix(in srgb, var(--me-bg, #f5f5f5) 55%, transparent);
+  animation: nav-chargement-apparait 0.2s ease-out;
+  pointer-events: none;
+}
+
+.nav-chargement__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--me-red-soft);
+  border-top-color: var(--me-red);
+  border-radius: 50%;
+  animation: nav-chargement-tourne 0.8s linear infinite;
+}
+
+@keyframes nav-chargement-glisse {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes nav-chargement-tourne {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nav-chargement-apparait {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-chargement::before,
+  .nav-chargement__spinner {
+    animation-duration: 2.5s;
+  }
+}

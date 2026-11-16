@@ -197,6 +197,10 @@
     </header>
 
     <main class="content">
+      @if (chargement()) {
+        <div class="nav-chargement" role="progressbar" aria-label="Chargement de la page"></div>
+        <div class="nav-chargement__voile" aria-hidden="true"><span class="nav-chargement__spinner"></span></div>
+      }
       <router-outlet />
     </main>
   </div>

@@ -59,6 +59,11 @@ try {
 set -e
 rm -rf /var/www/erp-manoha.new && mkdir -p /var/www/erp-manoha.new
 tar -xzf /tmp/erp-manoha.tar.gz -C /var/www/erp-manoha.new
+# Garde les fichiers JS/CSS des versions précédentes (30 jours) : un onglet resté ouvert avant la mise à jour
+# peut encore charger les écrans à la demande. Sans eux, le clic sur un menu (Analytique…) ne fait rien.
+for ancien in /var/www/erp-manoha /var/www/erp-manoha.prev; do
+  [ -d "$ancien" ] && find "$ancien" -maxdepth 1 -type f -regex '.*\.\(js\|css\)$' -mtime -30 -exec cp -np -t /var/www/erp-manoha.new/ {} + || true
+done
 chown -R www-data:www-data /var/www/erp-manoha.new
 rm -rf /var/www/erp-manoha.prev
 [ -d /var/www/erp-manoha ] && mv /var/www/erp-manoha /var/www/erp-manoha.prev
