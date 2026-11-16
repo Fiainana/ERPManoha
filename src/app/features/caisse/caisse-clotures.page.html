@@ -1,0 +1,131 @@
+<div class="rh caisse">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Caisse</span>
+        <span>›</span>
+        <strong>Historique des clôtures</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Historique des clôtures</h1>
+      </div>
+      <p class="subtitle">Clôtures, écarts de caisse, versements en banque et journées encore à clôturer</p>
+    </div>
+    <div class="rh__actions">
+      <a class="btn btn--primary" routerLink="/caisse/cloture">Clôture du jour</a>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <label class="inline">Du <input type="date" [(ngModel)]="debut" (change)="charger()" /></label>
+    <label class="inline">au <input type="date" [(ngModel)]="fin" (change)="charger()" /></label>
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (data(); as d) {
+    <section class="kpis">
+      <div class="kpi" [attr.data-tone]="d.resume.nbNonCloturees ? 'danger' : 'ok'">
+        <span>Journées non clôturées</span>
+        <strong>{{ d.resume.nbNonCloturees }}</strong>
+        <small>avec des encaissements</small>
+      </div>
+      <div class="kpi" [attr.data-tone]="d.resume.nbAVerser ? 'warn' : ''">
+        <span>À verser en banque</span>
+        <strong>{{ d.resume.montantAVerser | number: '1.0-0' }} Ar</strong>
+        <small>{{ d.resume.nbAVerser }} clôture(s)</small>
+      </div>
+      <div class="kpi" [attr.data-tone]="d.resume.nbEcarts ? 'danger' : 'ok'">
+        <span>Écarts de caisse</span>
+        <strong>{{ d.resume.totalEcarts > 0 ? '+' : '' }}{{ d.resume.totalEcarts | number: '1.0-0' }} Ar</strong>
+        <small>{{ d.resume.nbEcarts }} journée(s) avec écart</small>
+      </div>
+      <div class="kpi">
+        <span>Encaissé sur la période</span>
+        <strong>{{ d.resume.totalEncaisse | number: '1.0-0' }} Ar</strong>
+        <small>{{ d.resume.nbClotures }} clôture(s), {{ d.resume.nbVersees }} versée(s)</small>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button type="button" class="tab" [class.tab--active]="filtre() === 'tous'" (click)="filtre.set('tous')">Toutes</button>
+      <button type="button" class="tab" [class.tab--active]="filtre() === 'nonCloturees'" (click)="filtre.set('nonCloturees')">
+        Non clôturées ({{ d.resume.nbNonCloturees }})
+      </button>
+      <button type="button" class="tab" [class.tab--active]="filtre() === 'aVerser'" (click)="filtre.set('aVerser')">
+        À verser ({{ d.resume.nbAVerser }})
+      </button>
+      <button type="button" class="tab" [class.tab--active]="filtre() === 'ecarts'" (click)="filtre.set('ecarts')">Avec écart</button>
+    </nav>
+
+    <section class="panel">
+      <div class="table-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Journée</th>
+              <th>Statut</th>
+              <th>Code</th>
+              <th class="num">Encaissé</th>
+              <th class="num">Espèces attendues</th>
+              <th class="num">Comptées</th>
+              <th class="num">Écart</th>
+              <th>Versement</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (i of items(); track i.jour) {
+              <tr class="clickable" (click)="ouvrir(i)">
+                <td class="nowrap strong">{{ i.jour | date: 'EEE dd/MM/yyyy' }}</td>
+                <td>
+                  <span class="badge" [attr.data-tone]="statuts[i.statut].ton">{{ statuts[i.statut].libelle }}</span>
+                  @if (i.modifieDansSage) {
+                    <span class="badge" data-tone="warn" title="Les encaissements ont changé dans Sage depuis la clôture">modifié dans Sage</span>
+                  }
+                </td>
+                <td class="ref nowrap">{{ i.code ?? '—' }}</td>
+                <td class="num">{{ i.totalEncaisse | number: '1.0-0' }}<span class="sub">{{ i.nbReglements }} règl.</span></td>
+                <td class="num">{{ i.especesAttendues | number: '1.0-0' }}</td>
+                <td class="num">{{ i.especesComptees === null ? '—' : (i.especesComptees | number: '1.0-0') }}</td>
+                <td class="num" [class.ecart--ko]="!!i.ecart" [title]="i.motifEcart ?? ''">
+                  {{ i.ecart === null ? '—' : (i.ecart > 0 ? '+' : '') + (i.ecart | number: '1.0-0') }}
+                </td>
+                <td class="small">
+                  @if (i.versementDate) {
+                    {{ i.versementMontant | number: '1.0-0' }} Ar · {{ i.versementBanque }}
+                    <span class="sub">le {{ i.versementDate | date: 'dd/MM' }} · bordereau {{ i.versementBordereau }}</span>
+                    @if (i.ecartVersement) {
+                      <span class="sub ecart--ko">écart {{ i.ecartVersement | number: '1.0-0' }} Ar</span>
+                    }
+                  } @else if (i.statut === 'Cloturee') {
+                    <span class="muted">à verser : {{ i.montantAVerser | number: '1.0-0' }} Ar</span>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="nowrap">
+                  @if (i.statut === 'NonCloturee' || i.statut === 'Rouverte') {
+                    <span class="linkish small">Clôturer</span>
+                  } @else {
+                    <button type="button" class="linkish small" (click)="imprimer(i, $event)">PDF</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="9" class="muted">Aucune journée pour ce filtre.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else if (loading()) {
+    <div class="panel">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  }
+</div>

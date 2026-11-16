@@ -37,6 +37,7 @@ const RH: AppRole[] = ['Admin', 'HR'];
 const RH_PLANNING: AppRole[] = ['Admin', 'HR', 'Planning'];
 const COMPTA: AppRole[] = ['Admin', 'Compta'];
 const ACHAT: AppRole[] = ['Admin', 'Achat'];
+const CAISSE: AppRole[] = ['Admin', 'Caisse'];
 
 /**
  * Menu ERP, organisé par métier (hors comptoir et borne d'impression).
@@ -82,6 +83,19 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Clients', route: '/analyse/clients', roles: ADMIN },
       { label: 'Fournisseurs', route: '/analyse/fournisseurs', roles: ADMIN },
       { label: 'Commerciaux', route: '/analyse/commerciaux', roles: ADMIN },
+    ],
+  },
+
+  // —— Caisse ——
+  {
+    id: 'caisse',
+    label: 'Caisse',
+    icon: 'payments',
+    section: 'Commercial',
+    roles: CAISSE,
+    items: [
+      { label: 'Clôture du jour', route: '/caisse/cloture', roles: CAISSE },
+      { label: 'Historique des clôtures', route: '/caisse/clotures', roles: CAISSE },
     ],
   },
 

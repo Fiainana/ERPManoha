@@ -1,0 +1,500 @@
+<div class="rh caisse">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Caisse</span>
+        <span>›</span>
+        <strong>Clôture du jour</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Clôture de caisse</h1>
+        @if (cloture(); as c) {
+          <span class="badge" [attr.data-tone]="statuts[c.statut].ton">{{ statuts[c.statut].libelle }}</span>
+        } @else if (data()) {
+          <span class="badge" data-tone="warn">Pas encore clôturée</span>
+        }
+      </div>
+      <p class="subtitle">
+        {{ jour | date: 'EEEE d MMMM yyyy' }} · tous les encaissements clients du magasin, lus dans Sage
+      </p>
+    </div>
+    <div class="rh__actions">
+      <label class="inline">Journée <input type="date" [(ngModel)]="jour" (change)="changerJour()" [max]="aujourdhui" /></label>
+      <a class="btn btn--ghost" routerLink="/caisse/clotures">Historique</a>
+    </div>
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <div class="panel">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  }
+
+  @if (data(); as d) {
+    <!-- Clôture faite : code du versement -->
+    @if (cloture(); as c) {
+      @if (c.statut !== 'Rouverte') {
+        <section class="code-cloture">
+          <div>
+            <span class="code-cloture__label">Référence à reporter sur le bordereau de versement</span>
+            <button type="button" class="code-cloture__code" (click)="copierCode()" title="Copier le code">{{ c.code }}</button>
+            <span class="code-cloture__meta">Clôturée par {{ c.cloturePar }} le {{ c.clotureLe | date: 'dd/MM/yyyy à HH:mm' }}</span>
+          </div>
+          <div class="code-cloture__verser">
+            <span>Espèces à verser</span>
+            <strong>{{ c.montantAVerser | number: '1.0-0' }} Ar</strong>
+            @if (c.versement; as v) {
+              <span class="badge" data-tone="ok">Versé le {{ v.date | date: 'dd/MM/yyyy' }} · {{ v.banque }}</span>
+            }
+          </div>
+          <div class="code-cloture__actions">
+            <button type="button" class="btn btn--primary" (click)="imprimer()">Imprimer la clôture</button>
+            <button type="button" class="btn btn--ghost" (click)="ouvrirVersement()">
+              {{ c.versement ? 'Corriger le versement' : 'Enregistrer le versement' }}
+            </button>
+            @if (estAdmin) {
+              <button type="button" class="btn btn--ghost" (click)="ouvrirReouverture()">Rouvrir</button>
+            }
+          </div>
+        </section>
+
+        @if (c.versement; as v) {
+          <div class="alert" [class.alert--ok]="!v.ecart" [class.alert--warn]="!!v.ecart">
+            Versement de <strong>{{ v.montant | number: '1.0-0' }} Ar</strong> à {{ v.banque }} le {{ v.date | date: 'dd/MM/yyyy' }},
+            bordereau n° <strong>{{ v.bordereau }}</strong> (saisi par {{ v.par }}).
+            @if (v.ecart) {
+              Écart de {{ v.ecart | number: '1.0-0' }} Ar avec les espèces comptées.
+            }
+            @if (v.note) {
+              <span class="muted">— {{ v.note }}</span>
+            }
+          </div>
+        }
+      } @else {
+        <div class="alert alert--warn">
+          Cette clôture a été rouverte (code {{ c.code }} conservé). Corrigez le billetage, puis clôturez de nouveau.
+        </div>
+      }
+    }
+
+    @if (d.ecartsSage; as e) {
+      <div class="alert alert--warn">
+        Les encaissements de cette journée ont changé dans Sage depuis la clôture :
+        {{ e.ajoutes.length }} ajouté(s), {{ e.retires.length }} retiré(s), {{ e.modifies.length }} modifié(s).
+        Total actuel {{ e.totalActuel | number: '1.0-0' }} Ar ({{ e.difference > 0 ? '+' : '' }}{{ e.difference | number: '1.0-0' }} Ar),
+        dont espèces {{ e.differenceEspeces > 0 ? '+' : '' }}{{ e.differenceEspeces | number: '1.0-0' }} Ar.
+        @if (estAdmin) {
+          Rouvrez la clôture pour la mettre à jour.
+        } @else {
+          Prévenez l’administrateur.
+        }
+      </div>
+    }
+
+    <!-- Indicateurs -->
+    <section class="kpis">
+      <div class="kpi">
+        <span>Total encaissé</span>
+        <strong>{{ d.etat.totalEncaisse | number: '1.0-0' }} Ar</strong>
+        <small>{{ d.etat.nbReglements }} règlement(s)</small>
+      </div>
+      <div class="kpi">
+        <span>Espèces attendues</span>
+        <strong>{{ d.etat.especesAttendues | number: '1.0-0' }} Ar</strong>
+        <small>selon Sage</small>
+      </div>
+      <div class="kpi">
+        <span>Espèces comptées</span>
+        <strong>{{ (enSaisie() ? totalCompte() : cloture()!.especesComptees) | number: '1.0-0' }} Ar</strong>
+        <small>billetage</small>
+      </div>
+      @let e = enSaisie() ? ecart() : cloture()!.ecart;
+      <div class="kpi" [attr.data-tone]="!e ? 'ok' : 'danger'">
+        <span>Écart</span>
+        <strong>{{ e > 0 ? '+' : '' }}{{ e | number: '1.0-0' }} Ar</strong>
+        <small>{{ !e ? 'la caisse est juste' : e > 0 ? 'excédent' : 'manque en caisse' }}</small>
+      </div>
+      <div class="kpi">
+        <span>Ventes du jour</span>
+        <strong>{{ d.etat.ventes.totalTtc | number: '1.0-0' }} Ar</strong>
+        <small>{{ d.etat.ventes.nbFactures }} facture(s) · reste à régler {{ d.etat.ventes.reste | number: '1.0-0' }} Ar</small>
+      </div>
+    </section>
+
+    <div class="caisse__grille">
+      <!-- État de règlement -->
+      <div class="caisse__col">
+        <section class="panel">
+          <header class="panel__head"><h2>Encaissements par mode</h2></header>
+          <div class="table-scroll">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th class="num">Règlements</th>
+                  <th class="num">Montant</th>
+                  <th class="num">Pièces comptées</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of d.etat.parMode; track m.modeIndex) {
+                  <tr>
+                    <td class="strong">{{ m.mode }}</td>
+                    <td class="num">{{ m.nb }}</td>
+                    <td class="num">{{ m.total | number: '1.0-0' }}</td>
+                    <td class="num">
+                      @if (m.especes) {
+                        <span class="muted small">billetage →</span>
+                      } @else if (enSaisie()) {
+                        <input class="saisie-nb" type="number" min="0" inputmode="numeric" [placeholder]="m.nb"
+                          [ngModel]="controles()[m.modeIndex]" (ngModelChange)="setControle(m.modeIndex, $event)"
+                          [attr.aria-label]="'Nombre de ' + m.mode + ' comptés'" />
+                      } @else {
+                        @let ctl = cloture()?.controles?.find((x) => x.modeIndex === m.modeIndex);
+                        {{ ctl ? ctl.nbCompte : '—' }}
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="muted">Aucun encaissement ce jour-là.</td></tr>
+                }
+              </tbody>
+              @if (d.etat.parMode.length) {
+                <tfoot>
+                  <tr>
+                    <th>Total</th>
+                    <th class="num">{{ d.etat.nbReglements }}</th>
+                    <th class="num">{{ d.etat.totalEncaisse | number: '1.0-0' }}</th>
+                    <th></th>
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <header class="panel__head"><h2>Par journal de trésorerie</h2></header>
+          <div class="table-scroll">
+            <table class="tbl">
+              <tbody>
+                @for (j of d.etat.parJournal; track j.journal) {
+                  <tr>
+                    <td><span class="ref">{{ j.journal }}</span> {{ j.intitule }}</td>
+                    <td class="num">{{ j.nb }}</td>
+                    <td class="num">{{ j.total | number: '1.0-0' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td class="muted">—</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (d.etat.encaissementsFacturesAnterieures || d.etat.ventes.nbRetours) {
+            <footer class="panel__footer small muted">
+              @if (d.etat.encaissementsFacturesAnterieures) {
+                Dont {{ d.etat.encaissementsFacturesAnterieures | number: '1.0-0' }} Ar sur des factures des jours précédents.
+              }
+              @if (d.etat.ventes.nbRetours) {
+                {{ d.etat.ventes.nbRetours }} facture(s) de retour ({{ d.etat.ventes.totalRetours | number: '1.0-0' }} Ar).
+              }
+            </footer>
+          }
+        </section>
+      </div>
+
+      <!-- Billetage -->
+      <section class="panel caisse__billetage">
+        <header class="panel__head">
+          <h2>Billetage des espèces</h2>
+          @if (enSaisie()) {
+            <span class="muted small">Comptez les billets du tiroir</span>
+          }
+        </header>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Coupure</th>
+                <th class="num">Nombre</th>
+                <th class="num">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (enSaisie()) {
+                @for (c of d.coupures; track c) {
+                  <tr>
+                    <td class="strong">{{ c | number: '1.0-0' }} Ar</td>
+                    <td class="num">
+                      <input class="saisie-nb" type="number" min="0" inputmode="numeric" placeholder="0"
+                        [ngModel]="billets()[c]" (ngModelChange)="setBillet(c, $event)" [attr.aria-label]="'Billets de ' + c + ' Ar'" />
+                    </td>
+                    <td class="num">{{ montantCoupure(c) ? (montantCoupure(c) | number: '1.0-0') : '—' }}</td>
+                  </tr>
+                }
+                <tr>
+                  <td class="strong">Pièces</td>
+                  <td class="num" colspan="2">
+                    <input class="saisie-montant" type="number" min="0" inputmode="numeric" placeholder="Montant"
+                      [ngModel]="pieces()" (ngModelChange)="setPieces($event)" aria-label="Montant des pièces" />
+                  </td>
+                </tr>
+              } @else {
+                @for (b of cloture()!.billetage; track b.coupure) {
+                  <tr [class.dim]="!b.nombre">
+                    <td>{{ b.coupure | number: '1.0-0' }} Ar</td>
+                    <td class="num">{{ b.nombre || '—' }}</td>
+                    <td class="num">{{ b.montant ? (b.montant | number: '1.0-0') : '—' }}</td>
+                  </tr>
+                }
+                <tr>
+                  <td>Pièces</td>
+                  <td></td>
+                  <td class="num">{{ cloture()!.montantPieces ? (cloture()!.montantPieces | number: '1.0-0') : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th>Total compté</th>
+                <th></th>
+                <th class="num">{{ (enSaisie() ? totalCompte() : cloture()!.especesComptees) | number: '1.0-0' }} Ar</th>
+              </tr>
+              <tr>
+                <th>Espèces attendues</th>
+                <th></th>
+                <th class="num">{{ d.etat.especesAttendues | number: '1.0-0' }} Ar</th>
+              </tr>
+              <tr>
+                <th>Écart</th>
+                <th></th>
+                <th class="num" [class.ecart--ko]="!!e" [class.ecart--ok]="!e">{{ e > 0 ? '+' : '' }}{{ e | number: '1.0-0' }} Ar</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        @if (enSaisie()) {
+          <div class="panel__body">
+            @if (controlesEnEcart().length) {
+              <div class="alert alert--warn">
+                Pièces comptées différentes de Sage :
+                @for (m of controlesEnEcart(); track m.modeIndex; let last = $last) {
+                  {{ m.mode }} ({{ controles()[m.modeIndex] }} sur {{ m.nb }}){{ last ? '' : ', ' }}
+                }
+              </div>
+            }
+            <label class="field">
+              <span>Motif de l’écart @if (motifRequis()) {<span class="req">*</span>}</span>
+              <textarea [(ngModel)]="motifEcart" rows="2" maxlength="500"
+                [placeholder]="motifRequis() ? 'Expliquez l’écart (obligatoire)' : 'Aucun écart'"></textarea>
+            </label>
+            <label class="field">
+              <span>Commentaire</span>
+              <textarea [(ngModel)]="commentaire" rows="2" maxlength="500"></textarea>
+            </label>
+            <button type="button" class="btn btn--primary btn--bloc" (click)="demanderCloture()" [disabled]="acting() || loading()">
+              Clôturer la journée
+            </button>
+          </div>
+        } @else {
+          @if (cloture()!.motifEcart || cloture()!.commentaire) {
+            <div class="panel__body small">
+              @if (cloture()!.motifEcart) {
+                <p style="margin: 0"><span class="muted">Motif de l’écart :</span> {{ cloture()!.motifEcart }}</p>
+              }
+              @if (cloture()!.commentaire) {
+                <p style="margin: 0"><span class="muted">Commentaire :</span> {{ cloture()!.commentaire }}</p>
+              }
+            </div>
+          }
+        }
+      </section>
+    </div>
+
+    <!-- Détail des règlements -->
+    <section class="panel">
+      <header class="panel__head">
+        <h2>Détail des règlements</h2>
+        <button type="button" class="linkish small" (click)="detailOuvert.set(!detailOuvert())">
+          {{ detailOuvert() ? 'Masquer' : 'Afficher les ' + d.etat.nbReglements + ' règlements' }}
+        </button>
+      </header>
+      @if (detailOuvert()) {
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Heure</th>
+                <th>Facture(s)</th>
+                <th>Client</th>
+                <th>Mode</th>
+                <th>Journal</th>
+                <th class="num">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of d.etat.reglements; track r.rgNo) {
+                <tr>
+                  <td class="nowrap">{{ r.heure?.substring(0, 5) }}</td>
+                  <td>
+                    <span class="ref">{{ r.pieces ?? '—' }}</span>
+                    @if (r.factureAnterieure) {
+                      <span class="badge">jour précédent</span>
+                    }
+                  </td>
+                  <td>{{ r.client ?? r.clientNumero }}<span class="sub">{{ r.libelle }}</span></td>
+                  <td>{{ r.mode }}</td>
+                  <td>{{ r.journal }}</td>
+                  <td class="num" [class.ecart--ko]="r.montant < 0">{{ r.montant | number: '1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (cloture()?.historique?.length) {
+      <section class="panel">
+        <header class="panel__head"><h2>Historique</h2></header>
+        <ul class="historique">
+          @for (h of cloture()!.historique; track $index) {
+            <li>
+              <strong>{{ libelleAction(h.action) }}</strong>
+              <span class="muted"> · {{ h.le | date: 'dd/MM/yyyy HH:mm' }} · {{ h.par }}</span>
+              @if (h.detail) {
+                <div class="small">{{ h.detail }}</div>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>
+
+@if (confirmation() && data(); as d) {
+  <div class="overlay" (click)="confirmation.set(false)">
+    <div class="modal" style="width: min(460px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ d.jour | date: 'EEEE d MMMM yyyy' }}</p>
+          <h2>Clôturer la journée ?</h2>
+        </div>
+      </header>
+      <div class="modal__body">
+        <p style="margin: 0">
+          Encaissé : <strong>{{ d.etat.totalEncaisse | number: '1.0-0' }} Ar</strong> ({{ d.etat.nbReglements }} règlements)<br />
+          Espèces comptées : <strong>{{ totalCompte() | number: '1.0-0' }} Ar</strong>, attendues {{ d.etat.especesAttendues | number: '1.0-0' }} Ar<br />
+          Écart : <strong [class.ecart--ko]="!!ecart()">{{ ecart() > 0 ? '+' : '' }}{{ ecart() | number: '1.0-0' }} Ar</strong>
+        </p>
+        <p class="muted small" style="margin: 0">
+          La clôture fige ces montants et donne le code à reporter sur le bordereau de versement.
+          Seul l’administrateur pourra la rouvrir.
+        </p>
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="confirmation.set(false)">Annuler</button>
+        <button type="button" class="btn btn--primary" (click)="cloturer()" [disabled]="acting()">
+          {{ acting() ? 'Clôture…' : 'Clôturer' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+@if (modal() === 'versement' && cloture(); as c) {
+  <div class="overlay" (click)="modal.set(null)">
+    <div class="modal" style="width: min(480px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">Référence {{ c.code }} · à verser {{ c.montantAVerser | number: '1.0-0' }} Ar</p>
+          <h2>Versement en banque</h2>
+        </div>
+      </header>
+      <form (ngSubmit)="verser()">
+        <div class="modal__body">
+          @if (modalError()) {
+            <div class="alert" role="alert">{{ modalError() }}</div>
+          }
+          <div class="form-grid">
+            <label class="field field--wide">
+              <span>Banque <span class="req">*</span></span>
+              <select [(ngModel)]="versement.journal" name="journal">
+                @for (b of data()!.banques; track b.journal) {
+                  <option [value]="b.journal">{{ b.intitule }} ({{ b.journal }})</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Date du versement <span class="req">*</span></span>
+              <input type="date" [(ngModel)]="versement.date" name="date" [min]="c.jour" [max]="aujourdhui" />
+            </label>
+            <label class="field">
+              <span>Montant versé <span class="req">*</span></span>
+              <input type="number" min="0" [(ngModel)]="versement.montant" name="montant" />
+            </label>
+            <label class="field field--wide">
+              <span>N° du bordereau <span class="req">*</span></span>
+              <input [(ngModel)]="versement.bordereau" name="bordereau" maxlength="50" autocomplete="off" />
+            </label>
+            <label class="field field--wide">
+              <span>Note</span>
+              <input [(ngModel)]="versement.note" name="note" maxlength="500" />
+            </label>
+          </div>
+          @if (versement.montant && versement.montant !== c.montantAVerser) {
+            <div class="alert alert--warn">
+              Écart de {{ versement.montant - c.montantAVerser | number: '1.0-0' }} Ar avec les espèces comptées : précisez-le dans la note.
+            </div>
+          }
+        </div>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="acting()">Enregistrer</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
+
+@if (modal() === 'rouvrir' && cloture(); as c) {
+  <div class="overlay" (click)="modal.set(null)">
+    <div class="modal" style="width: min(460px, 100%)" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">{{ c.code }}</p>
+          <h2>Rouvrir la clôture</h2>
+        </div>
+      </header>
+      <form (ngSubmit)="rouvrir()">
+        <div class="modal__body">
+          @if (modalError()) {
+            <div class="alert" role="alert">{{ modalError() }}</div>
+          }
+          <p class="muted small" style="margin: 0">
+            Le billetage redevient modifiable et la journée devra être clôturée de nouveau. Le code est conservé.
+          </p>
+          <label class="field">
+            <span>Motif <span class="req">*</span></span>
+            <textarea [(ngModel)]="motifReouverture" name="motif" rows="2" maxlength="500"></textarea>
+          </label>
+        </div>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="modal.set(null)">Annuler</button>
+          <button type="submit" class="btn btn--danger" [disabled]="acting()">Rouvrir</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}

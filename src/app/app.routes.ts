@@ -245,6 +245,16 @@ export const routes: Routes = [
         loadChildren: () => import('./features/achats/achats.routes').then((m) => m.ACHATS_ROUTES),
       },
       {
+        path: 'caisse/cloture',
+        canActivate: [roleGuard('Admin', 'Caisse')],
+        loadComponent: () => import('./features/caisse/caisse-cloture.page').then((m) => m.CaisseCloturePage),
+      },
+      {
+        path: 'caisse/clotures',
+        canActivate: [roleGuard('Admin', 'Caisse')],
+        loadComponent: () => import('./features/caisse/caisse-clotures.page').then((m) => m.CaisseCloturesPage),
+      },
+      {
         path: 'analyse',
         canActivate: [roleGuard('Admin')],
         loadChildren: () => import('./features/analyse/analyse.routes').then((m) => m.ANALYSE_ROUTES),

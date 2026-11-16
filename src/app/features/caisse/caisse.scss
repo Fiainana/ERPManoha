@@ -1,0 +1,129 @@
+// Clôture de caisse : complète rh.scss (panneaux, tableaux, indicateurs, fenêtres).
+
+.caisse__grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.caisse__col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.code-cloture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--me-red-border);
+  border-radius: var(--me-radius-lg, 12px);
+  background: var(--me-red-soft);
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  &__label,
+  &__verser > span:first-child {
+    font-size: var(--me-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--me-text-secondary);
+  }
+
+  &__code {
+    all: unset;
+    cursor: copy;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--me-red-deeper);
+  }
+
+  &__meta {
+    font-size: var(--me-fs-sm);
+    color: var(--me-text-secondary);
+  }
+
+  &__verser strong {
+    font-size: var(--me-fs-xl, 1.4rem);
+  }
+
+  &__actions {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 0.5rem !important;
+  }
+}
+
+.saisie-nb,
+.saisie-montant {
+  width: 7rem;
+  height: 34px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--me-border);
+  border-radius: var(--me-radius, 8px);
+  font: inherit;
+  text-align: right;
+
+  &:focus {
+    outline: 2px solid var(--me-red-border);
+    border-color: var(--me-red);
+  }
+}
+
+.saisie-montant {
+  width: 100%;
+  max-width: 14rem;
+}
+
+.ecart--ok {
+  color: #15803d;
+}
+
+.ecart--ko {
+  color: var(--me-red-deeper);
+}
+
+.btn--bloc {
+  width: 100%;
+  justify-content: center;
+}
+
+.sub {
+  display: block;
+  font-size: var(--me-fs-xs);
+  color: var(--me-text-muted);
+}
+
+.historique {
+  margin: 0;
+  padding: 0.5rem 1.25rem 1rem;
+  list-style: none;
+
+  li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--me-border);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
+.cliquable {
+  cursor: pointer;
+}
