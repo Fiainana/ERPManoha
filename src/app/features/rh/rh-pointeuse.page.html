@@ -14,12 +14,13 @@
       </div>
       <p class="subtitle">
         @if (statut(); as s) {
-          {{ s.url || 'Appareil non configuré' }} · synchronisation à {{ s.heures.join(' h, ') }} h
+          @if (!s.url) {
+            Appareil non configuré ·
+          }
+          Synchronisation à {{ s.heures.join(' h, ') }} h
           @for (a of s.appareils; track a.appareil) {
             · dernière synchro {{ utc(a.dernierSucces) | date: 'dd/MM HH:mm' }} ({{ a.nbTotal }} pointages)
           }
-        } @else {
-          Pointages bruts de l’appareil Hikvision et corrections manuelles
         }
       </p>
     </div>

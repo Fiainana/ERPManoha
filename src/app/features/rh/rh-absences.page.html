@@ -10,7 +10,6 @@
         <h1>Congés & absences</h1>
         <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
       </div>
-      <p class="subtitle">Demandes des employés (avis du responsable puis décision RH) et absences saisies par le RH</p>
     </div>
     <div class="rh__actions">
       <button type="button" class="btn btn--primary" (click)="nouvelle()">Saisir une absence</button>
@@ -200,7 +199,7 @@
               </label>
             </div>
             <p class="muted small" style="margin: 0">
-              Le nombre de jours est calculé par le serveur (fériés exclus, jours de repos selon le type).
+              Le nombre de jours est calculé automatiquement (fériés exclus, jours de repos selon le type).
               Seuls les congés validés sont décomptés du solde.
             </p>
           </div>

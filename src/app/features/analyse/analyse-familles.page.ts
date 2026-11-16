@@ -16,7 +16,7 @@ type TriFamille = keyof Pick<
   imports: [NbPipe, RouterLink, AnalyseEnteteComponent, CompactPipe, PctPipe, JoursPipe],
   template: `
     <div class="immo analyse" style="--cols: minmax(200px, 2fr) repeat(9, minmax(86px, 1fr)); --min: 1140px">
-      <app-analyse-entete titre="Analyse par famille" sousTitre="Mix produit : contribution au CA et à la marge, stock et rotation" />
+      <app-analyse-entete titre="Analyse par famille" />
 
       @if (error()) {
         <div class="alert" role="alert">{{ error() }}</div>

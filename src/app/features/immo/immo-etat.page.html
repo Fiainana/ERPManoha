@@ -12,9 +12,6 @@
         <strong>État annuel</strong>
       </nav>
       <h1>Tableau des immobilisations et amortissements</h1>
-      <p class="immo__subtitle">
-        Valeur brute, amortissements et valeur nette comptable de l’exercice, par catégorie
-      </p>
     </div>
     <div class="immo__actions">
       <button type="button" class="btn btn--ghost" (click)="exporter('csv')" [disabled]="exporting() || !etat()">

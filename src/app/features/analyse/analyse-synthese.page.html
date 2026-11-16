@@ -1,7 +1,6 @@
 <div class="immo analyse">
   <app-analyse-entete
     titre="Analyse"
-    sousTitre="Indicateurs et ratios d’aide à la décision : ventes, marge, stock, trésorerie"
   />
 
   @if (error()) {
@@ -250,7 +249,7 @@
     </div>
 
     <p class="note">
-      CA = lignes des factures de vente, retours déduits. Marge = CA − prix de revient Sage des lignes (DL_PrixRU).
+      CA = lignes des factures de vente, retours déduits. Marge = CA − prix de revient des articles vendus.
       Stock, créances et dettes : situation actuelle, quelle que soit la période.
     </p>
   }

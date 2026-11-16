@@ -15,9 +15,6 @@
       </div>
       <p class="subtitle">
         Du {{ lundi | date: 'dd/MM/yyyy' }} au {{ fin | date: 'dd/MM/yyyy' }}
-        @if (peutModifier) {
-          · cliquez sur une case pour poser ou retirer un jour off
-        }
       </p>
     </div>
     @if (peutModifier) {
@@ -90,7 +87,7 @@
                   <span class="jour-nom">{{ j.jour.substring(0, 3) }}</span>
                   <span class="jour-date">{{ j.date | date: 'dd/MM' }}</span>
                   @if (j.offBloque) {
-                    <span class="jour-bloque" title="Pas de jour off ce jour (Rh:JoursSansOff)">🔒</span>
+                    <span class="jour-bloque" title="Pas de jour off ce jour">🔒</span>
                   }
                 </th>
               }
@@ -172,7 +169,7 @@
           }
           @default {
             @if (offBloque(c.jour.date)) {
-              <div class="alert alert--warn">Pas de jour off le {{ c.jour.date | date: 'EEEE' }} (paramètre Rh:JoursSansOff).</div>
+              <div class="alert alert--warn">Pas de jour off le {{ c.jour.date | date: 'EEEE' }} (paramètres RH).</div>
             } @else {
               <label class="field">
                 <span>Motif (facultatif)</span>
@@ -231,7 +228,7 @@
               @for (j of jours; track j.iso) {
                 <button type="button" class="day" [class.on]="rot.joursExclus.includes(j.iso) || bloqueParParametre(j.iso)"
                   [disabled]="bloqueParParametre(j.iso)" (click)="toggleExclu(j.iso)"
-                  [title]="bloqueParParametre(j.iso) ? 'Toujours bloqué (paramètre Rh:JoursSansOff)' : ''">
+                  [title]="bloqueParParametre(j.iso) ? 'Toujours bloqué (paramètres RH)' : ''">
                   {{ j.court }}{{ bloqueParParametre(j.iso) ? ' 🔒' : '' }}
                 </button>
               }

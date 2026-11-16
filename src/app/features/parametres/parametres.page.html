@@ -9,10 +9,6 @@
         <strong>Paramètres</strong>
       </nav>
       <h1>Paramètres</h1>
-      <p class="prm__subtitle">
-        Valeurs enregistrées en base et appliquées tout de suite, sans redémarrer l'API.
-        L'infrastructure (connexion ERP, SQL, sécurité) reste dans appsettings.
-      </p>
     </div>
   </header>
 
@@ -206,7 +202,7 @@
                   } @else if (p.enBase) {
                     <span class="tag">Personnalisé</span>
                     @if (p.modifiePar === 'appsettings') {
-                      <span>repris d'appsettings</span>
+                      <span>valeur d’origine</span>
                     } @else if (p.modifiePar) {
                       <span>par {{ p.modifiePar }}</span>
                     }

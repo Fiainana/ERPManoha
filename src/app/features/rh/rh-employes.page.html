@@ -10,7 +10,6 @@
         <h1>Employés</h1>
         <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
       </div>
-      <p class="subtitle">Fiches, contrats, régime de repos et accès à l’espace employé</p>
     </div>
     <div class="rh__actions">
       <button type="button" class="btn btn--ghost" (click)="importer()" [disabled]="acting()"

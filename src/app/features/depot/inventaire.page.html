@@ -12,9 +12,6 @@
         <h1>Inventaires</h1>
         <span class="count-pill">{{ loading() && items().length === 0 ? '…' : total() }}</span>
       </div>
-      <p class="inv__subtitle">
-        Inventaire partiel hebdomadaire : comptage dépôt, puis validation de l’ajustement par l’admin
-      </p>
     </div>
     @if (auth.isAdmin()) {
       <div class="inv__actions">

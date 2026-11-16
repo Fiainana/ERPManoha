@@ -30,11 +30,6 @@ export class EtatVentePage implements OnInit {
     return 'Consolidé';
   }
 
-  get subtitle(): string {
-    if (this.scope === 'comptoir') return 'Factures de vente du client comptoir sur la période';
-    if (this.scope === 'b2b') return 'Factures de vente B2B (hors client comptoir) sur la période';
-    return 'Toutes les factures de vente (comptoir + B2B) sur la période';
-  }
 
   ngOnInit(): void {
     const s = (this.route.snapshot.data['scope'] as string) || 'comptoir';

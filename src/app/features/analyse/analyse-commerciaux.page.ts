@@ -10,7 +10,7 @@ import { CompactPipe, PctPipe, sensDelta } from './analyse-format';
   imports: [AnalyseEnteteComponent, CompactPipe, PctPipe],
   template: `
     <div class="immo analyse" style="--cols: minmax(190px, 1.6fr) repeat(10, minmax(86px, 1fr)); --min: 1160px">
-      <app-analyse-entete titre="Analyse des commerciaux" sousTitre="CA, marge, devis et transformation, encours par représentant" />
+      <app-analyse-entete titre="Analyse des commerciaux" />
 
       @if (error()) {
         <div class="alert" role="alert">{{ error() }}</div>

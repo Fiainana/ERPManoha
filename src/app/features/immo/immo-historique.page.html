@@ -12,7 +12,6 @@
         <h1>Historique des actions</h1>
         <span class="count-pill">{{ loading() && items().length === 0 ? '…' : items().length }}</span>
       </div>
-      <p class="immo__subtitle">Qui a fait quoi sur les immobilisations, du plus récent au plus ancien</p>
     </div>
     <div class="immo__actions">
       <button type="button" class="btn btn--ghost" (click)="load()" [disabled]="loading()">Actualiser</button>

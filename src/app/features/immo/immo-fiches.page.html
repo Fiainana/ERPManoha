@@ -12,9 +12,6 @@
         <h1>Immobilisations</h1>
         <span class="count-pill">{{ loading() && fiches().length === 0 ? '…' : fiches().length }}</span>
       </div>
-      <p class="immo__subtitle">
-        Fiches des biens, amortissement linéaire et écritures vers la comptabilité Sage
-      </p>
     </div>
     <div class="immo__actions">
       <button type="button" class="btn btn--ghost" (click)="basculerSync()" [disabled]="acting()">

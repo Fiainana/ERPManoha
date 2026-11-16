@@ -12,9 +12,6 @@
         <h1>Écritures comptables</h1>
         <span class="count-pill">{{ loading() && items().length === 0 ? '…' : items().length }}</span>
       </div>
-      <p class="immo__subtitle">
-        Dotations, mises en service, cessions et rebuts, envoyés dans le journal d’OD de Sage
-      </p>
     </div>
     <div class="immo__actions">
       <button type="button" class="btn btn--ghost" (click)="reload()" [disabled]="loading()">Actualiser</button>
