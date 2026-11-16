@@ -163,17 +163,17 @@ export const routes: Routes = [
       {
         path: 'fournisseurs',
         component: FournisseursPage,
-        canActivate: [roleGuard('Admin')],
+        canActivate: [roleGuard('Admin', 'Achat')],
       },
       {
         path: 'fournisseurs/nouveau',
         component: FournisseurFormPage,
-        canActivate: [roleGuard('Admin')],
+        canActivate: [roleGuard('Admin', 'Achat')],
       },
       {
         path: 'fournisseurs/:numero',
         component: FournisseurDetailPage,
-        canActivate: [roleGuard('Admin')],
+        canActivate: [roleGuard('Admin', 'Achat')],
       },
 
       {
@@ -241,7 +241,7 @@ export const routes: Routes = [
 
       {
         path: 'achats',
-        canActivate: [roleGuard('Admin')],
+        canActivate: [roleGuard('Admin', 'Achat')],
         loadChildren: () => import('./features/achats/achats.routes').then((m) => m.ACHATS_ROUTES),
       },
       {
@@ -258,7 +258,7 @@ export const routes: Routes = [
 
       {
         path: 'rh',
-        canActivate: [roleGuard('Admin', 'HR')],
+        // Gardes posées écran par écran : le planning des repos est ouvert à tous les comptes.
         loadChildren: () => import('./features/rh/rh.routes').then((m) => m.RH_ROUTES),
       },
 

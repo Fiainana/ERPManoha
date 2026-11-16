@@ -8,11 +8,15 @@ import { FournisseurDetailAnalyse } from '../../core/models/analyse.model';
 import { AnalyseEnteteComponent } from './analyse-entete.component';
 import { GraphiqueEvolutionComponent, IndicateurSerie } from './graphique-evolution.component';
 import { CompactPipe, JoursPipe, PctPipe, sensDelta } from './analyse-format';
+import { AnalyseFournisseurCatalogueComponent } from './analyse-fournisseur-catalogue.component';
 
-/** Fiche d'analyse d'un fournisseur : évolution des achats, prix par article, dettes et commandes en cours. */
+/**
+ * Fiche d'analyse d'un fournisseur : évolution des achats, tous ses articles (stock, ventes, mouvements),
+ * prix par article, dettes et commandes en cours.
+ */
 @Component({
   selector: 'app-analyse-fournisseur-detail-page',
-  imports: [RouterLink, DatePipe, DecimalPipe, AnalyseEnteteComponent, GraphiqueEvolutionComponent, CompactPipe, PctPipe, JoursPipe],
+  imports: [RouterLink, DatePipe, DecimalPipe, AnalyseEnteteComponent, GraphiqueEvolutionComponent, AnalyseFournisseurCatalogueComponent, CompactPipe, PctPipe, JoursPipe],
   template: `
     <div class="immo analyse">
       <app-analyse-entete
@@ -68,6 +72,8 @@ import { CompactPipe, JoursPipe, PctPipe, sensDelta } from './analyse-format';
             [granulariteServeur]="d.periode.granulariteAuto ? d.periode.granularite : null"
           />
         </section>
+
+        <app-analyse-fournisseur-catalogue [catalogue]="d.catalogue" />
 
         <section class="panel" style="--cols: minmax(220px, 2.4fr) repeat(5, minmax(90px, 1fr)); --min: 820px">
           <div class="card" style="border: 0; padding-bottom: 0"><h2>Articles achetés <small>prix unitaire moyen, période et un an plus tôt</small></h2></div>

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RhService } from '../../core/services/rh.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   RH_JOURS_SEMAINE,
   RhDepartement,
@@ -32,6 +33,12 @@ interface CelluleChoisie {
 export class RhPlanningPage implements OnInit {
   private readonly api = inject(RhService);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
+
+  /** Fiches employés et absences : back-office RH seulement. */
+  readonly estRh = this.auth.hasRole('HR');
+  /** Poser ou retirer un jour off, générer la rotation. Les autres comptes consultent seulement. */
+  readonly peutModifier = this.auth.hasRole('HR', 'Planning');
 
   readonly loading = signal(false);
   readonly acting = signal(false);
@@ -79,7 +86,7 @@ export class RhPlanningPage implements OnInit {
   ngOnInit(): void {
     const q = this.route.snapshot.queryParamMap;
     if (q.get('employeId')) this.employeId = Number(q.get('employeId'));
-    this.api.departements().subscribe({ next: (d) => this.departements.set(d), error: () => {} });
+    if (this.estRh) this.api.departements().subscribe({ next: (d) => this.departements.set(d), error: () => {} });
     this.load();
   }
 
@@ -106,12 +113,23 @@ export class RhPlanningPage implements OnInit {
         next: (p) => {
           this.planning.set(p);
           this.loading.set(false);
+          if (!this.estRh && this.departementId == null && this.employeId == null)
+            this.departements.set(this.departementsDe(p));
         },
         error: (err) => {
           this.loading.set(false);
           this.error.set(err.message);
         },
       });
+  }
+
+  /** Hors back-office RH, la liste des départements vient du planning lui-même. */
+  private departementsDe(p: RhPlanning): RhDepartement[] {
+    const vus = new Map<number, string>();
+    for (const e of p.employes) if (e.departementId != null && e.departement) vus.set(e.departementId, e.departement);
+    return [...vus]
+      .map(([id, nom]) => ({ id, nom }) as RhDepartement)
+      .sort((a, b) => a.nom.localeCompare(b.nom));
   }
 
   estAujourdhui(date: string): boolean {
@@ -152,7 +170,7 @@ export class RhPlanningPage implements OnInit {
   }
 
   choisir(e: RhPlanningEmploye, j: RhJourPlanning): void {
-    if (j.statut === 'HorsContrat' || j.statut === 'Ferie') return;
+    if (!this.peutModifier || j.statut === 'HorsContrat' || j.statut === 'Ferie') return;
     this.motifOff = '';
     this.cellule.set({ employe: e, jour: j });
   }

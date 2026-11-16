@@ -46,4 +46,6 @@ export type AppRole =
   | 'Recouvrement'
   | 'HR'
   | 'ResponsableRH'
-  | 'Compta';
+  | 'Compta'
+  | 'Achat'
+  | 'Planning';

@@ -91,5 +91,11 @@ export const APP_ROLE_OPTIONS = [
     hint: 'Avis sur les demandes d’absence de son département',
   },
   { value: 'Compta', label: 'Comptabilité', hint: 'Immobilisations : validation, export vers Sage, clôture' },
+  { value: 'Achat', label: 'Achats', hint: 'Demandes d’achat, commandes, factures fournisseurs et règlements' },
+  {
+    value: 'Planning',
+    label: 'Planning & pointage',
+    hint: 'Met à jour le planning des repos et saisit les pointages manquants (sans pouvoir en écarter)',
+  },
   { value: 'Admin', label: 'Admin', hint: 'Administration complète' },
 ] as const;

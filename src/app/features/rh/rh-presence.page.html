@@ -2,7 +2,11 @@
   <header class="rh__header">
     <div>
       <nav class="breadcrumb" aria-label="Fil d'Ariane">
-        <a routerLink="/rh">Ressources humaines</a>
+        @if (estRh) {
+          <a routerLink="/rh">Ressources humaines</a>
+        } @else {
+          <span>Ressources humaines</span>
+        }
         <span>›</span>
         <strong>Présence</strong>
       </nav>
@@ -24,12 +28,14 @@
   </nav>
 
   <div class="toolbar">
+    @if (departements().length) {
     <select [(ngModel)]="departementId" (ngModelChange)="actualiser()" aria-label="Département">
       <option [ngValue]="null">Tous les départements</option>
       @for (d of departements(); track d.id) {
         <option [ngValue]="d.id">{{ d.nom }}</option>
       }
     </select>
+    }
     @if (onglet() === 'rapport') {
       <label class="inline">Du <input type="date" [(ngModel)]="debut" /></label>
       <label class="inline">au <input type="date" [(ngModel)]="fin" /></label>
@@ -77,7 +83,7 @@
             <tbody>
               @for (l of d.lignes; track l.employeId) {
                 <tr>
-                  <td><a class="strong linkish" style="color: inherit" [routerLink]="['/rh/employes', l.employeId]">{{ l.nom }}</a></td>
+                  <td>@if (estRh) {<a class="strong linkish" style="color: inherit" [routerLink]="['/rh/employes', l.employeId]">{{ l.nom }}</a>} @else {<span class="strong">{{ l.nom }}</span>}</td>
                   <td>
                     <span class="badge" [attr.data-tone]="tonPresence(l.statut)">{{ libellePresence(l.statut) }}</span>
                     <span class="muted small"> {{ libelleRepos(l.reposType) }} {{ typeAbsence(l.typeAbsence) }}{{ l.jourFerie ? ' ' + l.jourFerie : '' }}</span>
@@ -91,11 +97,11 @@
                   <td class="num">{{ l.retardMinutes ? l.retardMinutes + ' min' : '' }}</td>
                   <td class="num">{{ l.minutesTravaillees ? duree(l.minutesTravaillees) : '' }}</td>
                   <td class="nowrap">
-                    @if (l.statut === 'Absent' || l.statut === 'AVenir') {
+                    @if (estRh && (l.statut === 'Absent' || l.statut === 'AVenir')) {
                       <button type="button" class="linkish small" (click)="ouvrirJustif(l)">Justifier</button>
                     }
                     @if (l.statut === 'Present' || l.statut === 'Absent' || l.statut === 'AVenir') {
-                      · <button type="button" class="linkish small" (click)="ouvrirPointage(l)">Ajouter un pointage</button>
+                      @if (estRh) {·} <button type="button" class="linkish small" (click)="ouvrirPointage(l)">Ajouter un pointage</button>
                     }
                   </td>
                 </tr>
@@ -206,7 +212,7 @@
                     </td>
                     <td class="num">{{ l.minutesTravaillees ? duree(l.minutesTravaillees) : '' }}</td>
                     <td class="nowrap">
-                      @if (l.statut === 'Absent') {
+                      @if (estRh && l.statut === 'Absent') {
                         <button type="button" class="linkish small" (click)="ouvrirJustif(l)">Justifier</button> ·
                       }
                       @if (l.statut === 'Present' || l.statut === 'Absent') {

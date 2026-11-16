@@ -51,7 +51,12 @@
           @case ('commandes') {
             @if (aRecevoir()) {
               @if (d.entete.statut === 2) {
-                <a class="btn btn--primary" [routerLink]="['/depot/bc-reception', piece()]">Réceptionner</a>
+                <!-- La réception est faite par le dépôt : un acheteur voit seulement que la commande l'attend. -->
+                @if (peutReceptionner()) {
+                  <a class="btn btn--primary" [routerLink]="['/depot/bc-reception', piece()]">Réceptionner</a>
+                } @else {
+                  <span class="badge" data-statut="0">En attente de réception au dépôt</span>
+                }
               } @else {
                 <button type="button" class="btn btn--primary" (click)="changerStatut(2)" [disabled]="acting()">
                   Rendre réceptionnable

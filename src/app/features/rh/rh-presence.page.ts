@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RhService } from '../../core/services/rh.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   RH_TYPES_ABSENCE,
   RhDepartement,
@@ -27,6 +28,10 @@ type Onglet = 'jour' | 'rapport';
 export class RhPresencePage implements OnInit {
   private readonly api = inject(RhService);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
+
+  /** Le rôle Planning consulte la présence et ajoute les pointages manquants ; justifier reste au RH. */
+  readonly estRh = this.auth.hasRole('HR');
 
   readonly onglet = signal<Onglet>('jour');
   readonly loading = signal(false);
@@ -71,7 +76,7 @@ export class RhPresencePage implements OnInit {
 
   ngOnInit(): void {
     const q = this.route.snapshot.queryParamMap;
-    this.api.departements().subscribe({ next: (d) => this.departements.set(d), error: () => {} });
+    if (this.estRh) this.api.departements().subscribe({ next: (d) => this.departements.set(d), error: () => {} });
     if (q.get('employeId')) {
       this.employeId = Number(q.get('employeId'));
       this.onglet.set('rapport');

@@ -421,9 +421,92 @@ export interface FournisseursResume {
   abc: AbcLigne[];
 }
 
+/** Un article du fournisseur : achats, ventes, mouvements de la période et état actuel du stock. */
+export interface ArticleFournisseurAnalyse {
+  reference: string;
+  designation: string | null;
+  famille: string | null;
+  referenceFournisseur: string | null;
+  principal: boolean;
+  sommeil: boolean;
+  suiviStock: boolean;
+  delaiApproJours: number | null;
+  qteAchetee: number;
+  achatsHt: number;
+  puAchatMoyen: number | null;
+  puAchatMoyenN1: number | null;
+  variationPrixPct: number | null;
+  dernierAchat: string | null;
+  dernierPrixAchat: number | null;
+  qteEnCommande: number;
+  qteVendue: number;
+  caHt: number;
+  margeBrute: number;
+  tauxMarquePct: number | null;
+  qteVendueN1: number;
+  evolutionVentesPct: number | null;
+  derniereVente: string | null;
+  joursSansVente: number | null;
+  venteParJour: number;
+  entrees: number;
+  sorties: number;
+  nbMouvements: number;
+  dernierMouvement: string | null;
+  qteStock: number;
+  qteReservee: number;
+  qteDisponible: number;
+  qteMini: number;
+  valeurStock: number;
+  /** Jours que le stock disponible couvre au rythme de vente de la période. */
+  couvertureJours: number | null;
+  ruptureEstimee: string | null;
+  rotationAn: number | null;
+  qteACommander: number;
+  etat: 'Rupture' | 'ACommander' | 'SousMini' | 'Dormant' | 'Surstock' | 'SansVente' | 'NonSuivi' | 'Ok';
+}
+
+export interface CatalogueFournisseurAnalyse {
+  resume: {
+    nbArticles: number;
+    nbPrincipal: number;
+    nbVendus: number;
+    nbEnStock: number;
+    nbRuptures: number;
+    nbACommander: number;
+    nbSousMini: number;
+    nbDormants: number;
+    nbSurstock: number;
+    valeurStock: number;
+    valeurDormante: number;
+    valeurSurstock: number;
+    caHt: number;
+    margeBrute: number;
+    tauxMarquePct: number | null;
+    couvertureJours: number | null;
+    rotationAn: number | null;
+    entreesQte: number;
+    sortiesQte: number;
+    seuilDormantJours: number;
+    seuilSurstockJours: number;
+  };
+  articles: ArticleFournisseurAnalyse[];
+  mouvements: {
+    date: string;
+    typeLibelle: string;
+    numeroPiece: string;
+    tiers: string | null;
+    articleReference: string;
+    designation: string | null;
+    sens: 'Entrée' | 'Sortie';
+    quantite: number;
+    depot: string | null;
+  }[];
+}
+
 export interface FournisseurDetailAnalyse {
   periode: AnalysePeriode;
   fournisseur: FournisseurAnalyse;
+  catalogue: CatalogueFournisseurAnalyse;
   evolution: (TrancheBase & { achatsHt: number; nbFactures: number; achatsHtN1: number; nbFacturesN1: number })[];
   articles: {
     reference: string;

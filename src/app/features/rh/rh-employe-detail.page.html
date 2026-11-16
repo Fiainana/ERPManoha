@@ -281,6 +281,42 @@
             </div>
           </div>
         </section>
+
+        <section class="panel">
+          <header class="panel__head">
+            <h2>Compte ERP</h2>
+            @if (d.employe.userAppId) {
+              <span class="badge" data-tone="ok">Lié à {{ d.employe.userLogin ?? 'compte #' + d.employe.userAppId }}</span>
+            } @else {
+              <span class="badge">Aucun compte lié</span>
+            }
+          </header>
+          <div class="panel__body">
+            <p style="margin-top: 0">
+              Un employé qui a un compte dans l’ERP fait ses demandes de congé depuis le menu
+              <strong>Mes congés</strong>, sans matricule ni PIN. Un compte ne peut être lié qu’à une seule fiche.
+            </p>
+            <div class="form-grid">
+              <label class="field field--wide">
+                <span>Compte de l’ERP</span>
+                <select [(ngModel)]="compteChoisi" name="compte">
+                  <option [ngValue]="null">Aucun compte</option>
+                  @for (c of comptes(); track c.userId) {
+                    <option [ngValue]="c.userId" [disabled]="!!c.employeId && c.employeId !== d.employe.id">
+                      {{ c.login }}{{ c.nom ? ' — ' + c.nom : '' }}{{ c.employeId && c.employeId !== d.employe.id ? ' (lié à ' + c.employe + ')' : '' }}
+                    </option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="rh__actions">
+              <button type="button" class="btn btn--primary" (click)="lierCompte()"
+                [disabled]="acting() || compteChoisi === (d.employe.userAppId ?? null)">
+                {{ compteChoisi === null && d.employe.userAppId ? 'Délier le compte' : 'Enregistrer' }}
+              </button>
+            </div>
+          </div>
+        </section>
       }
     }
   }

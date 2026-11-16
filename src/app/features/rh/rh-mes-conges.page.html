@@ -1,0 +1,255 @@
+<div class="rh">
+  <header class="rh__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Ressources humaines</span>
+        <span>›</span>
+        <strong>Mes congés</strong>
+      </nav>
+      <div class="title-row">
+        <h1>Mes congés</h1>
+      </div>
+      @if (espace(); as e) {
+        <p class="subtitle">
+          {{ e.employe.nomComplet }} · {{ e.employe.matricule }}{{ e.employe.departement ? ' · ' + e.employe.departement : '' }}
+          @if (e.employe.responsable) {
+            · responsable : {{ e.employe.responsable }}
+          }
+        </p>
+      }
+    </div>
+    @if (espace()) {
+      <div class="rh__actions">
+        <button type="button" class="btn btn--primary" (click)="ouvrirFormulaire()">Nouvelle demande</button>
+      </div>
+    }
+  </header>
+
+  @if (toast()) {
+    <div class="alert alert--ok" role="status">{{ toast() }}</div>
+  }
+  @if (avertissement()) {
+    <div class="alert alert--warn">{{ avertissement() }}</div>
+  }
+  @if (error()) {
+    <div class="alert" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !moi()) {
+    <div class="panel">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton__row"></div>
+      }
+    </div>
+  } @else if (moi() && !moi()!.lie) {
+    <div class="panel">
+      <div class="empty">
+        <h2>Votre compte n’est pas encore lié à votre fiche employé</h2>
+        <p>Demandez au service RH de lier votre compte : vous pourrez ensuite voir votre solde et demander vos congés ici.</p>
+      </div>
+    </div>
+  } @else if (espace(); as e) {
+    <section class="kpis">
+      <div class="kpi" data-tone="ok">
+        <span>Solde de congés</span>
+        <strong>{{ e.soldeConges.solde | number: '1.0-1' }} j</strong>
+        <small>{{ e.soldeConges.joursParMois | number: '1.0-1' }} j acquis par mois</small>
+      </div>
+      <div class="kpi">
+        <span>Déjà pris</span>
+        <strong>{{ e.soldeConges.pris | number: '1.0-1' }} j</strong>
+      </div>
+      <div class="kpi">
+        <span>Validés à venir</span>
+        <strong>{{ e.soldeConges.planifies | number: '1.0-1' }} j</strong>
+      </div>
+      <div class="kpi" [attr.data-tone]="e.soldeConges.enAttente ? 'warn' : ''">
+        <span>En attente de réponse</span>
+        <strong>{{ e.soldeConges.enAttente | number: '1.0-1' }} j</strong>
+        <small>{{ e.employe.demandesEnAttente }} demande(s)</small>
+      </div>
+      <div class="kpi">
+        <span>Reste après mes demandes</span>
+        <strong>{{ e.soldeConges.soldeApresDemandes | number: '1.0-1' }} j</strong>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header class="panel__head">
+        <h2>Mes demandes</h2>
+        <span class="muted small">{{ total() }} demande(s)</span>
+      </header>
+      @if (demandes().length === 0) {
+        <div class="empty">
+          <h2>Aucune demande</h2>
+          <p>Utilisez « Nouvelle demande » pour demander un congé ou déclarer une absence.</p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Du</th>
+                <th>Au</th>
+                <th class="num">Jours</th>
+                <th>Statut</th>
+                <th>Demandé le</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of demandes(); track a.id) {
+                <tr class="clickable" (click)="ouvrir(a)">
+                  <td class="strong">{{ typeAbsence(a.type) }}</td>
+                  <td class="nowrap">{{ a.dateDebut | date: 'EEE dd/MM/yyyy' }}{{ a.debutApresMidi ? ' (après-midi)' : '' }}</td>
+                  <td class="nowrap">{{ a.dateFin | date: 'EEE dd/MM/yyyy' }}{{ a.finMatin ? ' (matin)' : '' }}</td>
+                  <td class="num">{{ a.nbJours | number: '1.0-1' }}</td>
+                  <td>
+                    <span class="badge" [attr.data-tone]="tonAbsence(a.statut)">{{ libelleStatut(a.statut) }}</span>
+                    @if (a.nbDocuments) {
+                      <span class="badge">{{ a.nbDocuments }} justificatif(s)</span>
+                    }
+                  </td>
+                  <td class="nowrap small muted">{{ utc(a.demandeLe) | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="nowrap">
+                    @if (enAttente(a)) {
+                      <button type="button" class="linkish small" (click)="$event.stopPropagation(); retirer(a)" [disabled]="acting()">Retirer</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (formOpen() && espace(); as e) {
+  <div class="overlay" (click)="formOpen.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">Solde : {{ e.soldeConges.soldeApresDemandes | number: '1.0-1' }} j disponibles</p>
+          <h2>Nouvelle demande</h2>
+        </div>
+      </header>
+      <form (ngSubmit)="envoyer()">
+        <div class="modal__body">
+          @if (formError()) {
+            <div class="alert" role="alert">{{ formError() }}</div>
+          }
+          <div class="form-grid">
+            <label class="field field--wide">
+              <span>Type <span class="req">*</span></span>
+              <select [(ngModel)]="f.type" name="type">
+                @for (t of types(); track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+              @if (f.type === 'Conge') {
+                <small>
+                  Un congé se demande au moins {{ e.regles.delaiPrevenanceCongeJours }} jours à l’avance :
+                  au plus tôt le {{ e.regles.congeAuPlusTotLe | date: 'dd/MM/yyyy' }}.
+                </small>
+              } @else if (f.type === 'Permission' || f.type === 'Maladie') {
+                <small>Peut être déclarée après coup, dans les 30 jours.</small>
+              }
+            </label>
+            <label class="field">
+              <span>Du <span class="req">*</span></span>
+              <input type="date" [(ngModel)]="f.dateDebut" (ngModelChange)="surDebut()" name="dateDebut" [min]="dateMin()" required />
+            </label>
+            <label class="field">
+              <span>Au <span class="req">*</span></span>
+              <input type="date" [(ngModel)]="f.dateFin" name="dateFin" [min]="f.dateDebut || dateMin()" required />
+            </label>
+            <label class="check"><input type="checkbox" [(ngModel)]="f.debutApresMidi" name="am" /> je pars l’après-midi du premier jour</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="f.finMatin" name="fm" /> je reviens l’après-midi du dernier jour</label>
+            <label class="field field--wide">
+              <span>Motif</span>
+              <textarea [(ngModel)]="f.motif" name="motif" rows="2" maxlength="500"></textarea>
+            </label>
+            <label class="field field--wide">
+              <span>Justificatif (facultatif)</span>
+              <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" (change)="surFichier($event)" />
+              <small>PDF ou photo, 5 Mo au plus. Vous pourrez aussi l’ajouter plus tard.</small>
+            </label>
+          </div>
+          <p class="muted small" style="margin: 0">
+            Le nombre de jours est calculé à l’envoi (jours fériés exclus).
+            {{ e.employe.responsable ? 'La demande va d’abord à ' + e.employe.responsable + ', puis au RH.' : 'La demande va au service RH.' }}
+          </p>
+        </div>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" (click)="formOpen.set(false)">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="acting()">{{ acting() ? 'Envoi…' : 'Envoyer la demande' }}</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
+
+@if (detail(); as d) {
+  <div class="overlay" (click)="detail.set(null)">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <header class="modal__head">
+        <div>
+          <p class="eyebrow">
+            {{ d.absence.dateDebut | date: 'dd/MM/yyyy' }} → {{ d.absence.dateFin | date: 'dd/MM/yyyy' }} ·
+            {{ d.absence.nbJours | number: '1.0-1' }} jour(s)
+          </p>
+          <h2>{{ typeAbsence(d.absence.type) }}</h2>
+        </div>
+        <span class="badge" [attr.data-tone]="tonAbsence(d.absence.statut)">{{ libelleStatut(d.absence.statut) }}</span>
+      </header>
+      <div class="modal__body">
+        @if (detailError()) {
+          <div class="alert" role="alert">{{ detailError() }}</div>
+        }
+        @if (d.absence.motif) {
+          <p style="margin: 0"><span class="muted">Motif :</span> {{ d.absence.motif }}</p>
+        }
+        @if (d.absence.commentaire) {
+          <p style="margin: 0"><span class="muted">Réponse :</span> {{ d.absence.commentaire }}</p>
+        }
+
+        <h3 class="small muted" style="margin: 0.5rem 0 0">Suivi</h3>
+        <ul style="margin: 0; padding-left: 1.1rem">
+          @for (h of d.historique; track $index) {
+            <li class="small">
+              {{ utc(h.le) | date: 'dd/MM/yyyy HH:mm' }} — {{ h.action }}{{ h.acteur ? ' (' + h.acteur + ')' : '' }}
+              @if (h.commentaire) {
+                <span class="muted"> : {{ h.commentaire }}</span>
+              }
+            </li>
+          }
+        </ul>
+
+        <h3 class="small muted" style="margin: 0.5rem 0 0">Justificatifs</h3>
+        @for (doc of d.documents; track doc.id) {
+          <div class="small">
+            <button type="button" class="linkish" (click)="voir(doc)">{{ doc.nomFichier }}</button>
+            <span class="muted"> · {{ doc.taille / 1024 | number: '1.0-0' }} Ko</span>
+          </div>
+        } @empty {
+          <p class="muted small" style="margin: 0">Aucun justificatif.</p>
+        }
+        @if (d.absence.statut !== 'Refusee' && d.absence.statut !== 'Annulee') {
+          <label class="field">
+            <span>Ajouter un justificatif</span>
+            <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" (change)="joindre($event)" [disabled]="acting()" />
+          </label>
+        }
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" (click)="detail.set(null)">Fermer</button>
+        @if (enAttente(d.absence)) {
+          <button type="button" class="btn btn--danger" (click)="retirer(d.absence)" [disabled]="acting()">Retirer la demande</button>
+        }
+      </footer>
+    </div>
+  </div>
+}

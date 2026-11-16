@@ -51,6 +51,9 @@ export interface RhEmploye extends RhEmployeListItem {
   motifSortie: string | null;
   pinDefini: boolean;
   pinBloqueJusqua: string | null;
+  /** Compte ERP lié : l'employé fait ses demandes de congé depuis l'ERP. */
+  userAppId: number | null;
+  userLogin: string | null;
   soldeCongesInitial: number;
   dateSoldeInitial: string | null;
   notes: string | null;
@@ -758,4 +761,48 @@ export interface PaieBareme {
 export interface PaieParametres {
   parametres: PaieParametre[];
   irsa: PaieBareme[];
+}
+
+// —— Compte ERP lié à une fiche employé, et « mes congés » ——
+
+export interface RhCompteErp {
+  userId: number;
+  login: string | null;
+  nom: string | null;
+  /** Fiche employé déjà liée à ce compte. */
+  employeId: number | null;
+  employe: string | null;
+}
+
+export interface RhMonEspace {
+  /** false : le compte n'est lié à aucune fiche employé. */
+  lie: boolean;
+  espace: {
+    employe: {
+      matricule: string;
+      nomComplet: string;
+      dateEmbauche: string;
+      modeRepos: string;
+      departement: string | null;
+      poste: string | null;
+      responsable: string | null;
+      demandesEnAttente: number;
+    };
+    soldeConges: RhSoldeConges;
+    regles: {
+      typesDemandables: string[];
+      delaiPrevenanceCongeJours: number;
+      congeAuPlusTotLe: string;
+      justificatifTailleMaxOctets: number;
+    };
+  } | null;
+}
+
+export interface RhMaDemandeRequest {
+  type: string;
+  dateDebut: string;
+  dateFin: string;
+  debutApresMidi: boolean;
+  finMatin: boolean;
+  motif: string | null;
 }

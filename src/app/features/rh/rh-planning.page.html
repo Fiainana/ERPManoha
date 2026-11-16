@@ -2,20 +2,29 @@
   <header class="rh__header">
     <div>
       <nav class="breadcrumb" aria-label="Fil d'Ariane">
-        <a routerLink="/rh">Ressources humaines</a>
+        @if (estRh) {
+          <a routerLink="/rh">Ressources humaines</a>
+        } @else {
+          <span>Ressources humaines</span>
+        }
         <span>›</span>
-        <strong>Planning</strong>
+        <strong>Planning des repos</strong>
       </nav>
       <div class="title-row">
-        <h1>Planning</h1>
+        <h1>Planning des repos</h1>
       </div>
       <p class="subtitle">
-        Du {{ lundi | date: 'dd/MM/yyyy' }} au {{ fin | date: 'dd/MM/yyyy' }} · cliquez sur une case pour poser ou retirer un jour off
+        Du {{ lundi | date: 'dd/MM/yyyy' }} au {{ fin | date: 'dd/MM/yyyy' }}
+        @if (peutModifier) {
+          · cliquez sur une case pour poser ou retirer un jour off
+        }
       </p>
     </div>
-    <div class="rh__actions">
-      <button type="button" class="btn btn--primary" (click)="ouvrirRotation()">Générer la rotation</button>
-    </div>
+    @if (peutModifier) {
+      <div class="rh__actions">
+        <button type="button" class="btn btn--primary" (click)="ouvrirRotation()">Générer la rotation</button>
+      </div>
+    }
   </header>
 
   <div class="toolbar">
@@ -54,7 +63,7 @@
   @if (error()) {
     <div class="alert" role="alert">{{ error() }}</div>
   }
-  @if (aPlanifier().length) {
+  @if (peutModifier && aPlanifier().length) {
     <div class="alert alert--warn">
       Jours off encore à planifier :
       @for (a of aPlanifier(); track a.nom; let last = $last) {
@@ -71,7 +80,7 @@
       }
     } @else if (planning(); as p) {
       <div class="table-scroll">
-        <table class="grille" [class.loading]="loading()">
+        <table class="grille" [class.loading]="loading()" [class.grille--lecture]="!peutModifier">
           <thead>
             <tr>
               <th class="col-nom">Employé</th>
@@ -91,7 +100,11 @@
             @for (e of p.employes; track e.employeId) {
               <tr>
                 <th class="col-nom">
-                  <a [routerLink]="['/rh/employes', e.employeId]">{{ e.nom }}</a>
+                  @if (estRh) {
+                    <a [routerLink]="['/rh/employes', e.employeId]">{{ e.nom }}</a>
+                  } @else {
+                    <span>{{ e.nom }}</span>
+                  }
                   <small>{{ libelleRegime(e.modeRepos, e.joursRepos, e.joursTravailSemaine) }}{{ e.departement ? ' · ' + e.departement : '' }}</small>
                 </th>
                 @for (j of e.jours; track j.date) {
@@ -122,7 +135,9 @@
         <span><i data-statut="JourOff" data-origine="Auto"></i>Jour off généré</span>
         <span><i data-statut="JourOff" data-origine="Manuel"></i>Jour off manuel</span>
         <span><i data-statut="Absence"></i>Congé / absence</span>
-        <span><i class="attente" data-statut="Travail"></i>Demande en attente</span>
+        @if (peutModifier) {
+          <span><i class="attente" data-statut="Travail"></i>Demande en attente</span>
+        }
         <span><i data-statut="Ferie"></i>Férié</span>
         <span>🔒 jour sans off</span>
       </footer>
@@ -148,7 +163,9 @@
             <p style="margin: 0">
               {{ typeAbsence(c.jour.absence?.type) }}{{ c.jour.absence?.demiJournee ? ' (' + c.jour.absence?.demiJournee + ')' : '' }}.
             </p>
-            <a class="linkish" [routerLink]="['/rh/absences', c.jour.absence?.id]" (click)="cellule.set(null)">Voir l’absence</a>
+            @if (estRh) {
+              <a class="linkish" [routerLink]="['/rh/absences', c.jour.absence?.id]" (click)="cellule.set(null)">Voir l’absence</a>
+            }
           }
           @case ('Repos') {
             <p style="margin: 0">Jour de repos {{ c.employe.modeRepos === 'Rotation' ? '(fermeture du magasin)' : 'fixe' }}.</p>
@@ -166,8 +183,10 @@
         }
         @if (c.jour.demandeEnAttente) {
           <div class="alert alert--warn">
-            Demande en attente : {{ typeAbsence(c.jour.demandeEnAttente.type) }} —
-            <a class="linkish" [routerLink]="['/rh/absences', c.jour.demandeEnAttente.id]" (click)="cellule.set(null)">traiter</a>
+            Demande en attente : {{ typeAbsence(c.jour.demandeEnAttente.type) }}
+            @if (estRh) {
+              — <a class="linkish" [routerLink]="['/rh/absences', c.jour.demandeEnAttente.id]" (click)="cellule.set(null)">traiter</a>
+            }
           </div>
         }
       </div>

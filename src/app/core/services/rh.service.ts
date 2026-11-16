@@ -9,6 +9,9 @@ import {
   RhAbsenceDetail,
   RhAbsenceRequest,
   RhAjustement,
+  RhCompteErp,
+  RhMaDemandeRequest,
+  RhMonEspace,
   RhContrat,
   RhDepartement,
   RhEmployeDetail,
@@ -163,6 +166,55 @@ export class RhService {
   telechargerDocument(documentId: number): Observable<Blob> {
     return this.http
       .get(`${this.base}/absences/documents/${documentId}`, { responseType: 'blob' })
+      .pipe(catchError((err) => throwError(() => new Error(this.readError(err)))));
+  }
+
+  // —— Compte ERP de l'employé ——
+
+  comptesErp() {
+    return this.get<RhCompteErp[]>('comptes-erp');
+  }
+
+  /** userId null = délier. */
+  lierCompte(employeId: number, userId: number | null) {
+    return this.send<unknown>('PUT', `employes/${employeId}/compte`, { userId });
+  }
+
+  // —— Mes congés (tout compte ERP lié à une fiche employé) ——
+
+  moi() {
+    return this.get<RhMonEspace>('moi');
+  }
+
+  mesDemandes(q: { statut?: string; page?: number; pageSize?: number }) {
+    return this.get<RhPage<RhAbsence>>('moi/demandes', q);
+  }
+
+  maDemande(id: number) {
+    return this.get<RhAbsenceDetail>(`moi/demandes/${id}`);
+  }
+
+  demander(req: RhMaDemandeRequest) {
+    return this.send<RhAbsenceCreation>('POST', 'moi/demandes', req);
+  }
+
+  retirerMaDemande(id: number) {
+    return this.send<unknown>('POST', `moi/demandes/${id}/annuler`);
+  }
+
+  ajouterMonJustificatif(demandeId: number, fichier: File) {
+    const form = new FormData();
+    form.append('fichier', fichier);
+    return this.send<unknown>('POST', `moi/demandes/${demandeId}/documents`, form);
+  }
+
+  supprimerMonJustificatif(documentId: number) {
+    return this.send<unknown>('DELETE', `moi/documents/${documentId}`);
+  }
+
+  telechargerMonJustificatif(documentId: number): Observable<Blob> {
+    return this.http
+      .get(`${this.base}/moi/documents/${documentId}`, { responseType: 'blob' })
       .pipe(catchError((err) => throwError(() => new Error(this.readError(err)))));
   }
 

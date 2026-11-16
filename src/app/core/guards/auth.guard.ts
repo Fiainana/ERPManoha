@@ -29,6 +29,14 @@ export const accueilGuard: CanActivateFn = () => {
   if (!ROLES_ACCUEIL_ERP.some((r) => roles.includes(r)) && roles.includes('Compta')) {
     return router.createUrlTree(['/immo']);
   }
+  // Un compte uniquement « Achat » arrive directement sur ses demandes d'achat.
+  if (!ROLES_ACCUEIL_ERP.some((r) => roles.includes(r)) && roles.includes('Achat')) {
+    return router.createUrlTree(['/achats']);
+  }
+  // Un compte uniquement « Planning » arrive sur le planning des repos.
+  if (!ROLES_ACCUEIL_ERP.some((r) => roles.includes(r)) && roles.includes('Planning')) {
+    return router.createUrlTree(['/rh/planning']);
+  }
   return true;
 };
 

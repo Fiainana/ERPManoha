@@ -7,6 +7,7 @@ import {
   RH_TYPES_CONTRAT,
   RhAbsence,
   RhAjustement,
+  RhCompteErp,
   RhContrat,
   RhEmployeDetail,
   RhPoste,
@@ -53,6 +54,8 @@ export class RhEmployeDetailPage implements OnInit {
   sortie = { dateSortie: rhIso(new Date()), motif: '' };
   ajustement = { jours: 0, motif: '', dateEffet: '' };
   pin = '';
+  readonly comptes = signal<RhCompteErp[]>([]);
+  compteChoisi: number | null = null;
   modalError = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -67,6 +70,7 @@ export class RhEmployeDetailPage implements OnInit {
     this.api.employe(this.id).subscribe({
       next: (d) => {
         this.detail.set(d);
+        this.compteChoisi = d.employe.userAppId ?? null;
         this.loading.set(false);
       },
       error: (err) => {
@@ -74,12 +78,28 @@ export class RhEmployeDetailPage implements OnInit {
         this.error.set(err.message);
       },
     });
+    if (this.onglet() === 'espace') this.chargerComptes();
     this.api.ajustements(this.id).subscribe({ next: (a) => this.ajustements.set(a.ajustements), error: () => {} });
     this.api.absences({ employeId: this.id, pageSize: 50 }).subscribe({ next: (p) => this.absences.set(p.items), error: () => {} });
   }
 
   setOnglet(o: Onglet): void {
     this.onglet.set(o);
+    if (o === 'espace') this.chargerComptes();
+  }
+
+  // —— Compte ERP lié ——
+
+  private chargerComptes(): void {
+    this.api.comptesErp().subscribe({ next: (c) => this.comptes.set(c), error: () => {} });
+  }
+
+  lierCompte(): void {
+    const login = this.comptes().find((c) => c.userId === this.compteChoisi)?.login;
+    this.executer(
+      this.api.lierCompte(this.id, this.compteChoisi),
+      this.compteChoisi === null ? 'Compte ERP délié.' : `Fiche liée au compte ${login ?? ''}.`
+    );
   }
 
   onSaved(): void {

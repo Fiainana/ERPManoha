@@ -33,7 +33,10 @@ export type NavSection =
 const ADMIN: AppRole[] = ['Admin'];
 const DEPOT: AppRole[] = ['Admin', 'Depot'];
 const RH: AppRole[] = ['Admin', 'HR'];
+/** Planning des repos : modification et saisie des pointages manquants. */
+const RH_PLANNING: AppRole[] = ['Admin', 'HR', 'Planning'];
 const COMPTA: AppRole[] = ['Admin', 'Compta'];
+const ACHAT: AppRole[] = ['Admin', 'Achat'];
 
 /**
  * Menu ERP, organisé par métier (hors comptoir et borne d'impression).
@@ -101,14 +104,14 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Achats',
     icon: 'shopping',
     section: 'Commercial',
-    roles: ADMIN,
+    roles: ACHAT,
     items: [
-      { label: 'Demandes d’achat', route: '/achats/demandes', roles: ADMIN },
-      { label: 'Préparations', route: '/achats/preparations', roles: ADMIN },
-      { label: 'Bons de commande', route: '/achats/commandes', roles: ADMIN },
-      { label: 'Bons de livraison', route: '/achats/receptions', roles: ADMIN },
-      { label: 'Factures fournisseurs', route: '/achats/factures', roles: ADMIN },
-      { label: 'Fournisseurs', route: '/fournisseurs', roles: ADMIN },
+      { label: 'Demandes d’achat', route: '/achats/demandes', roles: ACHAT },
+      { label: 'Préparations', route: '/achats/preparations', roles: ACHAT },
+      { label: 'Bons de commande', route: '/achats/commandes', roles: ACHAT },
+      { label: 'Bons de livraison', route: '/achats/receptions', roles: ACHAT },
+      { label: 'Factures fournisseurs', route: '/achats/factures', roles: ACHAT },
+      { label: 'Fournisseurs', route: '/fournisseurs', roles: ACHAT },
     ],
   },
 
@@ -161,13 +164,13 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Ressources humaines',
     icon: 'hr',
     section: 'Ressources humaines',
-    roles: RH,
     items: [
       { label: 'Tableau de bord RH', route: '/rh', roles: RH, exact: true },
       { label: 'Employés', route: '/rh/employes', roles: RH },
-      { label: 'Planning', route: '/rh/planning', roles: RH },
+      { label: 'Mes congés', route: '/rh/mes-conges' },
+      { label: 'Planning des repos', route: '/rh/planning' },
       { label: 'Congés & absences', route: '/rh/absences', roles: RH },
-      { label: 'Présence', route: '/rh/presence', roles: RH },
+      { label: 'Présence', route: '/rh/presence', roles: RH_PLANNING },
       { label: 'Pointeuse', route: '/rh/pointeuse', roles: RH },
       { label: 'Paie', route: '/rh/paie', roles: ADMIN, exact: true },
       { label: 'Paramètres de paie', route: '/rh/paie/parametres', roles: ADMIN },

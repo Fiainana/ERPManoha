@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { AchatsService } from '../../core/services/achats.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   AchatDetail,
   AchatEtatReglement,
@@ -42,6 +43,10 @@ export class AchatsDetailPage {
   private readonly api = inject(AchatsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+
+  /** La réception d'un bon de commande appartient au dépôt (et à l'Admin). */
+  readonly peutReceptionner = computed(() => this.auth.hasRole('Admin', 'Depot'));
 
   private readonly params = toSignal(
     this.route.paramMap.pipe(
