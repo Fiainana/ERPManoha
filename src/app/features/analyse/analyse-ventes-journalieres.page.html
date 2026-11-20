@@ -1,0 +1,260 @@
+<div class="vj">
+  <header class="vj__header">
+    <div>
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/analyse">Analyse</a>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path fill="currentColor" d="M6.7 3.3 5.3 4.7 8.6 8l-3.3 3.3 1.4 1.4L11.4 8z" />
+        </svg>
+        <strong>Ventes par jour</strong>
+      </nav>
+      <div class="vj__title-row">
+        <h1>Ventes journalières par article</h1>
+        @if (vue(); as v) {
+          <span class="count-pill">{{ v.rows.length }} article{{ v.rows.length > 1 ? 's' : '' }}</span>
+        }
+      </div>
+      <p class="vj__subtitle">
+        Ce qui s'est vendu chaque jour, article par article, retours déduits. Le fournisseur est le fournisseur
+        principal de l'article.
+      </p>
+    </div>
+    <div class="vj__actions">
+      <button type="button" class="btn btn--ghost" (click)="exporter()" [disabled]="!vue()?.rows?.length">
+        Exporter en CSV
+      </button>
+    </div>
+  </header>
+
+  <!-- Période, recherche, fournisseur, valeur affichée, tri -->
+  <section class="vj__toolbar" aria-label="Filtres">
+    <div class="vj__ligne">
+      <div class="mois" role="group" aria-label="Mois">
+        <button type="button" class="mois__btn" (click)="decalerMois(-1)" aria-label="Mois précédent">‹</button>
+        <strong class="mois__label">{{ libellePeriode() }}</strong>
+        <button
+          type="button"
+          class="mois__btn"
+          (click)="decalerMois(1)"
+          [disabled]="estMoisCourant()"
+          aria-label="Mois suivant"
+        >
+          ›
+        </button>
+      </div>
+
+      <div class="puces" role="group" aria-label="Raccourcis de période">
+        <button type="button" class="puce" (click)="moisCourant()">Ce mois</button>
+        <button type="button" class="puce" (click)="moisPrecedent()">Mois dernier</button>
+        <button type="button" class="puce" (click)="septDerniersJours()">7 derniers jours</button>
+      </div>
+
+      <div class="dates">
+        <label class="champ champ--date">
+          <span>Du</span>
+          <input type="date" [ngModel]="debut()" (change)="majPeriode($any($event.target).value, fin())" />
+        </label>
+        <label class="champ champ--date">
+          <span>Au</span>
+          <input type="date" [ngModel]="fin()" (change)="majPeriode(debut(), $any($event.target).value)" />
+        </label>
+      </div>
+    </div>
+
+    <div class="vj__ligne">
+      <div class="recherche">
+        <svg class="recherche__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+          />
+        </svg>
+        <input
+          type="search"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          placeholder="Référence ou désignation…"
+          autocomplete="off"
+          aria-label="Rechercher un article"
+        />
+        @if (recherche()) {
+          <button type="button" class="recherche__effacer" (click)="recherche.set('')" aria-label="Effacer">×</button>
+        }
+      </div>
+
+      <label class="champ">
+        <span>Fournisseur</span>
+        <select [ngModel]="fournisseur()" (ngModelChange)="choisirFournisseur($event)" aria-label="Fournisseur">
+          <option value="">Tous les fournisseurs</option>
+          @for (f of data()?.fournisseurs ?? []; track f.code) {
+            <option [value]="f.code">{{ f.nom }} ({{ f.nbArticles }})</option>
+          }
+        </select>
+      </label>
+
+      <label class="champ">
+        <span>Trier par</span>
+        <select [ngModel]="tri()" (ngModelChange)="tri.set($event)" aria-label="Tri">
+          <option value="fournisseur">Fournisseur, puis ventes</option>
+          <option value="total">Ventes (du plus au moins)</option>
+          <option value="designation">Désignation (A → Z)</option>
+          <option value="reference">Référence</option>
+        </select>
+      </label>
+
+      <div class="segment" role="group" aria-label="Valeur affichée">
+        <button type="button" [class.is-on]="metrique() === 'qte'" (click)="metrique.set('qte')">Quantité</button>
+        <button type="button" [class.is-on]="metrique() === 'ca'" (click)="metrique.set('ca')">CA TTC</button>
+      </div>
+
+      @if (filtreActif()) {
+        <button type="button" class="btn btn--ghost" (click)="reinitialiser()">Réinitialiser</button>
+      }
+    </div>
+  </section>
+
+  @if (error()) {
+    <div class="alert" role="alert">
+      {{ error() }}
+      <button type="button" class="btn btn--ghost btn--sm" style="margin-left: 0.75rem" (click)="charger()">
+        Réessayer
+      </button>
+    </div>
+  }
+
+  @if (vue(); as v) {
+    <!-- Indicateurs de la vue -->
+    <div class="kpis" [class.is-loading]="loading()">
+      <div class="kpi">
+        <span>Articles vendus</span>
+        <strong>{{ v.rows.length }}</strong>
+        <small>{{ v.nbFournisseurs }} fournisseur{{ v.nbFournisseurs > 1 ? 's' : '' }}</small>
+      </div>
+      <div class="kpi">
+        <span>{{ libelleMetrique() }}</span>
+        <strong>{{ fmt(v.total) || '0' }}</strong>
+        <small>sur {{ v.colonnes.length }} jour{{ v.colonnes.length > 1 ? 's' : '' }}</small>
+      </div>
+      <div class="kpi">
+        <span>Jours avec vente</span>
+        <strong>{{ v.joursAvecVente }} <i>/ {{ v.colonnes.length }}</i></strong>
+        <small>
+          @if (v.joursAvecVente > 0) {
+            moyenne {{ fmt(v.total / v.joursAvecVente) || '0' }} par jour
+          } @else {
+            aucune vente
+          }
+        </small>
+      </div>
+      <div class="kpi">
+        <span>Meilleur jour</span>
+        @if (v.meilleurJour; as mj) {
+          <strong>{{ fmt(mj.valeur) }}</strong>
+          <small>{{ mj.titre }}</small>
+        } @else {
+          <strong>—</strong>
+          <small>aucune vente</small>
+        }
+      </div>
+    </div>
+  }
+
+  <section class="panel" [class.is-loading]="loading()">
+    @if (loading() && !data()) {
+      <div class="skeleton" aria-busy="true">
+        @for (_ of [1, 2, 3, 4, 5, 6, 7, 8]; track $index) {
+          <div class="skeleton__row"></div>
+        }
+      </div>
+    } @else if (vue(); as v) {
+      @if (v.rows.length === 0) {
+        <div class="empty">
+          <h2>Aucune vente</h2>
+          <p>
+            @if (filtreActif()) {
+              Aucun article ne correspond à ces filtres sur cette période.
+            } @else {
+              Aucune facture de vente sur cette période.
+            }
+          </p>
+          @if (filtreActif()) {
+            <button type="button" class="btn btn--ghost" (click)="reinitialiser()">Réinitialiser</button>
+          }
+        </div>
+      } @else {
+        <div class="vj__defilement" tabindex="0" aria-label="Tableau des ventes par article et par jour">
+          <table class="vj__table" [class.is-ca]="metrique() === 'ca'">
+            <thead>
+              <tr>
+                <th class="c-article" scope="col">Article</th>
+                @for (c of v.colonnes; track c.iso) {
+                  <th class="c-jour" scope="col" [class.is-we]="c.weekend" [title]="c.titre">
+                    <span class="wd">{{ c.wd }}</span>
+                    <span class="dn">{{ c.n }}</span>
+                  </th>
+                }
+                <th class="c-total" scope="col">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of v.blocs; track b.cle) {
+                @if (b.groupe; as g) {
+                  <tr class="groupe">
+                    <th class="c-article" scope="rowgroup">
+                      <span class="groupe__nom">{{ g.nom }}</span>
+                      <span class="groupe__meta">{{ g.nbArticles }} article{{ g.nbArticles > 1 ? 's' : '' }}</span>
+                    </th>
+                    @for (x of g.cells; track $index) {
+                      <td class="c-jour" [class.is-we]="v.colonnes[$index].weekend">{{ x ? fmt(x) : '' }}</td>
+                    }
+                    <td class="c-total">{{ fmt(g.total) }}</td>
+                  </tr>
+                }
+                @for (r of b.rows; track r.a.reference) {
+                  <tr>
+                    <th class="c-article" scope="row">
+                      <span class="ref">{{ r.a.reference }}</span>
+                      <span class="des">{{ r.a.designation }}</span>
+                      @if (!b.groupe) {
+                        <span class="four">{{ r.a.fournisseurNom }}</span>
+                      }
+                    </th>
+                    @for (x of r.cells; track $index) {
+                      <td
+                        class="c-jour"
+                        [class.is-we]="v.colonnes[$index].weekend"
+                        [class.has-v]="x !== null"
+                        [style.background-color]="chaleur(x, v.max)"
+                        [attr.title]="titreCellule(x, v.colonnes[$index])"
+                      >
+                        {{ fmt(x) }}
+                      </td>
+                    }
+                    <td class="c-total">{{ fmt(r.total) }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th class="c-article" scope="row">Total journalier</th>
+                @for (x of v.totauxJour; track $index) {
+                  <td class="c-jour" [class.is-we]="v.colonnes[$index].weekend">{{ x ? fmt(x) : '' }}</td>
+                }
+                <td class="c-total">{{ fmt(v.total) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <footer class="panel__pied">
+          <span class="legende">
+            <i class="legende__case legende__case--faible"></i> peu
+            <i class="legende__case legende__case--fort"></i> beaucoup
+            <i class="legende__case legende__case--neg"></i> net négatif (retours)
+          </span>
+          <span>{{ libelleMetrique() }} · survolez une case pour le détail</span>
+        </footer>
+      }
+    }
+  </section>
+</div>

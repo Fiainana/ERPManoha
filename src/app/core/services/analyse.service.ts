@@ -22,6 +22,7 @@ import {
   FournisseurDetailAnalyse,
   FournisseursResume,
   Granularite,
+  VentesJournalieres,
 } from '../models/analyse.model';
 
 export type PresetPeriode =
@@ -191,6 +192,22 @@ export class AnalyseService {
 
   commerciaux() {
     return this.get<AnalyseListeSimple<CommercialAnalyse>>('commerciaux');
+  }
+
+  /**
+   * Ventes par article et par jour (62 jours au plus). Période propre à cet écran : elle n'utilise pas la
+   * période partagée des autres écrans Analyse.
+   */
+  ventesJournalieres(debut: string, fin: string, fournisseur?: string): Observable<VentesJournalieres> {
+    let params = new HttpParams().set('debut', debut).set('fin', fin);
+    if (fournisseur) params = params.set('fournisseur', fournisseur);
+    return this.http.get<ApiResponse<VentesJournalieres>>(`${this.base}/ventes-journalieres`, { params }).pipe(
+      map((res) => {
+        if (!res.success) throw new Error(res.message || res.detail || 'Erreur');
+        return res.data as VentesJournalieres;
+      }),
+      catchError((err: HttpErrorResponse | Error) => throwError(() => new Error(lireErreur(err))))
+    );
   }
 
   private get<T>(path: string, liste?: AnalyseListeParams, avecSerie = false): Observable<T> {

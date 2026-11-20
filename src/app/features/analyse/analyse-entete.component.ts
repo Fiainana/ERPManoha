@@ -34,6 +34,7 @@ import { AnalysePeriodeService, PRESETS, PresetPeriode } from '../../core/servic
         <a routerLink="/analyse/magasin" routerLinkActive="is-active">Magasin</a>
         <a routerLink="/analyse/marketing" routerLinkActive="is-active">Marketing</a>
         <a routerLink="/analyse/articles" routerLinkActive="is-active">Articles</a>
+        <a routerLink="/analyse/ventes-journalieres" routerLinkActive="is-active">Ventes par jour</a>
         <a routerLink="/analyse/familles" routerLinkActive="is-active">Familles</a>
         <a routerLink="/analyse/clients" routerLinkActive="is-active">Clients</a>
         <a routerLink="/analyse/fournisseurs" routerLinkActive="is-active">Fournisseurs</a>

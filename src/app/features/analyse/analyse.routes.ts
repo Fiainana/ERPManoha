@@ -24,6 +24,11 @@ export const ANALYSE_ROUTES: Routes = [
     loadComponent: () => import('./analyse-article-detail.page').then((m) => m.AnalyseArticleDetailPage),
   },
   {
+    path: 'ventes-journalieres',
+    loadComponent: () =>
+      import('./analyse-ventes-journalieres.page').then((m) => m.AnalyseVentesJournalieresPage),
+  },
+  {
     path: 'familles',
     loadComponent: () => import('./analyse-familles.page').then((m) => m.AnalyseFamillesPage),
   },

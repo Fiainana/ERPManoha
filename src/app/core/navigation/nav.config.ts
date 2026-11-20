@@ -79,6 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Magasin', route: '/analyse/magasin', roles: ADMIN },
       { label: 'Marketing et clientèle', route: '/analyse/marketing', roles: ADMIN },
       { label: 'Articles', route: '/analyse/articles', roles: ADMIN },
+      { label: 'Ventes par jour', route: '/analyse/ventes-journalieres', roles: ADMIN },
       { label: 'Familles', route: '/analyse/familles', roles: ADMIN },
       { label: 'Clients', route: '/analyse/clients', roles: ADMIN },
       { label: 'Fournisseurs', route: '/analyse/fournisseurs', roles: ADMIN },

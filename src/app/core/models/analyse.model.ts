@@ -681,3 +681,49 @@ export interface AnalyseMagasin {
     lift: number | null;
   }[];
 }
+
+/** Ventes journalières par article : une ligne par article, une colonne par jour. */
+export interface VenteJourCellule {
+  date: string;
+  qte: number;
+  caTtc: number;
+}
+
+export interface VenteJourArticle {
+  reference: string;
+  designation: string;
+  /** Code du fournisseur principal ; « - » = article sans fournisseur. */
+  fournisseurCode: string;
+  fournisseurNom: string;
+  qte: number;
+  caHt: number;
+  caTtc: number;
+  nbJoursVente: number;
+  /** Seulement les jours avec vente. */
+  jours: VenteJourCellule[];
+}
+
+export interface VenteJourTotalJour {
+  date: string;
+  qte: number;
+  caTtc: number;
+  nbArticles: number;
+}
+
+export interface VenteJourFournisseur {
+  code: string;
+  nom: string;
+  nbArticles: number;
+  qte: number;
+  caTtc: number;
+}
+
+export interface VentesJournalieres {
+  debut: string;
+  fin: string;
+  nbJours: number;
+  fournisseurs: VenteJourFournisseur[];
+  jours: VenteJourTotalJour[];
+  articles: VenteJourArticle[];
+  totaux: { nbArticles: number; qte: number; caHt: number; caTtc: number };
+}
