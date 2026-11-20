@@ -37,8 +37,12 @@
 
     @if (detail(); as d) {
       <div class="immo__actions">
+        <a [routerLink]="['/achats', type()]" class="btn btn--ghost">Retour</a>
         @switch (type()) {
           @case ('demandes') {
+            <button type="button" class="btn btn--ghost" (click)="telechargerPdf()" [disabled]="acting()">
+              PDF
+            </button>
             <button type="button" class="btn btn--primary" (click)="fenetre.set('commander')" [disabled]="lignesArticle().length === 0">
               Commander
             </button>
@@ -76,8 +80,6 @@
       </div>
     }
   </header>
-
-  <app-achats-tabs />
 
   @if (message()) {
     <div class="alert alert--ok" role="status">{{ message() }}</div>

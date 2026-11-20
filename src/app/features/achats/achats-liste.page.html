@@ -18,36 +18,45 @@
     </div>
   </header>
 
-  <app-achats-tabs />
-
-  <div class="toolbar">
-    <label class="field">
-      <span>Recherche</span>
+  <div class="fa__toolbar">
+    <div class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+        />
+      </svg>
       <input
         type="search"
         [(ngModel)]="search"
         (ngModelChange)="surRecherche()"
         placeholder="N° de pièce, référence, fournisseur…"
         autocomplete="off"
+        aria-label="Rechercher un document d'achat"
       />
-    </label>
-    <label class="field field--sm">
-      <span>Du</span>
-      <input type="date" [(ngModel)]="dateDebut" (ngModelChange)="recharger()" />
-    </label>
-    <label class="field field--sm">
-      <span>Au</span>
-      <input type="date" [(ngModel)]="dateFin" (ngModelChange)="recharger()" />
-    </label>
-    @if (type() === 'factures') {
-      <label class="check" style="height: 40px">
-        <input type="checkbox" [(ngModel)]="nonReglees" (ngModelChange)="recharger()" />
-        Non réglées seulement
+      @if (search) {
+        <button type="button" class="search__clear" (click)="search = ''; surRecherche()" aria-label="Effacer">×</button>
+      }
+    </div>
+    <div class="fa__toolbar-actions">
+      <label class="field-date">
+        <span>Du</span>
+        <input type="date" [(ngModel)]="dateDebut" (ngModelChange)="recharger()" />
       </label>
-    }
-    @if (filtre()) {
-      <button type="button" class="btn btn--ghost" (click)="reinitialiser()">Réinitialiser</button>
-    }
+      <label class="field-date">
+        <span>Au</span>
+        <input type="date" [(ngModel)]="dateFin" (ngModelChange)="recharger()" />
+      </label>
+      @if (type() === 'factures') {
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="nonReglees" (ngModelChange)="recharger()" />
+          <span>Non réglées seulement</span>
+        </label>
+      }
+      @if (filtre()) {
+        <button type="button" class="btn btn--ghost" (click)="reinitialiser()">Réinitialiser</button>
+      }
+    </div>
   </div>
 
   @if (message()) {

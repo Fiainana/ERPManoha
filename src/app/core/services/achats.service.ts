@@ -29,6 +29,34 @@ export class AchatsService {
   /** Message à afficher sur l'écran suivant (ex. « DEA000021 → bon de commande BCA000019 »). */
   readonly flash = signal<string | null>(null);
 
+  /** PDF A4 d'une demande d'achat : téléchargé directement, retourne le nom du fichier. */
+  telechargerPdfDemande(piece: string): Observable<string> {
+    return this.http
+      .get(`${this.base}/demandes/${encodeURIComponent(piece)}/pdf`, {
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(
+        map((resp) => {
+          const blob = resp.body;
+          if (!blob || blob.size === 0) throw new Error('PDF vide ou indisponible');
+          const cd = resp.headers.get('content-disposition') || '';
+          const match = /filename\*?=(?:UTF-8''|"?)([^";]+)/i.exec(cd);
+          const fileName = match
+            ? decodeURIComponent(match[1].replace(/"/g, ''))
+            : `Demande-achat-${piece}.pdf`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+          return fileName;
+        }),
+        catchError((err: HttpErrorResponse | Error) => throwError(() => new Error(lireErreur(err))))
+      );
+  }
+
   lister(type: TypeAchat, p: AchatListeParams = {}): Observable<AchatListe> {
     let params = new HttpParams();
     if (p.search) params = params.set('search', p.search);

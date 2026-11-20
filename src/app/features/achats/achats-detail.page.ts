@@ -15,7 +15,7 @@ import {
   TypeAchat,
   typeAchatDepuisDoType,
 } from '../../core/models/achats.model';
-import { AchatsTabsComponent, ArPipe, QtePipe, estTypeAchat } from './achats-commun';
+import { ArPipe, QtePipe, estTypeAchat } from './achats-commun';
 import { AchatsCommanderDialog, AchatsFacturerDialog, AchatsReglerDialog } from './achats-dialogs';
 
 type Fenetre = 'commander' | 'facturer' | 'regler' | null;
@@ -31,7 +31,6 @@ type Fenetre = 'commander' | 'facturer' | 'regler' | null;
     DatePipe,
     ArPipe,
     QtePipe,
-    AchatsTabsComponent,
     AchatsCommanderDialog,
     AchatsFacturerDialog,
     AchatsReglerDialog,
@@ -108,6 +107,22 @@ export class AchatsDetailPage {
     this.api.reglements(this.piece()).subscribe({
       next: (e) => this.etat.set(e),
       error: (e: Error) => this.error.set(e.message),
+    });
+  }
+
+  telechargerPdf(): void {
+    if (this.acting()) return;
+    this.acting.set(true);
+    this.error.set(null);
+    this.api.telechargerPdfDemande(this.piece()).subscribe({
+      next: () => {
+        this.acting.set(false);
+        this.message.set('PDF téléchargé');
+      },
+      error: (e: Error) => {
+        this.acting.set(false);
+        this.error.set(e.message);
+      },
     });
   }
 

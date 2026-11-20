@@ -1,5 +1,4 @@
-import { Component, Pipe, PipeTransform } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Pipe, PipeTransform } from '@angular/core';
 import { TYPES_ACHAT, TypeAchat } from '../../core/models/achats.model';
 
 const ENTIER = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
@@ -30,19 +29,3 @@ export function aujourdhuiIso(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Navigation interne du module Achats : un onglet par étape de la chaîne d'achat. */
-@Component({
-  selector: 'app-achats-tabs',
-  imports: [RouterLink, RouterLinkActive],
-  template: `
-    <nav class="tabs" aria-label="Achats">
-      @for (t of types; track t.id) {
-        <a [routerLink]="['/achats', t.id]" routerLinkActive="is-active">{{ t.libelle }}</a>
-      }
-    </nav>
-  `,
-  styleUrl: './achats.shared.scss',
-})
-export class AchatsTabsComponent {
-  readonly types = TYPES_ACHAT;
-}

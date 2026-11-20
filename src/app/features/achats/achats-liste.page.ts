@@ -7,7 +7,7 @@ import { Subscription, map } from 'rxjs';
 import { AchatsService } from '../../core/services/achats.service';
 import { AchatEntete, AchatResume, FacturerResultat, TYPES_ACHAT, TypeAchat } from '../../core/models/achats.model';
 import { ScrollInfiniDirective } from '../analyse/scroll-infini.directive';
-import { AchatsTabsComponent, ArPipe, estTypeAchat } from './achats-commun';
+import { ArPipe, estTypeAchat } from './achats-commun';
 import { AchatsFacturerDialog } from './achats-dialogs';
 
 const LOT = 40;
@@ -19,7 +19,7 @@ const LOT = 40;
  */
 @Component({
   selector: 'app-achats-liste-page',
-  imports: [RouterLink, FormsModule, DatePipe, ArPipe, AchatsTabsComponent, ScrollInfiniDirective, AchatsFacturerDialog],
+  imports: [RouterLink, FormsModule, DatePipe, ArPipe, ScrollInfiniDirective, AchatsFacturerDialog],
   templateUrl: './achats-liste.page.html',
   styleUrl: './achats.shared.scss',
 })
